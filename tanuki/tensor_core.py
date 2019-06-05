@@ -14,6 +14,14 @@ def normalize_argument_labels(labels):
     else:
         return [labels]
 
+def normalize_and_complement_argument_labels(tensor, row_labels, column_labels=None):
+    row_labels = normalize_argument_labels(row_labels)
+    if column_labels is None:
+        column_labels = [label for label in tensor.labels if label not in row_labels]
+    else:
+        column_labels = normalize_argument_labels(column_labels)
+    return row_labels, column_labels
+
 #decorate in-place Tensor class method with @outofplacable to be able to use as out-of-place method.
 def outofplacable(f):
     def g(self, *args, inplace=True, **kwargs):
@@ -398,6 +406,8 @@ class Tensor:
 
 
 
+
+
 class ToContract:
     """
     A["a"]*B["b"] == contract(A,B,["a"],["b"])
@@ -439,11 +449,7 @@ def direct_product(aTensor, bTensor):
 
 
 def tensor_to_matrix(tensor, row_labels, column_labels=None):
-    row_labels = normalize_argument_labels(row_labels)
-    if column_labels is None:
-        column_labels = [label for label in tensor.labels if label not in row_labels]
-    else:
-        column_labels = normalize_argument_labels(column_labels)
+    row_labels, column_labels = normalize_and_complement_argument_labels(tensor, row_labels, column_labels)
 
     t = tensor.move_all_indices(row_labels+column_labels, inplace=False)
     total_row_dim = soujou(t.shape[:len(row_labels)], dtype=int)
@@ -472,11 +478,7 @@ def scalar_to_tensor(scalar, labels):
 
 #I believe gesvd and gesdd return s which is positive, descending #TODO check
 def tensor_svd(A, row_labels, column_labels=None, svd_label="svd_"):
-    row_labels = normalize_argument_labels(row_labels)
-    if column_labels is None:
-        column_labels = [label for label in A.labels if label not in row_labels]
-    else:
-        column_labels = normalize_argument_labels(column_labels)
+    row_labels, column_labels = normalize_and_complement_argument_labels(tensor, row_labels, column_labels)
 
     row_dims = A.dims_of_labels(row_labels)
     column_dims = A.dims_of_labels(column_labels)
@@ -524,3 +526,34 @@ def truncated_svd(A, row_labels, column_labels=None, chi=None, absolute_threshol
     V.data = V.data[0:chi]
 
     return U, S, V
+
+
+def tensor_qr(A, row_labels, column_labels=None, qr_label="qr_", mode="economic"):
+    row_labels, column_labels = normalize_and_complement_argument_labels(A, row_labels, column_labels)
+
+    row_dims = A.dims_of_labels(row_labels)
+    column_dims = A.dims_of_labels(column_labels)
+
+    a = A.to_matrix(row_labels, column_labels)
+
+    q, r = xp.linalg.qr(a, mode=mode)
+
+    mid_dim = r.shape[0]
+
+    Q = matrix_to_tensor(q, row_dims+(mid_dim,), row_labels+[qr_label+"qr"])
+    R = matrix_to_tensor(r, (mid_dim,)+column_dims, [qr_label+"rl"]+column_labels)
+
+    return Q, R
+
+
+def tensor_lq(A, row_labels, column_labels=None, lq_label="lq_", mode="economic"):
+    row_labels, column_labels = normalize_and_complement_argument_labels(A, row_labels, column_labels)
+
+    temp_label = "qr_in_lq_temp_label"
+
+    Q, L = tensor_qr(A, column_labels, row_labels, qr_label=temp_label, mode=mode)
+
+    Q.replace_label(temp_label+"qr", lq_label+"ql")
+    L.replace_label(temp_label+"rl", lq_label+"lr")
+
+    return L, Q
