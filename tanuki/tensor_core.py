@@ -15,6 +15,7 @@ def normalize_argument_labels(labels):
     else:
         return [labels]
 
+#decorate in-place Tensor class method with @outofplacable to be able to use as out-of-place method.
 def outofplacable(f):
     def g(self, *args, inplace=True, **kwargs):
         if inplace:
@@ -25,6 +26,16 @@ def outofplacable(f):
             return copied
     return g
 
+#decorate out-of-place Tensor class method with @inplacable to be able to use as out-of-place method.
+def inplacable(f):
+    def g(self, *args, inplace=False, **kwargs):
+        if inplace:
+            re = f(self, *args, **kwargs)
+            self.data = re.data
+            self.labels = re.labels
+        else:
+            return f(self, *args, **kwargs)
+    return g
 
 class Tensor:
     def __init__(self, data, labels, copy=False):
@@ -195,6 +206,9 @@ class Tensor:
         newLabels = normalize_argument_labels(newLabels)
         oldLabels = self.labels
 
+        if set(newLabels) != set(oldLabels):
+            raise ValueError(f"newLabels do not match oldLabels. oldLabels=={oldLabels}, newLabels=={newLabels}")
+
         #oldPositions = list(range(self.ndim))
         newPositions = [newLabels.index(label) for label in oldLabels]
 
@@ -229,6 +243,7 @@ class Tensor:
 
     @outofplacable
     def split_index(self, labelSplit, newShapeSplit, newLabelsSplit=None):
+        newShapeSplit = tuple(newShapeSplit)
         if newLabelsSplit is None:
             if isinstance(labelSplit, tuple):
                 newLabelsSplit = list(labelSplit)
@@ -248,6 +263,80 @@ class Tensor:
 
         return OrderedDict(oldDimSplit=soujou(newShapeSplit), oldLabelSplit=labelSplit, labelSplit=labelSplit, newShapeSplit=newShapeSplit, newLabelsSplit=newLabelsSplit)
 
+
+    #methods for simple operation
+    @inplacable
+    def conjugate(self):
+        return Tensor(data=self.data.conj(),labels=self.labels)
+
+    def __imul__(self, scalar):
+        try:
+            self.data *= scalar
+            return self
+        except:
+            return NotImplemented
+
+    def __mul__(self, scalar):
+        try:
+            out = Tensor(self.data*scalar, labels=self.labels)
+            return out
+        except:
+            return NotImplemented
+
+    def __rmul__(self, scalar):
+        try:
+            out = Tensor(self.data*scalar, labels=self.labels)
+            return out
+        except:
+            return NotImplemented
+
+    def __itruediv__(self, scalar):
+        try:
+            self.data /= scalar
+            return self
+        except:
+            return NotImplemented
+
+    def __truediv__(self, scalar):
+        try:
+            out = Tensor(self.data/scalar, labels=self.labels)
+            return out
+        except:
+            return NotImplemented
+
+    def __add__(self, other, skipLabelSort=False):
+        try:
+            if not skipLabelSort:
+                other = other.move_all_indices(self.labels, inplace=False)
+            return Tensor(self.data+other.data, self.labels)
+        except:
+            return NotImplemented
+
+    def __iadd__(self, other, skipLabelSort=False):
+        try:
+            if not skipLabelSort:
+                other = other.move_all_indices(self.labels, inplace=False)
+            self.data += other.data
+            return self
+        except:
+            return NotImplemented
+
+    def __sub__(self, other, skipLabelSort=False):
+        try:
+            if not skipLabelSort:
+                other = other.move_all_indices(self.labels, inplace=False)
+            return Tensor(self.data-other.data, self.labels)
+        except:
+            return NotImplemented
+
+    def __isub__(self, other, skipLabelSort=False):
+        try:
+            if not skipLabelSort:
+                other = other.move_all_indices(self.labels, inplace=False)
+            self.data -= other.data
+            return self
+        except:
+            return NotImplemented
 
 
 
