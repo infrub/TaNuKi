@@ -4,7 +4,8 @@ import warnings
 from numpy import prod as soujou
 import textwrap
 from collections import OrderedDict
-
+import uuid
+import random
 
 
 #label :== string | tuple[label]
@@ -21,6 +22,9 @@ def normalize_and_complement_argument_labels(tensor, row_labels, column_labels=N
     else:
         column_labels = normalize_argument_labels(column_labels)
     return row_labels, column_labels
+
+def unique_label():
+    return "".join(random.choices("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",k=8))
 
 #decorate in-place Tensor class method with @outofplacable to be able to use as out-of-place method.
 def outofplacable(f):
@@ -47,12 +51,17 @@ def inplacable(f):
 
 
 class Tensor:
-    def __init__(self, data, labels, copy=False):
+    def __init__(self, data, labels=None, base_label=None, copy=False):
         if not copy and isinstance(data, xp.ndarray):
             self.data = data
         else:
             self.data = xp.asarray(data)
-        self.labels = labels
+        if labels is None:
+            if base_label is None:
+                base_label = unique_label()
+            self.assign_labels(base_label)
+        else:
+            self.labels = labels
 
     def copy(self, shallow=False):
         return Tensor(self.data, self.labels, copy=not(shallow))
@@ -104,6 +113,9 @@ class Tensor:
         self._labels = list(labels)
 
     labels = property(get_labels, set_labels)
+
+    def assign_labels(self, base_label):
+        self.labels = [base_label+"_"+str(i) for i in range(self.ndim)]
 
 
     def index_of_label(self, label):
@@ -359,11 +371,10 @@ class Tensor:
         except:
             return NotImplemented
 
-    def __eq__(self, other, skipLabelSort=False):
+    def __eq__(self, other, skipLabelSort=False, absolute_threshold=1e-10):
         try:
-            if not skipLabelSort:
-                other = other.move_all_indices(self.labels, inplace=False)
-            return self.data==other.data
+            diff = self.__sub__(other, skipLabelSort=skipLabelSort)
+            return diff.norm() < absolute_threshold
         except:
             return NotImplemented
 
@@ -522,10 +533,28 @@ def scalar_to_tensor(scalar, labels):
 """
 
 
+
+#decomposition functions
+def normalize_argument_svd_labels(svd_labels):
+    if svd_labels is None:
+        svd_labels = [unique_label()]
+    if not isinstance(svd_labels, list):
+        svd_labels = [svd_labels]
+    if len(svd_labels)==1:
+        svd_labels = [svd_labels[0]+"_us", svd_labels[0]+"_sv"]
+    if len(svd_labels)==2:
+        svd_labels = [svd_labels[0],svd_labels[0],svd_labels[1],svd_labels[1]]
+    if len(svd_labels)!=4:
+        raise ValueError(f"svd_labels must be a None or str or 1,2,4 length list. svd_labels=={svd_labels}")
+    return svd_labels
+
+
 #I believe gesvd and gesdd return s which is positive, descending #TODO check
 #A = (U["svd_ur"]*S["svd_sl"])["svd_sr"]*V["svd_vl"]
-def tensor_svd(A, row_labels, column_labels=None, svd_label="svd_"):
-    row_labels, column_labels = normalize_and_complement_argument_labels(tensor, row_labels, column_labels)
+def tensor_svd(A, row_labels, column_labels=None, svd_labels=None):
+    row_labels, column_labels = normalize_and_complement_argument_labels(A, row_labels, column_labels)
+
+    svd_labels = normalize_argument_svd_labels(svd_labels)
 
     row_dims = A.dims_of_labels(row_labels)
     column_dims = A.dims_of_labels(column_labels)
@@ -543,15 +572,16 @@ def tensor_svd(A, row_labels, column_labels=None, svd_label="svd_"):
 
     mid_dim = s_diag.shape[0]
 
-    U = matrix_to_tensor(u, row_dims+(mid_dim,), row_labels+[svd_label+"ur"])
-    S = matrix_to_tensor(xp.diag(s_diag), (mid_dim,mid_dim), [svd_label+"sl", svd_label+"sr"])
-    V = matrix_to_tensor(v, (mid_dim,)+column_dims, [svd_label+"vl"]+column_labels)
+    U = matrix_to_tensor(u, row_dims+(mid_dim,), row_labels+[svd_labels[0]])
+    S = matrix_to_tensor(xp.diag(s_diag), (mid_dim,mid_dim), [svd_labels[1],svd_labels[2]])
+    V = matrix_to_tensor(v, (mid_dim,)+column_dims, [svd_labels[3]]+column_labels)
 
     return U, S, V
 
 
-def truncated_svd(A, row_labels, column_labels=None, chi=None, absolute_threshold=None, relative_threshold=None, svd_label="svd_"):
-    U, S, V = tensor_svd(A, row_labels, column_labels, svd_label=svd_label)
+def truncated_svd(A, row_labels, column_labels=None, chi=None, absolute_threshold=None, relative_threshold=None, svd_labels=None):
+    svd_labels = normalize_argument_svd_labels(svd_labels)
+    U, S, V = tensor_svd(A, row_labels, column_labels, svd_labels=svd_labels)
     s_diag = xp.diag(S.data)
 
     if chi:
@@ -567,17 +597,29 @@ def truncated_svd(A, row_labels, column_labels=None, chi=None, absolute_threshol
     chi = len(trunc_s_diag)
 
     S.data = xp.diag(trunc_s_diag)
-    U.move_indices_to_top(svd_label+"ur")
+    U.move_indices_to_top(svd_labels[0])
     U.data = U.data[0:chi]
-    U.move_indices_to_bottom(svd_label+"ur")
+    U.move_indices_to_bottom(svd_labels[0])
     V.data = V.data[0:chi]
 
     return U, S, V
 
 
+def normalize_argument_qr_labels(qr_labels):
+    if qr_labels is None:
+        qr_labels = [unique_label()]
+    if not isinstance(qr_labels, list):
+        qr_labels = [qr_labels]
+    if len(qr_labels)==1:
+        qr_labels = [qr_labels[0]+"_qr", qr_labels[0]+"_qr"]
+    if len(qr_labels)!=2:
+        raise ValueError(f"qr_labels must be a None or str or 1,2 length list. qr_labels=={qr_labels}")
+    return qr_labels
+
 #A = Q["qr_qr"]*R["qr_rl"]
-def tensor_qr(A, row_labels, column_labels=None, qr_label="qr_", mode="economic"):
+def tensor_qr(A, row_labels, column_labels=None, qr_labels=None, mode="economic"):
     row_labels, column_labels = normalize_and_complement_argument_labels(A, row_labels, column_labels)
+    qr_labels = normalize_argument_qr_labels(qr_labels)
 
     row_dims = A.dims_of_labels(row_labels)
     column_dims = A.dims_of_labels(column_labels)
@@ -588,22 +630,29 @@ def tensor_qr(A, row_labels, column_labels=None, qr_label="qr_", mode="economic"
 
     mid_dim = r.shape[0]
 
-    Q = matrix_to_tensor(q, row_dims+(mid_dim,), row_labels+[qr_label+"qr"])
-    R = matrix_to_tensor(r, (mid_dim,)+column_dims, [qr_label+"rl"]+column_labels)
+    Q = matrix_to_tensor(q, row_dims+(mid_dim,), row_labels+[qr_labels[0]])
+    R = matrix_to_tensor(r, (mid_dim,)+column_dims, [qr_labels[1]]+column_labels)
 
     return Q, R
 
 
+def normalize_argument_lq_labels(lq_labels):
+    if lq_labels is None:
+        lq_labels = [unique_label()]
+    if not isinstance(lq_labels, list):
+        lq_labels = [lq_labels]
+    if len(lq_labels)==1:
+        lq_labels = [lq_labels[0]+"_lq", lq_labels[0]+"_lq"]
+    if len(lq_labels)!=2:
+        raise ValueError(f"lq_labels must be a None or str or 1,2 length list. lq_labels=={lq_labels}")
+    return lq_labels
+
 #A = L["lq_lr"]*Q["lq_ql"]
-def tensor_lq(A, row_labels, column_labels=None, lq_label="lq_", mode="economic"):
+def tensor_lq(A, row_labels, column_labels=None, lq_labels=None, mode="economic"):
     row_labels, column_labels = normalize_and_complement_argument_labels(A, row_labels, column_labels)
+    lq_labels = normalize_argument_lq_labels(lq_labels)
 
-    temp_label = "qr_in_lq_temp_label"
-
-    Q, L = tensor_qr(A, column_labels, row_labels, qr_label=temp_label, mode=mode)
-
-    Q.replace_label(temp_label+"qr", lq_label+"ql")
-    L.replace_label(temp_label+"rl", lq_label+"lr")
+    Q, L = tensor_qr(A, column_labels, row_labels, qr_labels=[lq_labels[1],lq_labels[0]], mode=mode)
 
     return L, Q
 
