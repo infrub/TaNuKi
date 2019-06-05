@@ -1,5 +1,3 @@
-__all__ = ["Tensor"]
-
 from tanuki.tnxp import xp as xp
 import copy as copyModule
 import warnings
@@ -356,7 +354,55 @@ class Tensor:
         self.data /= norm
 
 
+    #methods for trace, contract
+    @inplacable
+    def contract_internal(self, label1, label2):
+        index1 = self.index_of_label(label1)
+        index2 = self.index_of_label(label2)
+        index1,index2 = min(index1,index2), max(index1,index2)
+
+        newData = xp.trace(self.data, axis1=index1, axis2=index2)
+        newLabels = self.labels[:index1]+self.labels[index1+1:index2]+self.labels[index2+1:]
+
+        return Tensor(newData, newLabels)
+
+    trace = contract_internal
+    tr = contract_internal
+
+    @inplacable
+    def contract(self, *args, **kwargs):
+        return contract(self, *args, **kwargs)
+
+    def __getitem__(self, *labels):
+        if len(labels)==1 and isinstance(labels[0],list): #if called like as A[["a"]]
+            labels = labels[0]
+        else:
+            labels = list(labels)
+        return ToContract(self, labels)
 
 
 
+class ToContract:
+    """
+    A["a"]*B["b"] == contract(A,B,["a"],["b"])
+    """
+    def __init__(self, tensor, labels):
+        self.tensor = tensor
+        self.labels = labels
+
+    def __mul__(self, other):
+        return contract(self.tensor, other.tensor, self.labels, other.labels)
+
+
+def contract(aTensor, bTensor, aLabelsContract, bLabelsContract):
+    aLabelsContract = normalize_argument_labels(aLabelsContract)
+    bLabelsContract = normalize_argument_labels(bLabelsContract)
+
+    aIndicesContract = aTensor.indices_of_labels(aLabelsContract)
+    bIndicesContract = bTensor.indices_of_labels(bLabelsContract)
+
+    cData = xp.tensordot(aTensor.data, bTensor.data, (aIndicesContract, bIndicesContract))
+    cLabels = [label for label in aTensor.labels if label not in aLabelsContract] + [label for label in bTensor.labels if label not in bLabelsContract]
+
+    return Tensor(cData, cLabels)
 
