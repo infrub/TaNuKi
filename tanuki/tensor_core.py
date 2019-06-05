@@ -51,7 +51,7 @@ class Tensor:
         return f"Tensor(data={self.data}, labels={self.labels})"
 
     def __str__(self):
-        if soujou(self.shape) > 64:
+        if soujou(self.shape) > 100:
             dataStr = \
             "["*self.ndim + " ... " + "]"*self.ndim
         else:
@@ -179,7 +179,7 @@ class Tensor:
         #newIndicesNotMoveTo = list(range(self.ndim-len(oldIndicesMoveFrom)))
 
         oldLabels = self.labels
-        newLabels = [oldLabels[oldIndex] for oldIndex in oldIndicesMoveFrom] + [oldLabels[oldIndex] for oldIndex in oldIndicesNotMoveFrom]
+        newLabels = [oldLabels[oldIndex] for oldIndex in oldIndicesNotMoveFrom] + [oldLabels[oldIndex] for oldIndex in oldIndicesMoveFrom]
 
         self.data = xp.moveaxis(self.data, oldIndicesMoveFrom, newIndicesMoveTo)
         self.labels = newLabels
@@ -393,7 +393,6 @@ class Tensor:
     def to_vector(self, labels):
         return tensor_to_vector(self, labels)
 
-    def 
 
 
 
@@ -469,3 +468,59 @@ def tensor_to_scalar(tensor):
 
 def scalar_to_tensor(scalar, labels):
 """
+
+
+#I believe gesvd and gesdd return s which is positive, descending #TODO check
+def tensor_svd(A, row_labels, column_labels=None, svd_label="svd_"):
+    row_labels = normalize_argument_labels(row_labels)
+    if column_labels is None:
+        column_labels = [label for label in A.labels if label not in row_labels]
+    else:
+        column_labels = normalize_argument_labels(column_labels)
+
+    row_dims = A.dims_of_labels(row_labels)
+    column_dims = A.dims_of_labels(column_labels)
+
+    a = A.to_matrix(row_labels, column_labels)
+
+    try:
+        u, s_diag, v = xp.linalg.svd(a, full_matrices=False)
+    except (xp.linalg.LinAlgError, ValueError):
+        warnings.warn("xp.linalg.svd failed with gesdd. retry with gesvd.")
+        try:
+            u, s_diag, v = xp.linalg.svd(a, full_matrices=False, lapack_driver="gesvd")
+        except ValueError:
+            raise 
+
+    mid_dim = s_diag.shape[0]
+
+    U = matrix_to_tensor(u, row_dims+(mid_dim,), row_labels+[svd_label+"ur"])
+    S = matrix_to_tensor(xp.diag(s_diag), (mid_dim,mid_dim), [svd_label+"sl", svd_label+"sr"])
+    V = matrix_to_tensor(v, (mid_dim,)+column_dims, [svd_label+"vl"]+column_labels)
+
+    return U, S, V
+
+
+def truncated_svd(A, row_labels, column_labels=None, chi=None, absolute_threshold=None, relative_threshold=None, svd_label="svd_"):
+    U, S, V = tensor_svd(A, row_labels, column_labels, svd_label=svd_label)
+    s_diag = xp.diag(S.data)
+
+    if chi:
+        trunc_s_diag = s_diag[:chi]
+
+    if absolute_threshold:
+        trunc_s_diag = trunc_s_diag[trunc_s_diag > absolute_threshold]
+
+    if relative_threshold:
+        threshold = relative_threshold * s_diag[0]
+        trunc_s_diag = trunc_s_diag[trunc_s_diag > threshold]
+
+    chi = len(trunc_s_diag)
+
+    S.data = xp.diag(trunc_s_diag)
+    U.move_indices_to_top(svd_label+"ur")
+    U.data = U.data[0:chi]
+    U.move_indices_to_bottom(svd_label+"ur")
+    V.data = V.data[0:chi]
+
+    return U, S, V
