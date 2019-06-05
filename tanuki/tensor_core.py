@@ -32,7 +32,7 @@ class Tensor:
             self.data = data
         else:
             self.data = xp.asarray(data)
-        self.labels = list(labels)
+        self.labels = labels
 
     def copy(self, shallow=False):
         return Tensor(self.data, self.labels, copy=not(shallow))
@@ -128,3 +128,67 @@ class Tensor:
             self.data = xp.rollaxis(self.data, indexMoveFrom, position)
         else:
             self.data = xp.rollaxis(self.data, indexMoveFrom, position+1)
+
+    @outofplacable
+    def move_indices_to_top(self, labelsMove):
+        labelsMove = normalize_argument_labels(labelsMove)
+
+        oldIndicesMoveFrom = [self.index_of_label(label) for label in labelsMove]
+        newIndicesMoveTo = list(range(len(oldIndicesMoveFrom)))
+
+        oldIndicesNotMoveFrom = [i for i in range(len(self.labels)) if not i in oldIndicesMoveFrom]
+        #newIndicesNotMoveTo = list(range(len(oldIndicesMoveFrom), len(self.labels)))
+
+        oldLabels = self.labels
+        newLabels = [oldLabels[oldIndex] for oldIndex in oldIndicesMoveFrom] + [oldLabels[oldIndex] for oldIndex in oldIndicesNotMoveFrom]
+
+        self.data = xp.moveaxis(self.data, oldIndicesMoveFrom, newIndicesMoveTo)
+        self.labels = newLabels
+
+    @outofplacable
+    def move_indices_to_bottom(self, labelsMove):
+        labelsMove = normalize_argument_labels(labelsMove)
+
+        oldIndicesMoveFrom = [self.index_of_label(label) for label in labelsMove]
+        newIndicesMoveTo = list(range(self.ndim-len(oldIndicesMoveFrom), self.ndim))
+
+        oldIndicesNotMoveFrom = [i for i in range(len(self.labels)) if not i in oldIndicesMoveFrom]
+        #newIndicesNotMoveTo = list(range(self.ndim-len(oldIndicesMoveFrom)))
+
+        oldLabels = self.labels
+        newLabels = [oldLabels[oldIndex] for oldIndex in oldIndicesMoveFrom] + [oldLabels[oldIndex] for oldIndex in oldIndicesNotMoveFrom]
+
+        self.data = xp.moveaxis(self.data, oldIndicesMoveFrom, newIndicesMoveTo)
+        self.labels = newLabels
+
+    @outofplacable
+    def move_indices_to_position(self, labelsMove, position):
+        labelsMove = normalize_argument_labels(labelsMove)
+
+        oldIndicesMoveFrom = [self.index_of_label(label) for label in labelsMove]
+        newIndicesMoveTo = list(range(position, position+len(labelsMove)))
+
+        oldIndicesNotMoveFrom = [i for i in range(len(self.labels)) if not i in oldIndicesMoveFrom]
+        newIndicesNotMoveTo = list(range(position)) + list(range(position+len(labelsMove), self.ndim))
+
+        oldLabels = self.labels
+        newLabels = [None]*len(oldLabels)
+        for oldIndex, newIndex in zip(oldIndicesMoveFrom, newIndicesMoveTo):
+            newLabels[newIndex] = oldLabels[oldIndex]
+        for oldIndex, newIndex in zip(oldIndicesNotMoveFrom, newIndicesNotMoveTo):
+            newLabels[newIndex] = oldLabels[oldIndex]
+
+        self.data = xp.moveaxis(self.data, oldIndicesMoveFrom, newIndicesMoveTo)
+        self.labels = newLabels
+
+    @outofplacable
+    def move_all_indices(self, newLabels):
+        newLabels = normalize_argument_labels(newLabels)
+        oldLabels = self.labels
+
+        #oldPositions = list(range(self.ndim))
+        newPositions = [newLabels.index(label) for label in oldLabels]
+
+        self.data = xp.transpose(self.data, newPositions)
+        self.labels = newLabels
+
