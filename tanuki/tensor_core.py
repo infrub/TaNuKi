@@ -76,6 +76,10 @@ class Tensor:
         return self.data.ndim
 
     @property
+    def size(self):
+        return self.data.size
+    
+    @property
     def dtype(self):
         return self.data.dtype
 
@@ -382,6 +386,18 @@ class Tensor:
         return ToContract(self, labels)
 
 
+    #methods for converting to simple linalg object
+    def to_matrix(self, row_labels, column_labels=None):
+        return tensor_to_matrix(self, row_labels, column_labels)
+
+    def to_vector(self, labels):
+        return tensor_to_vector(self, labels)
+
+    def 
+
+
+
+
 
 class ToContract:
     """
@@ -421,3 +437,35 @@ def direct_product(aTensor, bTensor):
     return contract(aTensor, bTensor, [], [])
 
 
+
+
+def tensor_to_matrix(tensor, row_labels, column_labels=None):
+    row_labels = normalize_argument_labels(row_labels)
+    if column_labels is None:
+        column_labels = [label for label in tensor.labels if label not in row_labels]
+    else:
+        column_labels = normalize_argument_labels(column_labels)
+
+    t = tensor.move_all_indices(row_labels+column_labels, inplace=False)
+    total_row_dim = soujou(t.shape[:len(row_labels)], dtype=int)
+    total_column_dim = soujou(t.shape[len(row_labels):], dtype=int)
+
+    return xp.reshape(t.data, (total_row_dim, total_column_dim))
+
+def matrix_to_tensor(matrix, shape, labels):
+    return Tensor(xp.reshape(matrix, shape), labels)
+
+def tensor_to_vector(tensor, labels):
+    t = tensor.move_all_indices(labels, inplace=False)
+    return xp.reshape(t.data, (t.size,))
+
+def vector_to_tensor(vector, shape, labels):
+    return Tensor(xp.reshape(vector, shape), labels)
+
+"""
+def tensor_to_scalar(tensor):
+    if not tensor.size != 1:
+        raise ValueError(f"tensor.size != 1 can't be treated as a scalar. size=={tensor.size}")
+
+def scalar_to_tensor(scalar, labels):
+"""
