@@ -8,6 +8,7 @@ import uuid
 import random
 
 
+#label covering methods
 #label :== string | tuple[label]
 def normalize_argument_labels(labels):
     if isinstance(labels, list):
@@ -26,6 +27,8 @@ def normalize_and_complement_argument_labels(tensor, row_labels, column_labels=N
 def unique_label():
     return "".join(random.choices("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",k=8))
 
+
+#decorators
 #decorate in-place Tensor class method with @outofplacable to be able to use as out-of-place method.
 def outofplacable(f):
     def g(self, *args, inplace=True, **kwargs):
@@ -50,7 +53,9 @@ def inplacable(f):
 
 
 
+#tensor
 class Tensor:
+    #basic methods
     def __init__(self, data, labels=None, base_label=None, copy=False):
         if not copy and isinstance(data, xp.ndarray):
             self.data = data
@@ -86,6 +91,8 @@ class Tensor:
 
         return re
 
+
+    #properties
     @property
     def shape(self): #tuple
         return self.data.shape
@@ -114,9 +121,10 @@ class Tensor:
 
     labels = property(get_labels, set_labels)
 
+
+    #methods for labels
     def assign_labels(self, base_label):
         self.labels = [base_label+"_"+str(i) for i in range(self.ndim)]
-
 
     def index_of_label(self, label):
         return self.labels.index(label)
@@ -289,13 +297,7 @@ class Tensor:
         return OrderedDict(oldDimSplit=soujou(newShapeSplit), oldLabelSplit=labelSplit, labelSplit=labelSplit, newShapeSplit=newShapeSplit, newLabelsSplit=newLabelsSplit)
 
 
-    #methods for simple operation
-    @inplacable
-    def conjugate(self):
-        return Tensor(data=self.data.conj(),labels=self.labels)
-
-    conj = conjugate
-
+    #methods for basic operations
     def __imul__(self, scalar):
         if isinstance(other, Tensor):
             out = contract_common(self, other)
@@ -378,6 +380,11 @@ class Tensor:
         except:
             return NotImplemented
 
+    @inplacable
+    def conjugate(self):
+        return Tensor(data=self.data.conj(),labels=self.labels)
+
+    conj = conjugate
 
     @inplacable
     def pad_indices(self, labels, npads):
@@ -455,15 +462,9 @@ class Tensor:
 
 
 
-
-
-
-
-
+#contract functions
 class ToContract:
-    """
-    A["a"]*B["b"] == contract(A,B,["a"],["b"])
-    """
+    #A["a"]*B["b"] == contract(A,B,["a"],["b"])
     def __init__(self, tensor, labels):
         self.tensor = tensor
         self.labels = labels
@@ -471,11 +472,8 @@ class ToContract:
     def __mul__(self, other):
         return contract(self.tensor, other.tensor, self.labels, other.labels)
 
-
 def contract(aTensor, bTensor, aLabelsContract, bLabelsContract):
-    """
-    Be careful to cLabels must be unique
-    """
+    #Be careful to cLabels must be unique
     aLabelsContract = normalize_argument_labels(aLabelsContract)
     bLabelsContract = normalize_argument_labels(bLabelsContract)
 
@@ -504,7 +502,7 @@ def direct_product(aTensor, bTensor):
 
 
 
-
+#converting functions
 def tensor_to_matrix(tensor, row_labels, column_labels=None):
     row_labels, column_labels = normalize_and_complement_argument_labels(tensor, row_labels, column_labels)
 
@@ -549,9 +547,9 @@ def normalize_argument_svd_labels(svd_labels):
     return svd_labels
 
 
-#I believe gesvd and gesdd return s which is positive, descending #TODO check
-#A = (U["svd_ur"]*S["svd_sl"])["svd_sr"]*V["svd_vl"]
 def tensor_svd(A, row_labels, column_labels=None, svd_labels=None):
+    #I believe gesvd and gesdd return s which is positive, descending #TODO check
+    #A == U*S*V
     row_labels, column_labels = normalize_and_complement_argument_labels(A, row_labels, column_labels)
 
     svd_labels = normalize_argument_svd_labels(svd_labels)
@@ -605,6 +603,7 @@ def truncated_svd(A, row_labels, column_labels=None, chi=None, absolute_threshol
     return U, S, V
 
 
+
 def normalize_argument_qr_labels(qr_labels):
     if qr_labels is None:
         qr_labels = [unique_label()]
@@ -616,8 +615,9 @@ def normalize_argument_qr_labels(qr_labels):
         raise ValueError(f"qr_labels must be a None or str or 1,2 length list. qr_labels=={qr_labels}")
     return qr_labels
 
-#A = Q["qr_qr"]*R["qr_rl"]
+
 def tensor_qr(A, row_labels, column_labels=None, qr_labels=None, mode="economic"):
+    #A == Q*R
     row_labels, column_labels = normalize_and_complement_argument_labels(A, row_labels, column_labels)
     qr_labels = normalize_argument_qr_labels(qr_labels)
 
@@ -647,8 +647,9 @@ def normalize_argument_lq_labels(lq_labels):
         raise ValueError(f"lq_labels must be a None or str or 1,2 length list. lq_labels=={lq_labels}")
     return lq_labels
 
-#A = L["lq_lr"]*Q["lq_ql"]
+
 def tensor_lq(A, row_labels, column_labels=None, lq_labels=None, mode="economic"):
+    #A == L*Q
     row_labels, column_labels = normalize_and_complement_argument_labels(A, row_labels, column_labels)
     lq_labels = normalize_argument_lq_labels(lq_labels)
 
