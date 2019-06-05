@@ -5,20 +5,20 @@ import copy as copyModule
 import warnings
 from numpy import prod as soujou
 import textwrap
+from collections import OrderedDict
 
 
+#label :== string | tuple(label)
 def normalize_argument_labels(labels):
     if isinstance(labels, list):
         return labels
-    elif isinstance(labels, tuple):
-        return list(labels)
     else:
         return [labels]
 
 def outofplacable(f):
     def g(self, *args, inplace=True, **kwargs):
         if inplace:
-            f(self, *args, **kwargs)
+            return f(self, *args, **kwargs)
         else:
             copied = self.copy(shallow=True)
             f(copied, *args, **kwargs)
@@ -73,8 +73,8 @@ class Tensor:
         return self._labels
 
     def set_labels(self, labels):
-        if len(labels) != len(self.data.shape):
-            raise ValueError(f"labels do not match shape of data. labels=={labels}, shape=={self.data.shape}")
+        if len(labels) != len(self.shape):
+            raise ValueError(f"labels do not match shape of data. labels=={labels}, shape=={self.shape}")
         if len(labels) != len(set(labels)):
             raise ValueError(f"labels are not unique. labels=={labels}")
         self._labels = list(labels)
@@ -86,11 +86,19 @@ class Tensor:
         return self.labels.index(label)
 
     def dim_of_index(self, index):
-        return self.data.shape[index]
+        return self.shape[index]
 
     def dim_of_label(self, label):
         return self.dim_of_index(self.index_of_label(label))
 
+    def indices_of_labels(self,labels):
+        return [self.index_of_label(label) for label in labels]
+
+    def dims_of_indices(self,indices):
+        return [self.dim_of_index(index) for index in indices]
+
+    def dims_of_labels(self,labels):
+        return self.dims_of_indices(self.indices_of_labels(labels))
 
     def replace_label(self, oldLabels, newLabels):
         oldLabels = normalize_argument_labels(oldLabels)
@@ -102,6 +110,7 @@ class Tensor:
 
     #methods for moving indices
     #I assumed that rollaxis is better than moveaxis in terms of computing costs
+    #TODO pass if newIndices==oldIndices
     @outofplacable
     def move_index_to_top(self, labelMove):
         indexMoveFrom = self.index_of_label(labelMove)
@@ -133,7 +142,7 @@ class Tensor:
     def move_indices_to_top(self, labelsMove):
         labelsMove = normalize_argument_labels(labelsMove)
 
-        oldIndicesMoveFrom = [self.index_of_label(label) for label in labelsMove]
+        oldIndicesMoveFrom = self.indices_of_labels(labelsMove)
         newIndicesMoveTo = list(range(len(oldIndicesMoveFrom)))
 
         oldIndicesNotMoveFrom = [i for i in range(len(self.labels)) if not i in oldIndicesMoveFrom]
@@ -149,7 +158,7 @@ class Tensor:
     def move_indices_to_bottom(self, labelsMove):
         labelsMove = normalize_argument_labels(labelsMove)
 
-        oldIndicesMoveFrom = [self.index_of_label(label) for label in labelsMove]
+        oldIndicesMoveFrom = self.indices_of_labels(labelsMove)
         newIndicesMoveTo = list(range(self.ndim-len(oldIndicesMoveFrom), self.ndim))
 
         oldIndicesNotMoveFrom = [i for i in range(len(self.labels)) if not i in oldIndicesMoveFrom]
@@ -165,7 +174,7 @@ class Tensor:
     def move_indices_to_position(self, labelsMove, position):
         labelsMove = normalize_argument_labels(labelsMove)
 
-        oldIndicesMoveFrom = [self.index_of_label(label) for label in labelsMove]
+        oldIndicesMoveFrom = self.indices_of_labels(labelsMove)
         newIndicesMoveTo = list(range(position, position+len(labelsMove)))
 
         oldIndicesNotMoveFrom = [i for i in range(len(self.labels)) if not i in oldIndicesMoveFrom]
@@ -191,4 +200,55 @@ class Tensor:
 
         self.data = xp.transpose(self.data, newPositions)
         self.labels = newLabels
+
+
+    #methods for fuse/split
+    #if new.. is no specified, assume like following:
+    #["a","b","c","d"] <=split / fuse=> ["a",("b","c"),"d"]
+    @outofplacable
+    def fuse_indices(self, labelsFuse, newLabelFuse=None):
+        labelsFuse = normalize_argument_labels(labelsFuse)
+        if newLabelFuse is None:
+            newLabelFuse = tuple(labelsFuse)
+
+        position = min(self.indices_of_labels(labelsFuse))
+        self.move_indices_to_position(labelsFuse, position)
+
+        oldShape = self.shape
+        oldShapeFuse = oldShape[position:position+len(labelsFuse)]
+        newDimFuse = soujou(oldShapeFuse)
+        newShape = oldShape[:position] + (newDimFuse,) + oldShape[position+len(labelsFuse):]
+
+        oldLabels = self.labels
+        newLabels = oldLabels[:position] + [newLabelFuse] + oldLabels[position+len(labelsFuse):]
+
+        self.data = xp.reshape(self.data, newShape)
+        self.labels = newLabels
+
+        return OrderedDict(oldShapeFuse=oldShapeFuse, oldLabelsFuse=labelsFuse, labelsFuse=labelsFuse, newDimFuse=newDimFuse, newLabelFuse=newLabelFuse) #useful info (this is missed if out-of-place)
+
+    @outofplacable
+    def split_index(self, labelSplit, newShapeSplit, newLabelsSplit=None):
+        if newLabelsSplit is None:
+            if isinstance(labelSplit, tuple):
+                newLabelsSplit = list(labelSplit)
+            else:
+                newLabelsSplit = [labelSplit]
+            if len(newLabelsSplit) != len(newShapeSplit):
+                raise ValueError(f"newLabelsSplit is not defined and could not be assumed. labelSplit=={labelSplit}, newShapeSplit=={newShapeSplit}")
+        else:
+            newLabelsSplit = normalize_argument_labels(newLabelsSplit)
+
+        indexSplit = self.index_of_label(labelSplit)
+        newShape = self.shape[:indexSplit] + newShapeSplit + self.shape[indexSplit+1:]
+        newLabels = self.labels[:indexSplit] + newLabelsSplit + self.labels[indexSplit+1:]
+
+        self.data = xp.reshape(self.data, newShape)
+        self.labels = newLabels
+
+        return OrderedDict(oldDimSplit=soujou(newShapeSplit), oldLabelSplit=labelSplit, labelSplit=labelSplit, newShapeSplit=newShapeSplit, newLabelsSplit=newLabelsSplit)
+
+
+
+
 
