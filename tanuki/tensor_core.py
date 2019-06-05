@@ -123,6 +123,13 @@ class Tensor:
 
 
     #methods for labels
+    def replace_label(self, oldLabels, newLabels):
+        oldLabels = normalize_argument_labels(oldLabels)
+        newLabels = normalize_argument_labels(newLabels)
+        for i, label in enumerate(self.labels):
+            if label in oldLabels:
+                self.labels[i] = newLabels[oldLabels.index(label)]
+
     def assign_labels(self, base_label):
         self.labels = [base_label+"_"+str(i) for i in range(self.ndim)]
 
@@ -143,13 +150,6 @@ class Tensor:
 
     def dims_of_labels(self,labels): #tuple[int]
         return self.dims_of_indices(self.indices_of_labels(labels))
-
-    def replace_label(self, oldLabels, newLabels):
-        oldLabels = normalize_argument_labels(oldLabels)
-        newLabels = normalize_argument_labels(newLabels)
-        for i, label in enumerate(self.labels):
-            if label in oldLabels:
-                self.labels[i] = newLabels[oldLabels.index(label)]
 
 
     #methods for moving indices
@@ -402,6 +402,8 @@ class Tensor:
     def normalize(self):
         norm = self.norm()
         self.data /= norm
+
+    #TODO impl hermitize method
 
 
     #methods for trace, contract
