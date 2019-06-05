@@ -15,6 +15,15 @@ def normalize_argument_labels(labels):
     else:
         return [labels]
 
+def outofplacable(f):
+    def g(self, *args, inplace=True, **kwargs):
+        if inplace:
+            f(self, *args, **kwargs)
+        else:
+            copied = self.copy(shallow=True)
+            f(copied, *args, **kwargs)
+            return copied
+    return g
 
 
 class Tensor:
@@ -93,40 +102,29 @@ class Tensor:
 
     #methods for moving indices
     #I assumed that rollaxis is better than moveaxis in terms of computing costs
-    def move_index_to_top(self, labelMove, inplace=True):
-        if inplace:
-            indexMoveFrom = self.index_of_label(labelMove)
-            self.labels.pop(indexMoveFrom)
-            self.labels.insert(0, labelMove)
-            self.data = xp.rollaxis(self.data, indexMoveFrom, 0)
-        else:
-            copySelf = self.copy(shallow=True)
-            copySelf.move_index_to_top(labelMove, inplace=True)
-            return copySelf
+    @outofplacable
+    def move_index_to_top(self, labelMove):
+        indexMoveFrom = self.index_of_label(labelMove)
+        self.labels.pop(indexMoveFrom)
+        self.labels.insert(0, labelMove)
+        self.data = xp.rollaxis(self.data, indexMoveFrom, 0)
 
-    def move_index_to_bottom(self, labelMove, inplace=True):
-        if inplace:
-            indexMoveFrom = self.index_of_label(labelMove)
-            self.labels.pop(indexMoveFrom)
-            self.labels.append(labelMove)
-            self.data = xp.rollaxis(self.data, indexMoveFrom, self.ndim)
-        else:
-            copySelf = self.copy(shallow=True)
-            copySelf.move_index_to_bottom(labelMove, inplace=True)
-            return copySelf
 
+    @outofplacable
+    def move_index_to_bottom(self, labelMove):
+        indexMoveFrom = self.index_of_label(labelMove)
+        self.labels.pop(indexMoveFrom)
+        self.labels.append(labelMove)
+        self.data = xp.rollaxis(self.data, indexMoveFrom, self.ndim)
+
+    @outofplacable
     def move_index_to_position(self, labelMove, position, inplace=True):
-        if inplace:
-            indexMoveFrom = self.index_of_label(labelMove)
-            if position == indexMoveFrom:
-                return
-            self.labels.pop(indexMoveFrom)
-            self.labels.insert(position, labelMove)
-            if position < indexMoveFrom:
-                self.data = xp.rollaxis(self.data, indexMoveFrom, position)
-            else:
-                self.data = xp.rollaxis(self.data, indexMoveFrom, position+1)
+        indexMoveFrom = self.index_of_label(labelMove)
+        if position == indexMoveFrom:
+            return
+        self.labels.pop(indexMoveFrom)
+        self.labels.insert(position, labelMove)
+        if position < indexMoveFrom:
+            self.data = xp.rollaxis(self.data, indexMoveFrom, position)
         else:
-            copySelf = self.copy(shallow=True)
-            copySelf.move_index_to_position(labelMove, position, inplace=True)
-            return copySelf
+            self.data = xp.rollaxis(self.data, indexMoveFrom, position+1)
