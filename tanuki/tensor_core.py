@@ -12,7 +12,6 @@ class Tensor:
             self.data = data
         else:
             self.data = xp.asarray(data)
-        print(type(self.data))
         self.labels = list(labels)
 
     def copy(self):
@@ -61,5 +60,30 @@ class Tensor:
         self._labels = list(labels)
 
     labels = property(get_labels, set_labels)
+
+
+    def index_of_label(self, label):
+        return self.labels.index(label)
+
+    def dim_of_index(self, index):
+        return self.data.shape[index]
+
+    def dim_of_label(self, label):
+        return self.dim_of_index(self.index_of_label(label))
+
+
+    def replace_label(self, oldLabels, newLabels):
+        if isinstance(oldLabels, tuple):
+            oldLabels = list(oldLabels)
+        elif not isinstance(oldLabels, list):
+            oldLabels = [oldLabels]
+        if isinstance(newLabels, tuple):
+            newLabels = list(newLabels)
+        elif not isinstance(newLabels, list):
+            newLabels = [newLabels]
+
+        for i, label in enumerate(self.labels):
+            if label in oldLabels:
+                self.labels[i] = newLabels[oldLabels.index(label)]
 
     
