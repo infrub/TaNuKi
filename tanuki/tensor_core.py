@@ -338,6 +338,25 @@ class Tensor:
         except:
             return NotImplemented
 
+    @inplacable
+    def pad_indices(self, labels, npads):
+        indices = [self.index_of_label(label) for label in labels]
+        wholeNpad = [(0,0)] * self.ndim
+        for index,npad in zip(indices, npads):
+            wholeNpad[index] = npad
+        newData = xp.pad(self.data, wholeNpad, mode="constant", constant_values=0)
+        return Tensor(newData, labels=self.labels)
+
+    def norm(self): #Frobenius norm
+        return xp.linalg.norm(self.data)
+
+    @outofplacable
+    def normalize(self):
+        norm = self.norm()
+        self.data /= norm
+
+
+
 
 
 
