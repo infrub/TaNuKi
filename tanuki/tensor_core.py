@@ -6,7 +6,8 @@ import textwrap
 from collections import OrderedDict
 
 
-#label :== string | tuple(label)
+
+#label :== string | tuple[label]
 def normalize_argument_labels(labels):
     if isinstance(labels, list):
         return labels
@@ -67,7 +68,7 @@ class Tensor:
         return re
 
     @property
-    def shape(self):
+    def shape(self): #tuple
         return self.data.shape
     
     @property
@@ -100,13 +101,13 @@ class Tensor:
     def dim_of_label(self, label):
         return self.dim_of_index(self.index_of_label(label))
 
-    def indices_of_labels(self,labels):
+    def indices_of_labels(self,labels): #list[int]
         return [self.index_of_label(label) for label in labels]
 
-    def dims_of_indices(self,indices):
-        return [self.dim_of_index(index) for index in indices]
+    def dims_of_indices(self,indices): #tuple[int]
+        return tuple(self.dim_of_index(index) for index in indices)
 
-    def dims_of_labels(self,labels):
+    def dims_of_labels(self,labels): #tuple[int]
         return self.dims_of_indices(self.indices_of_labels(labels))
 
     def replace_label(self, oldLabels, newLabels):
@@ -338,7 +339,7 @@ class Tensor:
 
     @inplacable
     def pad_indices(self, labels, npads):
-        indices = [self.index_of_label(label) for label in labels]
+        indices = self.indices_of_labels(labels)
         wholeNpad = [(0,0)] * self.ndim
         for index,npad in zip(indices, npads):
             wholeNpad[index] = npad
@@ -395,14 +396,28 @@ class ToContract:
 
 
 def contract(aTensor, bTensor, aLabelsContract, bLabelsContract):
+    """
+    Be careful to cLabels must be unique
+    """
     aLabelsContract = normalize_argument_labels(aLabelsContract)
     bLabelsContract = normalize_argument_labels(bLabelsContract)
 
     aIndicesContract = aTensor.indices_of_labels(aLabelsContract)
     bIndicesContract = bTensor.indices_of_labels(bLabelsContract)
 
+    aDimsContract = aTensor.dims_of_indices(aIndicesContract)
+    bDimsContract = bTensor.dims_of_indices(bIndicesContract)
+
+    if aDimsContract != bDimsContract:
+        raise ValueError(f"Dimss in contraction do not match. aLabelsContract=={aLabelsContract}, bLabelsContract=={bLabelsContract}, aDimsContract=={aDimsContract}, bDimsContract=={bDimsContract}")
+
     cData = xp.tensordot(aTensor.data, bTensor.data, (aIndicesContract, bIndicesContract))
     cLabels = [label for label in aTensor.labels if label not in aLabelsContract] + [label for label in bTensor.labels if label not in bLabelsContract]
 
     return Tensor(cData, cLabels)
+
+
+def direct_product(aTensor, bTensor):
+    return contract(aTensor, bTensor, [], [])
+
 
