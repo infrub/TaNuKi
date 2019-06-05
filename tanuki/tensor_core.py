@@ -44,6 +44,8 @@ def inplacable(f):
             return f(self, *args, **kwargs)
     return g
 
+    
+
 class Tensor:
     def __init__(self, data, labels, copy=False):
         if not copy and isinstance(data, xp.ndarray):
@@ -280,6 +282,8 @@ class Tensor:
     def conjugate(self):
         return Tensor(data=self.data.conj(),labels=self.labels)
 
+    conj = conjugate
+
     def __imul__(self, scalar):
         try:
             self.data *= scalar
@@ -394,6 +398,28 @@ class Tensor:
         return ToContract(self, labels)
 
 
+    #methods for dummy index
+    @outofplacable
+    def add_dummy_index(self, label):
+        self.data = self.data[xp.newaxis, :]
+        self.labels.insert(0, label)
+
+    @outofplacable
+    def remove_all_dummy_indices(self, labels=None):
+        oldShape = self.shape
+        oldLabels = self.labels
+        newShape = ()
+        newLabels = []
+        for i, x in enumerate(oldLabels):
+            if oldShape[i]==1 and ((labels is None) or (x in labels)):
+                pass
+            else:
+                newShape = newShape + (oldShape[i],)
+                newLabels.append(x)
+        self.data = self.data.reshape(newShape)
+        self.labels = newLabels
+
+
     #methods for converting to simple linalg object
     def to_matrix(self, row_labels, column_labels=None):
         return tensor_to_matrix(self, row_labels, column_labels)
@@ -477,6 +503,7 @@ def scalar_to_tensor(scalar, labels):
 
 
 #I believe gesvd and gesdd return s which is positive, descending #TODO check
+#A = (U["svd_ur"]*S["svd_sl"])["svd_sr"]*V["svd_vl"]
 def tensor_svd(A, row_labels, column_labels=None, svd_label="svd_"):
     row_labels, column_labels = normalize_and_complement_argument_labels(tensor, row_labels, column_labels)
 
@@ -528,6 +555,7 @@ def truncated_svd(A, row_labels, column_labels=None, chi=None, absolute_threshol
     return U, S, V
 
 
+#A = Q["qr_qr"]*R["qr_rl"]
 def tensor_qr(A, row_labels, column_labels=None, qr_label="qr_", mode="economic"):
     row_labels, column_labels = normalize_and_complement_argument_labels(A, row_labels, column_labels)
 
@@ -546,6 +574,7 @@ def tensor_qr(A, row_labels, column_labels=None, qr_label="qr_", mode="economic"
     return Q, R
 
 
+#A = L["lq_lr"]*Q["lq_ql"]
 def tensor_lq(A, row_labels, column_labels=None, lq_label="lq_", mode="economic"):
     row_labels, column_labels = normalize_and_complement_argument_labels(A, row_labels, column_labels)
 
@@ -557,3 +586,5 @@ def tensor_lq(A, row_labels, column_labels=None, lq_label="lq_", mode="economic"
     L.replace_label(temp_label+"rl", lq_label+"lr")
 
     return L, Q
+
+#A = Vh["eigh_vhr"]*W["eigh_wl"]["eigh_wr"]*V[eigh_vl]
