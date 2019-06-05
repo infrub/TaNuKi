@@ -44,7 +44,7 @@ def inplacable(f):
             return f(self, *args, **kwargs)
     return g
 
-    
+
 
 class Tensor:
     def __init__(self, data, labels, copy=False):
@@ -285,23 +285,30 @@ class Tensor:
     conj = conjugate
 
     def __imul__(self, scalar):
+        if isinstance(other, Tensor):
+            out = contract_common(self, other)
+            self.data = out
+            self.labels = out.labels
+            return self
         try:
             self.data *= scalar
             return self
         except:
             return NotImplemented
 
-    def __mul__(self, scalar):
+    def __mul__(self, other):
+        if isinstance(other, Tensor):
+            return contract_common(self, other)
         try:
-            out = Tensor(self.data*scalar, labels=self.labels)
-            return out
+            return Tensor(self.data*scalar, labels=self.labels)
         except:
             return NotImplemented
 
     def __rmul__(self, scalar):
+        if isinstance(other, Tensor):
+            return contract_common(self, other)
         try:
-            out = Tensor(self.data*scalar, labels=self.labels)
-            return out
+            return Tensor(self.data*scalar, labels=self.labels)
         except:
             return NotImplemented
 
@@ -314,8 +321,7 @@ class Tensor:
 
     def __truediv__(self, scalar):
         try:
-            out = Tensor(self.data/scalar, labels=self.labels)
-            return out
+            return Tensor(self.data/scalar, labels=self.labels)
         except:
             return NotImplemented
 
@@ -352,6 +358,15 @@ class Tensor:
             return self
         except:
             return NotImplemented
+
+    def __eq__(self, other, skipLabelSort=False):
+        try:
+            if not skipLabelSort:
+                other = other.move_all_indices(self.labels, inplace=False)
+            return self.data==other.data
+        except:
+            return NotImplemented
+
 
     @inplacable
     def pad_indices(self, labels, npads):
@@ -467,6 +482,11 @@ def contract(aTensor, bTensor, aLabelsContract, bLabelsContract):
 
     return Tensor(cData, cLabels)
 
+def contract_common(aTensor, bTensor):
+    aLabels = aTensor.labels
+    bLabels = bTensor.labels
+    commonLabels = list(set(aLabels) & set(bLabels))
+    return contract(aTensor, bTensor, commonLabels, commonLabels)
 
 def direct_product(aTensor, bTensor):
     return contract(aTensor, bTensor, [], [])
