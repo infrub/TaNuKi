@@ -50,5 +50,16 @@ class Tensor:
     def dtype(self):
         return self.data.dtype
 
+    def get_labels(self):
+        return self._labels
+
+    def set_labels(self, labels):
+        if len(labels) != len(self.data.shape):
+            raise ValueError(f"Labels do not match shape of data. labels=={labels}, shape=={self.data.shape}")
+        if len(labels) != len(set(labels)):
+            raise ValueError(f"Labels are not unique. labels=={labels}")
+        self._labels = list(labels)
+
+    labels = property(get_labels, set_labels)
 
     
