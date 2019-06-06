@@ -123,12 +123,17 @@ class Tensor:
 
 
     #methods for labels
-    def replace_label(self, oldLabels, newLabels):
+    def replace_labels(self, oldLabels, newLabels):
         oldLabels = normalize_argument_labels(oldLabels)
+        tempLabelBase = unique_label()
+        tempLabels = ["temp_replace_labels_"+tempLabelBase+"_"+str(i) for i in range(len(oldLabels))]
         newLabels = normalize_argument_labels(newLabels)
         for i, label in enumerate(self.labels):
             if label in oldLabels:
-                self.labels[i] = newLabels[oldLabels.index(label)]
+                self.labels[i] = tempLabels[oldLabels.index(label)]
+        for i, label in enumerate(self.labels):
+            if label in tempLabels:
+                self.labels[i] = newLabels[tempLabels.index(label)]
 
     def assign_labels(self, base_label):
         self.labels = [base_label+"_"+str(i) for i in range(self.ndim)]
