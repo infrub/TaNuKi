@@ -123,6 +123,7 @@ class Tensor:
 
 
     #methods for labels
+    @outofplacable
     def replace_labels(self, oldLabels, newLabels):
         oldLabels = normalize_argument_labels(oldLabels)
         tempLabelBase = unique_label()
@@ -390,6 +391,26 @@ class Tensor:
         return Tensor(data=self.data.conj(),labels=self.labels)
 
     conj = conjugate
+
+    @inplacable
+    def adjoint(self,row_labels,column_labels=None):
+        row_labels, column_labels = normalize_and_complement_argument_labels(self,row_labels,column_labels)
+        if len(row_labels) != len(column_labels):
+            raise ValueError(f"adjoint arg must be len(row_labels)==len(column_labels). but row_labels=={row_labels}, column_labels=={column_labels}")
+        out = self.conjugate()
+        out.replace_labels(row_labels+column_labels, column_labels+row_labels)
+        return out
+
+    adj = adjoint
+
+    @inplacable
+    def hermite(self, row_labels, column_labels=None):
+        return (self + self.adjoint(row_labels,column_labels))/2
+
+    @inplacable
+    def antihermite(self, row_labels, column_labels=None):
+        return (self - self.adjoint(row_labels,column_labels))/2
+
 
     @inplacable
     def pad_indices(self, labels, npads):
