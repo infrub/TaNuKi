@@ -709,7 +709,7 @@ class DiagonalTensor(TensorMixin):
 
     #methods for converting to simple linalg object
     def to_tensor(self):
-        return diagonalTensor_to_Tensor(self)
+        return diagonalTensor_to_tensor(self)
 
     def to_matrix(self, row_labels, column_labels=None):
         return tensor_to_matrix(self.to_tensor(), row_labels, column_labels)
@@ -773,28 +773,28 @@ def contract(aTensor, bTensor, aLabelsContract, bLabelsContract):
     elif type(aTensor)==Tensor and type(bTensor)==DiagonalTensor:
         if len(bDimsContract)==1:
             aTensor_ = aTensor.move_index_to_bottom(aLabelsContract[0], inplace=False)
-            cData = xp.muliply(aTensor_.data, bTensor.data)
+            cData = xp.multiply(aTensor_.data, bTensor.data)
         else: #len(bDimsContract)==2:
             aTensor_ = aTensor.move_indices_to_bottom(aLabelsContract, inplace=False)
-            cData = xp.muliply(aTensor_.data, bTensor.data)
+            cData = xp.multiply(aTensor_.data, bTensor.data)
             cData = xp.trace(cData, axis1=aTensor.ndim-2, axis2=aTensor.ndim-1)
 
     elif type(aTensor)==DiagonalTensor and type(bTensor)==Tensor:
         if len(aDimsContract)==1:
             bTensor_ = bTensor.move_index_to_bottom(bLabelsContract[0], inplace=False)
-            cData = xp.muliply(aTensor.data, bTensor_.data)
+            cData = xp.multiply(aTensor.data, bTensor_.data)
             cData = xp.rollaxis(cData, bTensor.ndim-1, 0)
         else: #len(aDimsContract)==2:
             bTensor_ = bTensor.move_indices_to_bottom(bLabelsContract, inplace=False)
-            cData = xp.muliply(aTensor.data, bTensor_.data)
+            cData = xp.multiply(aTensor.data, bTensor_.data)
             cData = xp.trace(cData, axis1=bTensor.ndim-2, axis2=bTensor.ndim-1)
 
     elif type(aTensor)==DiagonalTensor and type(bTensor)==DiagonalTensor:
         if len(aDimsContract)==1:
-            cData = xp.muliply(aTensor.data, bTensor.data)
+            cData = xp.multiply(aTensor.data, bTensor.data)
             return DiagonalTensor(cData, cLabels)
-        else: len(aDimsContract)==2:
-            cData = xp.sum(xp.muliply(aTensor.data, bTensor.data))
+        else: #len(aDimsContract)==2:
+            cData = xp.sum(xp.multiply(aTensor.data, bTensor.data))
 
     else:
         return NotImplemented
