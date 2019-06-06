@@ -75,7 +75,7 @@ class Tensor:
         return f"Tensor(data={self.data}, labels={self.labels})"
 
     def __str__(self):
-        if soujou(self.shape) > 100:
+        if self.size > 100:
             dataStr = \
             "["*self.ndim + " ... " + "]"*self.ndim
         else:
