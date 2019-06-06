@@ -896,7 +896,7 @@ def tensor_svd(A, row_labels, column_labels=None, svd_labels=None):
     mid_dim = s_diag.shape[0]
 
     U = matrix_to_tensor(u, row_dims+(mid_dim,), row_labels+[svd_labels[0]])
-    S = matrix_to_tensor(xp.diag(s_diag), (mid_dim,mid_dim), [svd_labels[1],svd_labels[2]])
+    S = diagonalMatrix_to_diagonalTensor(s_diag, [svd_labels[1],svd_labels[2]])
     V = matrix_to_tensor(v, (mid_dim,)+column_dims, [svd_labels[3]]+column_labels)
 
     return U, S, V
@@ -905,7 +905,7 @@ def tensor_svd(A, row_labels, column_labels=None, svd_labels=None):
 def truncated_svd(A, row_labels, column_labels=None, chi=None, absolute_threshold=None, relative_threshold=None, svd_labels=None):
     svd_labels = normalize_argument_svd_labels(svd_labels)
     U, S, V = tensor_svd(A, row_labels, column_labels, svd_labels=svd_labels)
-    s_diag = xp.diag(S.data)
+    s_diag = S.data
 
     if chi:
         trunc_s_diag = s_diag[:chi]
@@ -919,7 +919,7 @@ def truncated_svd(A, row_labels, column_labels=None, chi=None, absolute_threshol
 
     chi = len(trunc_s_diag)
 
-    S.data = xp.diag(trunc_s_diag)
+    S.data = trunc_s_diag
     U.move_indices_to_top(svd_labels[0])
     U.data = U.data[0:chi]
     U.move_indices_to_bottom(svd_labels[0])
