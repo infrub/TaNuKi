@@ -123,14 +123,6 @@ class TensorMixin:
 
 
     #methods for basic operations
-
-
-    @inplacable
-    def conjugate(self):
-        return Tensor(data=self.data.conj(),labels=self.labels)
-
-    conj = conjugate
-
     @inplacable
     def adjoint(self,row_labels,column_labels=None):
         row_labels, column_labels = normalize_and_complement_argument_labels(self,row_labels,column_labels)
@@ -419,6 +411,12 @@ class Tensor(TensorMixin):
 
 
     @inplacable
+    def conjugate(self):
+        return Tensor(data=self.data.conj(),labels=self.labels)
+
+    conj = conjugate
+
+    @inplacable
     def pad_indices(self, labels, npads):
         indices = self.indices_of_labels(labels)
         wholeNpad = [(0,0)] * self.ndim
@@ -665,6 +663,12 @@ class DiagonalTensor(TensorMixin):
         return NotImplemented
 
 
+    @inplacable
+    def conjugate(self):
+        return DiagonalTensor(data=self.data.conj(),labels=self.labels)
+
+    conj = conjugate
+
     def norm(self): #Frobenius norm
         return xp.linalg.norm(self.data)
 
@@ -676,19 +680,19 @@ class DiagonalTensor(TensorMixin):
 
     #methods for trace, contract
     def contract_internal(self, label1, label2):
-        index1, index2 == tuple(indexs_maybe_duplicate(self.labels, [label1, label2]))
+        index1, index2 = tuple(indexs_maybe_duplicate(self.labels, [label1, label2]))
         index1, index2 = min(index1,index2), max(index1,index2)
-        if not(index1==0 and index2==0):
-            warnings.warn(f"DiagonalTensor.contract_internal(label1, label2) must be index1,index2=0,1. but label1=={label1}, label2=={label2}. ignore.")
+        if not(index1==0 and index2==1):
+            warnings.warn(f"DiagonalTensor.contract_internal(label1, label2) must be index1,index2=0,1. but label1=={label1}, label2=={label2}, tensor=={self}. ignore.")
         return Tensor(xp.sum(self.data), [])
 
     def contract_common_internal(self):
-        if label1==label2 and label1==self.labels[0] and label2==self.labels[1]:
+        if self.labels[0]==self.labels[1]:
             return Tensor(xp.sum(self.data), [])
         else:
             return self.copy()
 
-    def trace(self, label1, label2):
+    def trace(self, label1=None, label2=None):
         if label1 is None:
             return self.contract_common_internal()
         else:
@@ -836,7 +840,7 @@ def vector_to_tensor(vector, shape, labels):
     return Tensor(xp.reshape(vector, shape), labels)
 
 def tensor_to_scalar(tensor):
-    return tensor.item(0)
+    return tensor.data.item(0)
 
 def scalar_to_tensor(scalar):
     return Tensor(scalar, [])
