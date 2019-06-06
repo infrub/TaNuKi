@@ -8,6 +8,23 @@ import uuid
 import random
 
 
+
+def diff_list(univ, see):
+    diff = list(univ)
+    for x in see:
+        diff.remove(x)
+    return diff
+
+def indexs_maybe_duplicate(univ, see):
+    temp = list(univ)
+    res = []
+    for x in see:
+        i = temp.index(x)
+        res.append(i)
+        temp[i] = None
+    return res
+
+
 #label covering methods
 #label :== string | tuple[label]
 def normalize_argument_labels(labels):
@@ -19,7 +36,7 @@ def normalize_argument_labels(labels):
 def normalize_and_complement_argument_labels(tensor, row_labels, column_labels=None):
     row_labels = normalize_argument_labels(row_labels)
     if column_labels is None:
-        column_labels = [label for label in tensor.labels if label not in row_labels]
+        column_labels = diff_list(tensor.labels, row_labels)
     else:
         column_labels = normalize_argument_labels(column_labels)
     return row_labels, column_labels
@@ -116,7 +133,7 @@ class Tensor:
         if len(labels) != len(self.shape):
             raise ValueError(f"labels do not match shape of data. labels=={labels}, shape=={self.shape}")
         if len(labels) != len(set(labels)):
-            raise ValueError(f"labels are not unique. labels=={labels}")
+            warnings.warn(f"labels are not unique. labels=={labels}")
         self._labels = list(labels)
 
     labels = property(get_labels, set_labels)
@@ -125,6 +142,7 @@ class Tensor:
     #methods for labels
     @outofplacable
     def replace_labels(self, oldLabels, newLabels):
+        #if tensor has labels with same name, all labels with the name is replaced. 
         oldLabels = normalize_argument_labels(oldLabels)
         tempLabelBase = unique_label()
         tempLabels = ["temp_replace_labels_"+tempLabelBase+"_"+str(i) for i in range(len(oldLabels))]
@@ -149,7 +167,7 @@ class Tensor:
         return self.dim_of_index(self.index_of_label(label))
 
     def indices_of_labels(self,labels): #list[int]
-        return [self.index_of_label(label) for label in labels]
+        return indexs_maybe_duplicate(self.labels, labels)
 
     def dims_of_indices(self,indices): #tuple[int]
         return tuple(self.dim_of_index(index) for index in indices)
@@ -195,7 +213,7 @@ class Tensor:
         oldIndicesMoveFrom = self.indices_of_labels(labelsMove)
         newIndicesMoveTo = list(range(len(oldIndicesMoveFrom)))
 
-        oldIndicesNotMoveFrom = [i for i in range(len(self.labels)) if not i in oldIndicesMoveFrom]
+        oldIndicesNotMoveFrom = diff_list(range(len(self.labels)), oldIndicesMoveFrom)
         #newIndicesNotMoveTo = list(range(len(oldIndicesMoveFrom), len(self.labels)))
 
         oldLabels = self.labels
@@ -211,7 +229,7 @@ class Tensor:
         oldIndicesMoveFrom = self.indices_of_labels(labelsMove)
         newIndicesMoveTo = list(range(self.ndim-len(oldIndicesMoveFrom), self.ndim))
 
-        oldIndicesNotMoveFrom = [i for i in range(len(self.labels)) if not i in oldIndicesMoveFrom]
+        oldIndicesNotMoveFrom = diff_list(range(len(self.labels)), oldIndicesMoveFrom)
         #newIndicesNotMoveTo = list(range(self.ndim-len(oldIndicesMoveFrom)))
 
         oldLabels = self.labels
@@ -227,7 +245,7 @@ class Tensor:
         oldIndicesMoveFrom = self.indices_of_labels(labelsMove)
         newIndicesMoveTo = list(range(position, position+len(labelsMove)))
 
-        oldIndicesNotMoveFrom = [i for i in range(len(self.labels)) if not i in oldIndicesMoveFrom]
+        oldIndicesNotMoveFrom = diff_list(range(len(self.labels)), oldIndicesMoveFrom)
         newIndicesNotMoveTo = list(range(position)) + list(range(position+len(labelsMove), self.ndim))
 
         oldLabels = self.labels
@@ -245,11 +263,11 @@ class Tensor:
         newLabels = normalize_argument_labels(newLabels)
         oldLabels = self.labels
 
-        if set(newLabels) != set(oldLabels):
+        if sorted(newLabels) != sorted(oldLabels):
             raise ValueError(f"newLabels do not match oldLabels. oldLabels=={oldLabels}, newLabels=={newLabels}")
 
         #oldPositions = list(range(self.ndim))
-        newPositions = [newLabels.index(label) for label in oldLabels]
+        newPositions = indexs_maybe_duplicate(newLabels, oldLabels)
 
         self.data = xp.transpose(self.data, newPositions)
         self.labels = newLabels
@@ -433,17 +451,34 @@ class Tensor:
     #methods for trace, contract
     @inplacable
     def contract_internal(self, label1, label2):
-        index1 = self.index_of_label(label1)
-        index2 = self.index_of_label(label2)
-        index1,index2 = min(index1,index2), max(index1,index2)
+        index1, index2 = tuple(indexs_maybe_duplicate(self.labels, [label1, label2]))
+        index1, index2 = min(index1,index2), max(index1,index2)
 
         newData = xp.trace(self.data, axis1=index1, axis2=index2)
         newLabels = self.labels[:index1]+self.labels[index1+1:index2]+self.labels[index2+1:]
 
         return Tensor(newData, newLabels)
 
-    trace = contract_internal
-    tr = contract_internal
+    @inplacable
+    def contract_common_internal(self):
+        temp = self
+        while True:
+            commons = [x for x in set(temp.labels) if temp.labels.count(x) > 1]
+            if len(commons)==0:
+                break
+            for common in commons:
+                temp = temp.contract_internal(common, common)
+        return temp
+
+    @inplacable
+    def trace(self, label1=None, label2=None):
+        if label1 is None:
+            return self.contract_common_internal()
+        else:
+            return self.contract_internal(label1, label2)
+
+    tr = trace
+
 
     @inplacable
     def contract(self, *args, **kwargs):
@@ -513,7 +548,7 @@ def contract(aTensor, bTensor, aLabelsContract, bLabelsContract):
         raise ValueError(f"Dimss in contraction do not match. aLabelsContract=={aLabelsContract}, bLabelsContract=={bLabelsContract}, aDimsContract=={aDimsContract}, bDimsContract=={bDimsContract}")
 
     cData = xp.tensordot(aTensor.data, bTensor.data, (aIndicesContract, bIndicesContract))
-    cLabels = [label for label in aTensor.labels if label not in aLabelsContract] + [label for label in bTensor.labels if label not in bLabelsContract]
+    cLabels = diff_list(aTensor.labels, aLabelsContract) + diff_list(bTensor.labels, bLabelsContract)
 
     return Tensor(cData, cLabels)
 
