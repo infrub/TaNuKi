@@ -424,12 +424,10 @@ class Tensor:
     def norm(self): #Frobenius norm
         return xp.linalg.norm(self.data)
 
-    @outofplacable
+    @inplacable
     def normalize(self):
         norm = self.norm()
-        self.data /= norm
-
-    #TODO impl hermitize method
+        return self / norm
 
 
     #methods for trace, contract
