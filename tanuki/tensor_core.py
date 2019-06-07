@@ -451,7 +451,8 @@ class Tensor(TensorMixin):
     #methods for trace, contract
     @inplacable
     def contract_internal(self, label1, label2):
-        index1, index2 = tuple(indexs_duplable_front(self.labels, [label1, label2]))
+        index1 = indexs_duplable_front(self.labels, label1)
+        index2 = indexs_duplable_back(self.labels, label2)
         index1, index2 = min(index1,index2), max(index1,index2)
 
         newData = xp.trace(self.data, axis1=index1, axis2=index2)
