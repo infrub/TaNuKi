@@ -15,12 +15,21 @@ def diff_list(univ, see):
         diff.remove(x)
     return diff
 
-def indexs_maybe_duplicate(univ, see):
+def indexs_duplable_front(univ, see):
     temp = list(univ)
     res = []
     for x in see:
         i = temp.index(x)
         res.append(i)
+        temp[i] = None
+    return res
+
+def indexs_duplable_back(univ, see):
+    temp = list(reversed(univ))
+    res = []
+    for x in see:
+        i = temp.index(x)
+        res.append(len(univ)-1-i)
         temp[i] = None
     return res
 
@@ -112,15 +121,20 @@ class TensorMixin:
     def dim_of_label(self, label):
         return self.dim_of_index(self.index_of_label(label))
 
-    def indices_of_labels(self,labels): #list[int]
-        return indexs_maybe_duplicate(self.labels, labels)
+    def indices_of_labels_front(self,labels): #list[int]
+        return indexs_duplable_front(self.labels, labels)
+    def indices_of_labels_back(self,labels): #list[int]
+        return indexs_duplable_back(self.labels, labels)
+    indices_of_labels = indices_of_labels_front
 
     def dims_of_indices(self,indices): #tuple[int]
         return tuple(self.dim_of_index(index) for index in indices)
 
-    def dims_of_labels(self,labels): #tuple[int]
-        return self.dims_of_indices(self.indices_of_labels(labels))
-
+    def dims_of_labels_front(self,labels): #tuple[int]
+        return self.dims_of_indices(self.indices_of_labels_front(labels))
+    def dims_of_labels_back(self,labels): #tuple[int]
+        return self.dims_of_indices(self.indices_of_labels_back(labels))
+    dims_of_labels = dims_of_labels_front
 
     #methods for basic operations
     @inplacable
@@ -293,7 +307,7 @@ class Tensor(TensorMixin):
             raise ValueError(f"newLabels do not match oldLabels. oldLabels=={oldLabels}, newLabels=={newLabels}")
 
         #oldPositions = list(range(self.ndim))
-        newPositions = indexs_maybe_duplicate(newLabels, oldLabels)
+        newPositions = indexs_duplable_front(newLabels, oldLabels)
 
         self.data = xp.transpose(self.data, newPositions)
         self.labels = newLabels
@@ -437,7 +451,7 @@ class Tensor(TensorMixin):
     #methods for trace, contract
     @inplacable
     def contract_internal(self, label1, label2):
-        index1, index2 = tuple(indexs_maybe_duplicate(self.labels, [label1, label2]))
+        index1, index2 = tuple(indexs_duplable_front(self.labels, [label1, label2]))
         index1, index2 = min(index1,index2), max(index1,index2)
 
         newData = xp.trace(self.data, axis1=index1, axis2=index2)
@@ -680,7 +694,7 @@ class DiagonalTensor(TensorMixin):
 
     #methods for trace, contract
     def contract_internal(self, label1, label2):
-        index1, index2 = tuple(indexs_maybe_duplicate(self.labels, [label1, label2]))
+        index1, index2 = tuple(indexs_duplable_front(self.labels, [label1, label2]))
         index1, index2 = min(index1,index2), max(index1,index2)
         if not(index1==0 and index2==1):
             warnings.warn(f"DiagonalTensor.contract_internal(label1, label2) must be index1,index2=0,1. but label1=={label1}, label2=={label2}, tensor=={self}. ignore.")
@@ -755,8 +769,8 @@ def contract(aTensor, bTensor, aLabelsContract, bLabelsContract):
     aLabelsContract = normalize_argument_labels(aLabelsContract)
     bLabelsContract = normalize_argument_labels(bLabelsContract)
 
-    aIndicesContract = aTensor.indices_of_labels(aLabelsContract)
-    bIndicesContract = bTensor.indices_of_labels(bLabelsContract)
+    aIndicesContract = aTensor.indices_of_labels_back(aLabelsContract)
+    bIndicesContract = bTensor.indices_of_labels_front(bLabelsContract)
 
     aDimsContract = aTensor.dims_of_indices(aIndicesContract)
     bDimsContract = bTensor.dims_of_indices(bIndicesContract)
@@ -883,8 +897,8 @@ def tensor_svd(A, row_labels, column_labels=None, svd_labels=None):
 
     svd_labels = normalize_argument_svd_labels(svd_labels)
 
-    row_dims = A.dims_of_labels(row_labels)
-    column_dims = A.dims_of_labels(column_labels)
+    row_dims = A.dims_of_labels_front(row_labels)
+    column_dims = A.dims_of_labels_back(column_labels)
 
     a = A.to_matrix(row_labels, column_labels)
 
@@ -950,8 +964,8 @@ def tensor_qr(A, row_labels, column_labels=None, qr_labels=None, mode="economic"
     row_labels, column_labels = normalize_and_complement_argument_labels(A, row_labels, column_labels)
     qr_labels = normalize_argument_qr_labels(qr_labels)
 
-    row_dims = A.dims_of_labels(row_labels)
-    column_dims = A.dims_of_labels(column_labels)
+    row_dims = A.dims_of_labels_front(row_labels)
+    column_dims = A.dims_of_labels_back(column_labels)
 
     a = A.to_matrix(row_labels, column_labels)
 
