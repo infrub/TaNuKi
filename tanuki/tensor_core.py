@@ -55,8 +55,8 @@ def unique_label():
 
 
 #decorators
-#decorate in-place Tensor class method with @outofplacable to be able to use as out-of-place method.
-def outofplacable(f):
+#decorate in-place Tensor class method with @outofplacable_tensorMixin_method to be able to use as out-of-place method.
+def outofplacable_tensorMixin_method(f):
     def g(self, *args, inplace=True, **kwargs):
         if inplace:
             return f(self, *args, **kwargs)
@@ -66,8 +66,8 @@ def outofplacable(f):
             return copied
     return g
 
-#decorate out-of-place Tensor class method with @inplacable to be able to use as out-of-place method.
-def inplacable(f):
+#decorate out-of-place Tensor class method with @inplacable_tensorMixin_method to be able to use as out-of-place method.
+def inplacable_tensorMixin_method(f):
     def g(self, *args, inplace=False, **kwargs):
         if inplace:
             re = f(self, *args, **kwargs)
@@ -94,7 +94,7 @@ class TensorMixin:
 
     labels = property(get_labels, set_labels)
 
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def replace_labels(self, oldLabels, newLabels):
         #if tensor has labels with same name, all labels with the name is replaced. 
         oldLabels = normalize_argument_labels(oldLabels)
@@ -137,7 +137,7 @@ class TensorMixin:
     dims_of_labels = dims_of_labels_front
 
     #methods for basic operations
-    @inplacable
+    @inplacable_tensorMixin_method
     def adjoint(self,row_labels,column_labels=None):
         row_labels, column_labels = normalize_and_complement_argument_labels(self,row_labels,column_labels)
         if len(row_labels) != len(column_labels):
@@ -148,11 +148,11 @@ class TensorMixin:
 
     adj = adjoint
 
-    @inplacable
+    @inplacable_tensorMixin_method
     def hermite(self, row_labels, column_labels=None):
         return (self + self.adjoint(row_labels,column_labels))/2
 
-    @inplacable
+    @inplacable_tensorMixin_method
     def antihermite(self, row_labels, column_labels=None):
         return (self - self.adjoint(row_labels,column_labels))/2
 
@@ -220,21 +220,21 @@ class Tensor(TensorMixin):
     #methods for moving indices
     #I assumed that rollaxis is better than moveaxis in terms of computing costs
     #TODO pass if newIndices==oldIndices
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def move_index_to_top(self, labelMove):
         indexMoveFrom = self.index_of_label(labelMove)
         self.labels.pop(indexMoveFrom)
         self.labels.insert(0, labelMove)
         self.data = xp.rollaxis(self.data, indexMoveFrom, 0)
 
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def move_index_to_bottom(self, labelMove):
         indexMoveFrom = self.index_of_label(labelMove)
         self.labels.pop(indexMoveFrom)
         self.labels.append(labelMove)
         self.data = xp.rollaxis(self.data, indexMoveFrom, self.ndim)
 
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def move_index_to_position(self, labelMove, position, inplace=True):
         indexMoveFrom = self.index_of_label(labelMove)
         if position == indexMoveFrom:
@@ -246,7 +246,7 @@ class Tensor(TensorMixin):
         else:
             self.data = xp.rollaxis(self.data, indexMoveFrom, position+1)
 
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def move_indices_to_top(self, labelsMove):
         labelsMove = normalize_argument_labels(labelsMove)
 
@@ -262,7 +262,7 @@ class Tensor(TensorMixin):
         self.data = xp.moveaxis(self.data, oldIndicesMoveFrom, newIndicesMoveTo)
         self.labels = newLabels
 
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def move_indices_to_bottom(self, labelsMove):
         labelsMove = normalize_argument_labels(labelsMove)
 
@@ -278,7 +278,7 @@ class Tensor(TensorMixin):
         self.data = xp.moveaxis(self.data, oldIndicesMoveFrom, newIndicesMoveTo)
         self.labels = newLabels
 
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def move_indices_to_position(self, labelsMove, position):
         labelsMove = normalize_argument_labels(labelsMove)
 
@@ -298,7 +298,7 @@ class Tensor(TensorMixin):
         self.data = xp.moveaxis(self.data, oldIndicesMoveFrom, newIndicesMoveTo)
         self.labels = newLabels
 
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def move_all_indices(self, newLabels):
         newLabels = normalize_argument_labels(newLabels)
         oldLabels = self.labels
@@ -316,7 +316,7 @@ class Tensor(TensorMixin):
     #methods for fuse/split
     #if new.. is no specified, assume like following:
     #["a","b","c","d"] <=split / fuse=> ["a",("b","c"),"d"]
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def fuse_indices(self, labelsFuse, newLabelFuse=None):
         labelsFuse = normalize_argument_labels(labelsFuse)
         if newLabelFuse is None:
@@ -338,7 +338,7 @@ class Tensor(TensorMixin):
 
         return OrderedDict(oldShapeFuse=oldShapeFuse, oldLabelsFuse=labelsFuse, labelsFuse=labelsFuse, newDimFuse=newDimFuse, newLabelFuse=newLabelFuse) #useful info (this is missed if out-of-place)
 
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def split_index(self, labelSplit, newShapeSplit, newLabelsSplit=None):
         newShapeSplit = tuple(newShapeSplit)
         if newLabelsSplit is None:
@@ -424,13 +424,13 @@ class Tensor(TensorMixin):
         return NotImplemented
 
 
-    @inplacable
+    @inplacable_tensorMixin_method
     def conjugate(self):
         return Tensor(data=self.data.conj(),labels=self.labels)
 
     conj = conjugate
 
-    @inplacable
+    @inplacable_tensorMixin_method
     def pad_indices(self, labels, npads):
         indices = self.indices_of_labels(labels)
         wholeNpad = [(0,0)] * self.ndim
@@ -442,14 +442,14 @@ class Tensor(TensorMixin):
     def norm(self): #Frobenius norm
         return xp.linalg.norm(self.data)
 
-    @inplacable
+    @inplacable_tensorMixin_method
     def normalize(self):
         norm = self.norm()
         return self / norm
 
 
     #methods for trace, contract
-    @inplacable
+    @inplacable_tensorMixin_method
     def contract_internal(self, label1, label2):
         index1 = indexs_duplable_front(self.labels, label1)
         index2 = indexs_duplable_back(self.labels, label2)
@@ -460,7 +460,7 @@ class Tensor(TensorMixin):
 
         return Tensor(newData, newLabels)
 
-    @inplacable
+    @inplacable_tensorMixin_method
     def contract_common_internal(self):
         temp = self
         while True:
@@ -471,7 +471,7 @@ class Tensor(TensorMixin):
                 temp = temp.contract_internal(common, common)
         return temp
 
-    @inplacable
+    @inplacable_tensorMixin_method
     def trace(self, label1=None, label2=None):
         if label1 is None:
             return self.contract_common_internal()
@@ -481,7 +481,7 @@ class Tensor(TensorMixin):
     tr = trace
 
 
-    @inplacable
+    @inplacable_tensorMixin_method
     def contract(self, *args, **kwargs):
         return contract(self, *args, **kwargs)
 
@@ -494,12 +494,12 @@ class Tensor(TensorMixin):
 
 
     #methods for dummy index
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def add_dummy_index(self, label):
         self.data = self.data[xp.newaxis, :]
         self.labels.insert(0, label)
 
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def remove_all_dummy_indices(self, labels=None):
         oldShape = self.shape
         oldLabels = self.labels
@@ -594,41 +594,41 @@ class DiagonalTensor(TensorMixin):
 
     #methods for moving indices
     #hobo muimi
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def move_index_to_top(self, labelMove):
         indexMoveFrom = self.index_of_label(labelMove)
         self.labels.pop(indexMoveFrom)
         self.labels.insert(0, labelMove)
 
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def move_index_to_bottom(self, labelMove):
         indexMoveFrom = self.index_of_label(labelMove)
         self.labels.pop(indexMoveFrom)
         self.labels.append(labelMove)
 
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def move_index_to_position(self, labelMove, position, inplace=True):
         indexMoveFrom = self.index_of_label(labelMove)
         self.labels.pop(indexMoveFrom)
         self.labels.insert(position, labelMove)
 
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def move_indices_to_top(self, labelsMove):
         labelsMove = normalize_argument_labels(labelsMove)
         self.labels = labelsMove + diff_list(self.labels, labelsMove)
 
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def move_indices_to_bottom(self, labelsMove):
         labelsMove = normalize_argument_labels(labelsMove)
         self.labels = diff_list(self.labels, labelsMove) + labelsMove
 
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def move_indices_to_position(self, labelsMove, position):
         labelsMove = normalize_argument_labels(labelsMove)
         labelsNotMove = diff_list(self.labels, labelsMove)
         self.labels = labelsNotMove[:position] + labelsMove + labelsNotMove[position:]
 
-    @outofplacable
+    @outofplacable_tensorMixin_method
     def move_all_indices(self, newLabels):
         newLabels = normalize_argument_labels(newLabels)
         oldLabels = self.labels
@@ -678,7 +678,7 @@ class DiagonalTensor(TensorMixin):
         return NotImplemented
 
 
-    @inplacable
+    @inplacable_tensorMixin_method
     def conjugate(self):
         return DiagonalTensor(data=self.data.conj(),labels=self.labels)
 
@@ -687,7 +687,7 @@ class DiagonalTensor(TensorMixin):
     def norm(self): #Frobenius norm
         return xp.linalg.norm(self.data)
 
-    @inplacable
+    @inplacable_tensorMixin_method
     def normalize(self):
         norm = self.norm()
         return self / norm
