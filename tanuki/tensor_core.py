@@ -42,10 +42,10 @@ def normalize_argument_labels(labels):
     else:
         return [labels]
 
-def normalize_and_complement_argument_labels(tensor, row_labels, column_labels=None):
+def normalize_and_complement_argument_labels(all_labels, row_labels, column_labels=None):
     row_labels = normalize_argument_labels(row_labels)
     if column_labels is None:
-        column_labels = diff_list(tensor.labels, row_labels)
+        column_labels = diff_list(all_labels, row_labels)
     else:
         column_labels = normalize_argument_labels(column_labels)
     return row_labels, column_labels
@@ -139,7 +139,7 @@ class TensorMixin:
     #methods for basic operations
     @inplacable_tensorMixin_method
     def adjoint(self,row_labels,column_labels=None):
-        row_labels, column_labels = normalize_and_complement_argument_labels(self,row_labels,column_labels)
+        row_labels, column_labels = normalize_and_complement_argument_labels(self.labels,row_labels,column_labels)
         if len(row_labels) != len(column_labels):
             raise ValueError(f"adjoint arg must be len(row_labels)==len(column_labels). but row_labels=={row_labels}, column_labels=={column_labels}")
         out = self.conjugate()
@@ -420,7 +420,7 @@ class Tensor(TensorMixin):
     def __eq__(self, other, skipLabelSort=False, absolute_threshold=1e-10):
         if isinstance(other, TensorMixin):
             diff = self.__sub__(other, skipLabelSort=skipLabelSort)
-            return diff.norm() < absolute_threshold
+            return diff.norm() <= absolute_threshold
         return NotImplemented
 
 
@@ -527,6 +527,53 @@ class Tensor(TensorMixin):
 
     def to_scalar(self):
         return tensor_to_scalar(self)
+
+
+    #methods for confirming character
+    def is_scalar(self):
+        return self.ndim==0
+
+    def is_diagonal(self, absolute_threshold=1e-10):
+        if self.ndim != 2:
+            return False
+        temp = self.data[xp.eye(*self.data.shape)==0]
+        return xp.linalg.norm(temp) <= absolute_threshold
+
+    def is_identity(self, absolute_threshold=1e-10):
+        if self.ndim != 2:
+            return False
+        temp = self.data - xp.eye(*self.data.shape)
+        return xp.linalg.norm(temp) <= absolute_threshold
+
+    def is_right_unitary(self, column_labels, absolute_threshold=1e-10):
+        column_labels, row_labels = normalize_and_complement_argument_labels(self.labels, column_labels)
+        M = self.to_matrix(row_labels, column_labels)
+        temp = xp.dot(M, M.conj().transpose())
+        temp = temp - xp.eye(*temp.shape)
+        return xp.linalg.norm(temp) <= absolute_threshold
+
+    def is_left_unitary(self, row_labels, absolute_threshold=1e-10):
+        row_labels, column_labels = normalize_and_complement_argument_labels(self.labels, row_labels)
+        M = self.to_matrix(row_labels, column_labels)
+        temp = xp.dot(M.conj().transpose(), M)
+        temp = temp - xp.eye(*temp.shape)
+        return xp.linalg.norm(temp) <= absolute_threshold
+
+    def is_unitary(self, row_labels, column_labels=None, absolute_threshold=1e-10):
+        row_labels, column_labels = normalize_and_complement_argument_labels(self.labels, row_labels, column_labels)
+        if soujou(self.dims_of_labels_front(row_labels)) != soujou(self.dims_of_labels_back(column_labels)):
+            return False
+        M = self.to_matrix(row_labels, column_labels)
+        Mh = M.conj().transpose()
+        temp = xp.dot(M, Mh)
+        temp = temp - xp.eye(*temp.shape)
+        if xp.linalg.norm(temp) > absolute_threshold:
+            return False
+        temp = xp.dot(Mh, M)
+        temp = temp - xp.eye(*temp.shape)
+        if xp.linalg.norm(temp) > absolute_threshold:
+            return False
+        return True
 
 
 
@@ -674,7 +721,7 @@ class DiagonalTensor(TensorMixin):
     def __eq__(self, other, skipLabelSort=False, absolute_threshold=1e-10):
         if type(other)==DiagonalTensor:
             diff = self.__sub__(other, skipLabelSort=skipLabelSort)
-            return diff.norm() < absolute_threshold
+            return diff.norm() <= absolute_threshold
         return NotImplemented
 
 
@@ -836,7 +883,7 @@ def direct_product(aTensor, bTensor):
 
 #converting functions
 def tensor_to_matrix(tensor, row_labels, column_labels=None):
-    row_labels, column_labels = normalize_and_complement_argument_labels(tensor, row_labels, column_labels)
+    row_labels, column_labels = normalize_and_complement_argument_labels(tensor.labels, row_labels, column_labels)
 
     t = tensor.move_all_indices(row_labels+column_labels, inplace=False)
     total_row_dim = soujou(t.shape[:len(row_labels)], dtype=int)
@@ -894,7 +941,7 @@ def normalize_argument_svd_labels(svd_labels):
 def tensor_svd(A, row_labels, column_labels=None, svd_labels=None):
     #I believe gesvd and gesdd return s which is positive, descending #TODO check
     #A == U*S*V
-    row_labels, column_labels = normalize_and_complement_argument_labels(A, row_labels, column_labels)
+    row_labels, column_labels = normalize_and_complement_argument_labels(A.labels, row_labels, column_labels)
 
     svd_labels = normalize_argument_svd_labels(svd_labels)
 
@@ -962,7 +1009,7 @@ def normalize_argument_qr_labels(qr_labels):
 
 def tensor_qr(A, row_labels, column_labels=None, qr_labels=None, mode="economic"):
     #A == Q*R
-    row_labels, column_labels = normalize_and_complement_argument_labels(A, row_labels, column_labels)
+    row_labels, column_labels = normalize_and_complement_argument_labels(A.labels, row_labels, column_labels)
     qr_labels = normalize_argument_qr_labels(qr_labels)
 
     row_dims = A.dims_of_labels_front(row_labels)
@@ -994,7 +1041,7 @@ def normalize_argument_lq_labels(lq_labels):
 
 def tensor_lq(A, row_labels, column_labels=None, lq_labels=None, mode="economic"):
     #A == L*Q
-    row_labels, column_labels = normalize_and_complement_argument_labels(A, row_labels, column_labels)
+    row_labels, column_labels = normalize_and_complement_argument_labels(A.labels, row_labels, column_labels)
     lq_labels = normalize_argument_lq_labels(lq_labels)
 
     Q, L = tensor_qr(A, column_labels, row_labels, qr_labels=[lq_labels[1],lq_labels[0]], mode=mode)
