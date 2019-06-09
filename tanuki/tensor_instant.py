@@ -17,12 +17,13 @@ def zeros_tensor(shape, labels=None, base_label=None, dtype=float):
     return tnc.Tensor(data, labels=labels, base_label=base_label)
 
 
-def identity_tensor(physDim, physoutLabel, physinLabel, virtLabels=None, dtype=float):
-    matrix = xp.identity(physDim, dtype=dtype)
-    tensor = tnc.Tensor(matrix, labels=[physoutLabel, physinLabel])
-    if not virtLabels is None:
-        for label in virtLabels:
-            tensor.add_dummy_index(label)
+def identity_tensor(dim, labels=None, base_label=None, dtype=float):
+    matrix = xp.identity(dim, dtype=dtype)
+    if isinstance(labels, list) and len(labels)==1:
+        labels = [labels[0], labels[0]]
+    if not isinstance(labels, list) and not labels is None:
+        labels = [labels, labels]
+    tensor = tnc.DiagonalTensor(matrix, labels=labels, base_label=base_label)
     return tensor
 
 
