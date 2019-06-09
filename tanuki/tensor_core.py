@@ -44,8 +44,8 @@ class TensorMixin:
     def set_labels(self, labels):
         if len(labels) != len(self.shape):
             raise ValueError(f"labels do not match shape of data. labels=={labels}, shape=={self.shape}")
-        if len(labels) != len(set(labels)):
-            warnings.warn(f"labels are not unique. labels=={labels}")
+        #if len(labels) != len(set(labels)):
+        #    warnings.warn(f"labels are not unique. labels=={labels}")
         self._labels = list(labels)
 
     labels = property(get_labels, set_labels)
@@ -448,7 +448,7 @@ class Tensor(TensorMixin):
 
     #methods for dummy index
     @outofplacable_tensorMixin_method
-    def add_dummy_index(self, label=(,)):
+    def add_dummy_index(self, label=()):
         self.data = self.data[xp.newaxis, :]
         self.labels.insert(0, label)
 

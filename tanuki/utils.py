@@ -1,4 +1,5 @@
 from collections import Counter
+import random
 
 #utils
 def diff_list(univ, see):

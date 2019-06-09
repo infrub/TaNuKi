@@ -18,7 +18,7 @@ def zeros_tensor(shape, labels=None, base_label=None, dtype=float):
 
 
 def identity_tensor(dim, labels=None, base_label=None, dtype=float):
-    matrix = xp.identity(dim, dtype=dtype)
+    matrix = xp.ones(dim, dtype=dtype)
     if isinstance(labels, list) and len(labels)==1:
         labels = [labels[0], labels[0]]
     if not isinstance(labels, list) and not labels is None:

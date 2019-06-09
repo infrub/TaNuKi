@@ -1,1 +1,1 @@
-from tanuki.lattices.Fin1DSimTPS import *
+from tanuki.lattices.Fin1DTN import *

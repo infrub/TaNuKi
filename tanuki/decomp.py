@@ -51,8 +51,10 @@ def truncated_svd(A, row_labels, column_labels=None, chi=None, absolute_threshol
     U, S, V = tensor_svd(A, row_labels, column_labels, svd_labels=svd_labels)
     s_diag = S.data
 
+    trunc_s_diag = s_diag
+
     if chi:
-        trunc_s_diag = s_diag[:chi]
+        trunc_s_diag = trunc_s_diag[:chi]
 
     if absolute_threshold:
         trunc_s_diag = trunc_s_diag[trunc_s_diag > absolute_threshold]
