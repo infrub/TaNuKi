@@ -37,6 +37,14 @@ def inplacable_tensorMixin_method(f):
 
 #classes
 class TensorMixin:
+    def __copy__(self):
+        return self.copy(shallow=True)
+
+    def __deepcopy__(self, memo=None):
+        if memo is None: return {}
+        return self.copy(shallow=False)
+
+
     #methods for labels
     def get_labels(self):
         return self._labels
@@ -259,7 +267,10 @@ class Tensor(TensorMixin):
         newLabels = normalize_argument_labels(newLabels)
         oldLabels = self.labels
 
-        if sorted(newLabels) != sorted(oldLabels):
+        try:
+            if len(diff_list(newLabels, oldLabels))!=0:
+                raise Exception
+        except:
             raise ValueError(f"newLabels do not match oldLabels. oldLabels=={oldLabels}, newLabels=={newLabels}")
 
         #oldPositions = list(range(self.ndim))
@@ -549,12 +560,6 @@ class DiagonalTensor(TensorMixin):
     def copy(self, shallow=False):
         return DiagonalTensor(self.data, self.labels, copy=not(shallow))
 
-    def __copy__(self):
-        return self.copy(shallow=True)
-
-    def __deepcopy__(self):
-        return self.copy(shallow=False)
-
     def __repr__(self):
         return f"DiagonalTensor(data={self.data}, labels={self.labels})"
 
@@ -662,6 +667,11 @@ class DiagonalTensor(TensorMixin):
     def __truediv__(self, other):
         if xp.isscalar(other):
             return DiagonalTensor(self.data/other, labels=self.labels)
+        return NotImplemented
+
+    def __rtruediv__(self, other):
+        if isinstance(other, TensorMixin):
+            return other * self.inv()
         return NotImplemented
 
     def __add__(self, other, skipLabelSort=False):

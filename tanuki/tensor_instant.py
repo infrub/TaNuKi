@@ -32,3 +32,11 @@ def random_tensor_like(tensor):
 
 def zeros_tensor_like(tensor):
     return zeros_tensor(tensor.shape, labels=tensor.labels, dtype=tensor.dtype)
+
+
+
+def dummy_tensor():
+    return tnc.Tensor(1.0)
+
+def dummy_diagonalTensor():
+    return tnc.DiagonalTensor([1.0], [(),()])
