@@ -2,6 +2,13 @@ from collections import Counter
 import random
 
 #utils
+def eq_list(xs, ys):
+    xc = Counter(xs)
+    yc = Counter(ys)
+    zc = xc.subtract(yc)
+    zs = list(zc.elements())
+    return len(zs)==0
+
 def diff_list(univ, see):
     diff = list(univ)
     for x in see:
@@ -61,3 +68,20 @@ def normalize_and_complement_argument_labels(all_labels, row_labels, column_labe
 def unique_label():
     return "".join(random.choices("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",k=8))
 
+def aster_label(label):
+    if type(label)==tuple:
+        return tuple(aster_label(x) for x in label)
+    else:
+        return label+"*"
+
+def prime_label(label):
+    if type(label)==tuple:
+        return tuple(prime_label(x) for x in label)
+    else:
+        return label+"'"
+
+def aster_labels(labels):
+    return [aster_label(label) for label in labels]
+
+def prime_labels(labels):
+    return [prime_label(label) for label in labels]

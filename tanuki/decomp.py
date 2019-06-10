@@ -1,3 +1,4 @@
+from tanuki.tnxp import xp
 from tanuki.utils import *
 from tanuki.tensor_core import *
 
@@ -128,4 +129,18 @@ def tensor_lq(A, row_labels, column_labels=None, lq_labels=None, mode="economic"
 
     return L, Q
 
-#A = Vh["eigh_vhr"]*W["eigh_wl"]["eigh_wr"]*V[eigh_vl]
+
+
+def normalize_argument_eigh_labels(eigh_labels):
+    if eigh_labels is None:
+        eigh_labels = [unique_label()]
+    if not isinstance(eigh_labels, list):
+        eigh_labels = [eigh_labels]
+    if len(eigh_labels)==1:
+        eigh_labels = [eigh_labels[0]+"_eigh", eigh_labels[0]+"_eigh"]
+    if len(eigh_labels)!=2:
+        raise ValueError(f"eigh_labels must be a None or str or 1,2 length list. eigh_labels=={eigh_labels}")
+    return eigh_labels
+
+def tensor_eigh(A, row_labels, column_labels=None)
+    row_labels, column_labels = normalize_and_complement_argument_labels(A.labels, row_labels, column_labels)

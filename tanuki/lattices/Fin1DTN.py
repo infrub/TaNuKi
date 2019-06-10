@@ -179,6 +179,8 @@ class Fin1DSimTPS:
 
 
 
+
+
 # bdts[0] -- tensors[0] -- bdts[1] -- tensors[1] -- ... -- tensors[len-1] -- bdts[len]
 class Fin1DSimBTPS:
     def __init__(self, tensors, bdts, phys_labelss=None):
@@ -261,63 +263,88 @@ class Fin1DSimBTPS:
         return soujou(self.tensors[site].dims_of_labels(self.get_right_labels_site(site)))
 
 
+    def left_canonize_right_end(self, chi=None, relative_threshold=1e-14, end_dealing="normalize"):
+        site = len(self)-1
+
+        if end_dealing=="no":
+            return
+
+        # just normalize.
+        # this method senses only when it can be written as:
+        # /-(len-1)-[len-1]-         /-
+        # |            |      == c * |
+        # \-(len-1)-[len-1]-         \-
+        elif end_dealing=="normalize":
+            S = self.bdts[site]
+            V = self.tensors[site]
+            SV = S*V
+            #VhS = SV.conjugate()
+            #VhSSV = VhS[self.get_right_labels_site(site-1)+self.get_phys_labels_site(site)]*SV[self.get_right_labels_site(site-1)+self.get_phys_labels_site(site)]
+            #is_senseful = SV.is_left_unitary()
+            norm = SV.norm()
+            self.tensors[site] = V / norm
+            return
+
+        # expel norm to ext_bdt.
+        # so including ext_bdt, this method keeps the norm.
+        # this method senses only when it can be written as:
+        # /-(len-1)-[len-1]-       /-
+        # |            |      ==  (*)
+        # \-(len-1)-[len-1]-       \-
+        elif end_dealing=="expel_bdt":
+            return "e-n yappa dounimo DiagonalTensor motto jigen hoshii yo~" #TODO
+
+        # svd including bdt[len] and expel the remain V as ext_ut and return.
+        # so the followings are held:
+        #     /-(len-1)-[len-1]-       /-
+        # new |            |      ==   |
+        #     \-(len-1)-[len-1]-       \-
+        #
+        #     /-(len-1)-[len-1]-(len)-           (len)-[ext_ut]-
+        # old |            |            ==  new    |
+        #     \-(len-1)-[len-1]-(len)-           (len)-[ext_ut]-
+        # this method senses in all case.
+        elif end_dealing=="expel_ut":
+            U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_right_labels_site(site-1)+self.get_phys_labels_site(site), chi=chi, relative_threshold=relative_threshold)
+            self.tensors[site] = U/self.bdts[site]
+            self.bdts[site+1] = S
+            return V
+
+        else:
+            return
+
     # (site=1):
     # /-(1)-[1]-      /-
     # |      |    ==  |
     # \-(1)-[1]-      \-
     def left_canonize_site(self, site, chi=None, relative_threshold=1e-14, end_dealing="normalize"):
         if site==len(self)-1:
-            if end_dealing=="no":
-                return
-
-            # just normalize.
-            # this method senses only when it can be written as:
-            # /-(len-1)-[len-1]-         /-
-            # |            |      == c * |
-            # \-(len-1)-[len-1]-         \-
-            elif end_dealing=="normalize":
-                S = self.bdts[site]
-                V = self.tensors[site]
-                SV = S*V
-                #VhS = SV.conjugate()
-                #VhSSV = VhS[self.get_right_labels_site(site-1)+self.get_phys_labels_site(site)]*SV[self.get_right_labels_site(site-1)+self.get_phys_labels_site(site)]
-                #is_senseful = SV.is_left_unitary()
-                norm = SV.norm()
-                self.tensors[site] = V / norm
-                return
-
-            # expel norm to ext_bdt.
-            # so including ext_bdt, this method keeps the norm.
-            # this method senses only when it can be written as:
-            # /-(len-1)-[len-1]-       /-
-            # |            |      ==  (*)
-            # \-(len-1)-[len-1]-       \-
-            elif end_dealing=="expel_bdt":
-                return "e-n yappa dounimo DiagonalTensor motto jigen hoshii yo~" #TODO
-
-            # svd including bdt[len] and expel the remain V as ext_ut and return.
-            # so the followings are held:
-            #     /-(len-1)-[len-1]-       /-
-            # new |            |      ==   |
-            #     \-(len-1)-[len-1]-       \-
-            #
-            #     /-(len-1)-[len-1]-(len)-           (len)-[ext_ut]-
-            # old |            |            ==  new    |
-            #     \-(len-1)-[len-1]-(len)-           (len)-[ext_ut]-
-            # this method senses in all case.
-            elif end_dealing=="expel_ut":
-                U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_right_labels_site(site-1)+self.get_phys_labels_site(site), chi=chi, relative_threshold=relative_threshold)
-                self.tensors[site] = U/self.bdts[site]
-                self.bdts[site+1] = S
-                return V
-
-            else:
-                return
-
+            self.left_canonize_right_end(chi=chi, relative_threshold=relative_threshold, end_dealing=end_dealing)
         U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_right_labels_site(site-1)+self.get_phys_labels_site(site), chi=chi, relative_threshold=relative_threshold)
         self.tensors[site] = U/self.bdts[site]
         self.bdts[site+1] = S
         self.tensors[site+1] = V*self.tensors[site+1]
+
+    def right_canonize_left_end(self, chi=None, relative_threshold=1e-14, end_dealing="normalize"):
+        site = 0
+        if end_dealing=="no":
+            return
+        elif end_dealing=="normalize":
+            U = self.tensors[site]
+            S = self.bdts[site+1]
+            US = U*S
+            norm = US.norm()
+            self.tensors[site] = U / norm
+            return
+        elif end_dealing=="expel_bdt":
+            return "e-n yappa dounimo DiagonalTensor motto jigen hoshii yo~" #TODO
+        elif end_dealing=="expel_ut":
+            U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_right_labels_site(site-1), chi=chi, relative_threshold=relative_threshold)
+            self.bdts[site] = S
+            self.tensors[site] = V/self.bdts[site+1]
+            return U
+        else:
+            return
 
     # (site=4):
     # -[4]-(5)-\      -\
@@ -325,25 +352,7 @@ class Fin1DSimBTPS:
     # -[4]-(5)-/      -/
     def right_canonize_site(self, site, chi=None, relative_threshold=1e-14, end_dealing="normalize"):
         if site==0:
-            if end_dealing=="no":
-                return
-            elif end_dealing=="normalize":
-                U = self.tensors[site]
-                S = self.bdts[site+1]
-                US = U*S
-                norm = US.norm()
-                self.tensors[site] = U / norm
-                return
-            elif end_dealing=="expel_bdt":
-                return "e-n yappa dounimo DiagonalTensor motto jigen hoshii yo~" #TODO
-            elif end_dealing=="expel_ut":
-                U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_right_labels_site(site-1), chi=chi, relative_threshold=relative_threshold)
-                self.bdts[site] = S
-                self.tensors[site] = V/self.bdts[site+1]
-                return U
-            else:
-                return
-
+            self.right_canonize_left_end(chi=chi, relative_threshold=relative_threshold, end_dealing=end_dealing)
         U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_right_labels_site(site-1), chi=chi, relative_threshold=relative_threshold)
         self.tensors[site-1] = self.tensors[site-1]*U
         self.bdts[site] = S
@@ -419,6 +428,68 @@ class Fin1DSimBTPS:
 
 
 
+
 # )-- bdts[0] -- tensors[0] -- bdts[1] -- tensors[1] -- ... -- bdts[-1] -- tensors[-1] --(
-#class Inf1DSimBTPS:
+class Inf1DSimBTPS(Fin1DSimBTPS):
+    def __init__(self, tensors, bdts, phys_labelss=None):
+        Fin1DSimBTPS.__init__(self, tensors, bdts, phys_labelss=phys_labelss)
+
+    def __repr__(self):
+        return f"Inf1DSimTPS(tensors={self.tensors}, bdts={self.bdts}, phys_labelss={self.phys_labelss})"
+
+    def __str__(self):
+        if len(self) > 20:
+            dataStr = " ... "
+        else:
+            dataStr = ""
+            for i in range(len(self)):
+                bdt = self.bdts[i]
+                dataStr += str(bdt)
+                dataStr += "\n"
+                tensor = self.tensors[i]
+                dataStr += str(tensor)
+                dataStr += ",\n"
+        dataStr = textwrap.indent(dataStr, "    ")
+
+        dataStr = "[\n" + dataStr + "],\n"
+        dataStr += f"phys_labelss={self.phys_labelss},\n"
+        dataStr = textwrap.indent(dataStr, "    ")
+
+        re = \
+        f"Inf1DSimBTPS(\n" + \
+        dataStr + \
+        f")"
+
+        return re
+
+
+    def get_left_labels_site(self, site):
+        site = site % len(self)
+        return tnc.intersection_list(self.bdts[site].labels, self.tensors[site].labels)
+
+    def get_right_labels_site(self, site):
+        site = site % len(self)
+        return tnc.intersection_list(self.tensors[site].labels, self.bdts[(site+1)%len(self)].labels)
+
+    # get L s.t.
+    # /-(0)-[0]-...-(len-1)-[len-1]-          /-
+    # L      |                 |      ==  c * L
+    # \-(0)-[0]-...-(len-1)-[len-1]-          \-
+    def get_left_eigenvector(self): #TOCHUU
+        temp = Tensor(1)
+        in_bra_labels = self.get_right_labels_site(i)
+        in_ket_labels = aster_labels(in_bra_labels)
+        out_bra_labels = prime_labels(in_bra_labels)
+        out_ket_labels = aster_labels(out_bra_labels)
+        for i in range(len(self)):
+            temp *= self.bdts[i]
+            temp *= self.bdts[i].adjoint(self.get_left_labels_bond(i),self.get_right_labels_bond(i), style="aster")
+            if i==len(self)-1:
+                migiue = self.tensors[i].replace_labels(in_bra_labels, out_bra_labels, inplace=False)
+                migisita = migiue.adjoint(self.get_left_labels_site(i), out_bra_labels, style="aster")
+                temp *= migiue
+                temp *= migisita
+            else:
+                temp *= self.tensors[i]
+                temp *= self.tensors[i].adjoint(self.get_left_labels_site(i),self.get_right_labels_site(i), style="aster")
 

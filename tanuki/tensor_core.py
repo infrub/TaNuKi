@@ -72,6 +72,16 @@ class TensorMixin:
             if label in tempLabels:
                 self.labels[i] = newLabels[tempLabels.index(label)]
 
+    @outofplacable_tensorMixin_method
+    def aster_labels(self, oldLabels):
+        newLabels = aster_labels(oldLabels)
+        self.replace_labels(oldLabels, newLabels)
+
+    @outofplacable_tensorMixin_method
+    def prime_labels(self, oldLabels):
+        newLabels = prime_labels(oldLabels)
+        self.replace_labels(oldLabels, newLabels)
+
     def assign_labels(self, base_label):
         self.labels = [base_label+"_"+str(i) for i in range(self.ndim)]
 
@@ -102,12 +112,16 @@ class TensorMixin:
 
     #methods for basic operations
     @inplacable_tensorMixin_method
-    def adjoint(self,row_labels,column_labels=None):
+    def adjoint(self,row_labels,column_labels=None,style="transpose"):
         row_labels, column_labels = normalize_and_complement_argument_labels(self.labels,row_labels,column_labels)
-        if len(row_labels) != len(column_labels):
-            raise ValueError(f"adjoint arg must be len(row_labels)==len(column_labels). but row_labels=={row_labels}, column_labels=={column_labels}")
-        out = self.conjugate()
-        out.replace_labels(row_labels+column_labels, column_labels+row_labels)
+        if style=="transpose":
+            if len(row_labels) != len(column_labels):
+                raise ValueError(f"adjoint arg must be len(row_labels)==len(column_labels). but row_labels=={row_labels}, column_labels=={column_labels}")
+            out = self.conjugate()
+            out.replace_labels(row_labels+column_labels, column_labels+row_labels)
+        elif style=="aster":
+            out = self.conjugate()
+            out.aster_labels(row_labels+column_labels)
         return out
 
     adj = adjoint
@@ -267,10 +281,7 @@ class Tensor(TensorMixin):
         newLabels = normalize_argument_labels(newLabels)
         oldLabels = self.labels
 
-        try:
-            if len(diff_list(newLabels, oldLabels))!=0:
-                raise Exception
-        except:
+        if not eq_list(newLabels, oldLabels):
             raise ValueError(f"newLabels do not match oldLabels. oldLabels=={oldLabels}, newLabels=={newLabels}")
 
         #oldPositions = list(range(self.ndim))
