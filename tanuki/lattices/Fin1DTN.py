@@ -3,7 +3,6 @@ from tanuki import tensor_core as tnc
 from tanuki import tensor_instant as tni
 from tanuki import decomp as tnd
 from tanuki.utils import *
-from numpy import prod as soujou
 import textwrap
 
 #Finite 1D Simple Tensor Product State (wholly used when making BTPS through)
@@ -165,7 +164,7 @@ class Fin1DSimTPS:
         for site in range(len(self)-1):
             dim = self.get_right_dim_site(site)
             label = self.get_right_labels_site(site)[0]
-            bdt = tni.identity_tensor(dim, label)
+            bdt = tni.identity_diagonalTensor(dim, label)
             bdts.append(bdt)
         bdts.append(fused_self.right_ext_bdt)
         return Fin1DSimBTPS(fused_self.tensors, bdts, phys_labelss=fused_self.phys_labelss)
@@ -256,6 +255,12 @@ class Fin1DSimBTPS:
         return self.get_left_labels_site(bondsite)
 
 
+    def get_left_shape_site(self, site):
+        return self.tensors[site].dims_of_labels(self.get_left_labels_site(site))
+
+    def get_right_shape_site(self, site):
+        return self.tensors[site].dims_of_labels(self.get_right_labels_site(site))
+
     def get_left_dim_site(self, site):
         return soujou(self.tensors[site].dims_of_labels(self.get_left_labels_site(site)))
 
@@ -305,7 +310,7 @@ class Fin1DSimBTPS:
         #     \-(len-1)-[len-1]-(len)-           (len)-[ext_ut]-
         # this method senses in all case.
         elif end_dealing=="expel_ut":
-            U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_right_labels_site(site-1)+self.get_phys_labels_site(site), chi=chi, relative_threshold=relative_threshold)
+            U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_left_labels_bond(site)+self.get_phys_labels_site(site), chi=chi, relative_threshold=relative_threshold)
             self.tensors[site] = U/self.bdts[site]
             self.bdts[site+1] = S
             return V
@@ -317,13 +322,18 @@ class Fin1DSimBTPS:
     # /-(1)-[1]-      /-
     # |      |    ==  |
     # \-(1)-[1]-      \-
-    def left_canonize_site(self, site, chi=None, relative_threshold=1e-14, end_dealing="normalize"):
-        if site==len(self)-1:
-            self.left_canonize_right_end(chi=chi, relative_threshold=relative_threshold, end_dealing=end_dealing)
-        U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_right_labels_site(site-1)+self.get_phys_labels_site(site), chi=chi, relative_threshold=relative_threshold)
+    def left_canonize_not_end_site(self, site, chi=None, relative_threshold=1e-14):
+        U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_left_labels_bond(site)+self.get_phys_labels_site(site), chi=chi, relative_threshold=relative_threshold)
         self.tensors[site] = U/self.bdts[site]
         self.bdts[site+1] = S
         self.tensors[site+1] = V*self.tensors[site+1]
+
+    def left_canonize_site(self, site, chi=None, relative_threshold=1e-14, end_dealing="normalize"):
+        if site==len(self)-1:
+            self.left_canonize_right_end(chi=chi, relative_threshold=relative_threshold, end_dealing=end_dealing)
+        else:
+            self.left_canonize_not_end_site(site, chi=chi, relative_threshold=relative_threshold)
+
 
     def right_canonize_left_end(self, chi=None, relative_threshold=1e-14, end_dealing="normalize"):
         site = 0
@@ -339,7 +349,7 @@ class Fin1DSimBTPS:
         elif end_dealing=="expel_bdt":
             return "e-n yappa dounimo DiagonalTensor motto jigen hoshii yo~" #TODO
         elif end_dealing=="expel_ut":
-            U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_right_labels_site(site-1), chi=chi, relative_threshold=relative_threshold)
+            U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_left_labels_bond(site), chi=chi, relative_threshold=relative_threshold)
             self.bdts[site] = S
             self.tensors[site] = V/self.bdts[site+1]
             return U
@@ -353,7 +363,8 @@ class Fin1DSimBTPS:
     def right_canonize_site(self, site, chi=None, relative_threshold=1e-14, end_dealing="normalize"):
         if site==0:
             self.right_canonize_left_end(chi=chi, relative_threshold=relative_threshold, end_dealing=end_dealing)
-        U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_right_labels_site(site-1), chi=chi, relative_threshold=relative_threshold)
+            return
+        U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_left_labels_bond(site), chi=chi, relative_threshold=relative_threshold)
         self.tensors[site-1] = self.tensors[site-1]*U
         self.bdts[site] = S
         self.tensors[site] = V/self.bdts[site+1]
@@ -386,13 +397,17 @@ class Fin1DSimBTPS:
         S = self.bdts[site]
         V = self.tensors[site]
         SV = S*V
-        return SV.is_left_unitary(self.get_right_labels_site(site-1)+self.get_phys_labels_site(site))
+        re = SV.is_left_unitary(self.get_right_labels_site(site-1)+self.get_phys_labels_site(site))
+        print(site,re)
+        return re
 
     def is_right_canonical_site(self, site):
         U = self.tensors[site]
         S = self.bdts[site+1]
         US = U*S
-        return US.is_right_unitary(self.get_phys_labels_site(site)+self.get_left_labels_site(site+1))
+        re = US.is_right_unitary(self.get_phys_labels_site(site)+self.get_left_labels_site(site+1))
+        print(site,re)
+        return re
 
     def is_left_canonical_upto(self, interval=None):
         if interval is None: interval = len(self)
@@ -432,6 +447,10 @@ class Fin1DSimBTPS:
 # )-- bdts[0] -- tensors[0] -- bdts[1] -- tensors[1] -- ... -- bdts[-1] -- tensors[-1] --(
 class Inf1DSimBTPS(Fin1DSimBTPS):
     def __init__(self, tensors, bdts, phys_labelss=None):
+        if type(tensors) != CyclicList:
+            tensors = CyclicList(tensors)
+        if type(bdts) != CyclicList:
+            bdts = CyclicList(bdts)
         Fin1DSimBTPS.__init__(self, tensors, bdts, phys_labelss=phys_labelss)
 
     def __repr__(self):
@@ -463,33 +482,126 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
         return re
 
 
+    def __len__(self):
+        return self.tensors.__len__()
+
+
     def get_left_labels_site(self, site):
-        site = site % len(self)
         return tnc.intersection_list(self.bdts[site].labels, self.tensors[site].labels)
 
     def get_right_labels_site(self, site):
-        site = site % len(self)
-        return tnc.intersection_list(self.tensors[site].labels, self.bdts[(site+1)%len(self)].labels)
+        return tnc.intersection_list(self.tensors[site].labels, self.bdts[site+1].labels)
+
+    def get_left_labels_bond(self, bondsite):
+        return self.get_right_labels_site(bondsite-1)
+
+    def get_right_labels_bond(self, bondsite):
+        return self.get_left_labels_site(bondsite)
+
+    def to_tensor(self):
+        re = 1
+        for i in range(len(self)):
+            x = self.bdts[i]
+            re *= x
+            x = self.tensors[i]
+            re *= x
+        re.remove_all_dummy_indices()
+        return re
+
 
     # get L s.t.
     # /-(0)-[0]-...-(len-1)-[len-1]-          /-
     # L      |                 |      ==  c * L
     # \-(0)-[0]-...-(len-1)-[len-1]-          \-
     def get_left_eigenvector(self): #TOCHUU
-        temp = Tensor(1)
-        in_bra_labels = self.get_right_labels_site(i)
-        in_ket_labels = aster_labels(in_bra_labels)
-        out_bra_labels = prime_labels(in_bra_labels)
-        out_ket_labels = aster_labels(out_bra_labels)
-        for i in range(len(self)):
-            temp *= self.bdts[i]
-            temp *= self.bdts[i].adjoint(self.get_left_labels_bond(i),self.get_right_labels_bond(i), style="aster")
-            if i==len(self)-1:
-                migiue = self.tensors[i].replace_labels(in_bra_labels, out_bra_labels, inplace=False)
-                migisita = migiue.adjoint(self.get_left_labels_site(i), out_bra_labels, style="aster")
-                temp *= migiue
-                temp *= migisita
-            else:
-                temp *= self.tensors[i]
-                temp *= self.tensors[i].adjoint(self.get_left_labels_site(i),self.get_right_labels_site(i), style="aster")
+        label_base = "TFL" #unique_label()
+        inbra = label_base + "_inbra"
+        inket = label_base + "_inket"
+        outbra = label_base + "_outbra"
+        outket = label_base + "_outket"
+        dim = self.get_right_dim_site(len(self)-1)
+        shape = self.get_right_shape_site(len(self)-1)
+        rawl = self.get_right_labels_site(len(self)-1)
 
+        TF_L = tni.identity_tensor(dim, shape, labels=[inket]+rawl)
+        TF_L *= tni.identity_tensor(dim, shape, labels=[inbra]+aster_labels(rawl))
+        for i in range(len(self)):
+            TF_L *= self.bdts[i]
+            TF_L *= self.bdts[i].adjoint(self.get_left_labels_bond(i),self.get_right_labels_bond(i), style="aster")
+            TF_L *= self.tensors[i]
+            TF_L *= self.tensors[i].adjoint(self.get_left_labels_site(i),self.get_right_labels_site(i), style="aster")
+        TF_L *= tni.identity_tensor(dim, shape, labels=[outket]+rawl)
+        TF_L *= tni.identity_tensor(dim, shape, labels=[outbra]+aster_labels(rawl))
+        #print("TF_L: ", TF_L.trace(inbra, inket))
+
+        w_L, V_L = tnd.tensor_eigsh(TF_L, [outket,outbra], [inket,inbra])
+        V_L.hermite(inket, inbra, assume_definite_and_if_negative_then_make_positive=True, inplace=True)
+        V_L.split_index(inket, shape, rawl)
+        V_L.split_index(inbra, shape, aster_labels(rawl))
+
+        return V_L
+
+    # get R s.t.
+    # -[0]-...-(len-1)-[len-1]-(0)-\          -\
+    #   |                 |        R  ==  c *  R
+    # -[0]-...-(len-1)-[len-1]-(0)-/          -/
+    def get_right_eigenvector(self): #TOCHUU
+        label_base = "TFR" #unique_label()
+        inbra = label_base + "_inbra"
+        inket = label_base + "_inket"
+        outbra = label_base + "_outbra"
+        outket = label_base + "_outket"
+        dim = self.get_left_dim_site(0)
+        shape = self.get_left_shape_site(0)
+        rawl = self.get_left_labels_site(0)
+
+        TF_R = tni.identity_tensor(dim, shape, labels=[inket]+rawl)
+        TF_R *= tni.identity_tensor(dim, shape, labels=[inbra]+aster_labels(rawl))
+        for i in range(len(self)-1, -1, -1):
+            TF_R *= self.bdts[i+1]
+            TF_R *= self.bdts[i+1].adjoint(self.get_left_labels_bond(i+1),self.get_right_labels_bond(i+1), style="aster")
+            TF_R *= self.tensors[i]
+            TF_R *= self.tensors[i].adjoint(self.get_left_labels_site(i),self.get_right_labels_site(i), style="aster")
+        TF_R *= tni.identity_tensor(dim, shape, labels=[outket]+rawl)
+        TF_R *= tni.identity_tensor(dim, shape, labels=[outbra]+aster_labels(rawl))
+
+        w_R, V_R = tnd.tensor_eigsh(TF_R, [outket,outbra], [inket,inbra])
+        V_R.hermite(inbra, inket, assume_definite_and_if_negative_then_make_positive=True, inplace=True)
+        V_R.split_index(inket, shape, rawl)
+        V_R.split_index(inbra, shape, aster_labels(rawl))
+        
+        return V_R
+
+    # ref: https://arxiv.org/abs/0711.3960
+    def canonize_end(self, chi=None, relative_threshold=1e-14):
+        dl_label = unique_label()
+        dr_label = unique_label()
+        V_L = self.get_left_eigenvector()
+        V_R = self.get_right_eigenvector()
+        #print("V_L:", V_L)
+        #print("V_R:", V_R)
+        Yh, d_L, Y = tnd.tensor_eigh(V_L, self.get_right_labels_site(len(self)-1), aster_labels(self.get_right_labels_site(len(self)-1)), eigh_labels=dl_label)
+        #print("sahen", tensou*Yh*d_L*Y)
+        #print("uhen", Yh*d_L*Y)
+        Y.unaster_labels(aster_labels(self.get_right_labels_site(len(self)-1)))
+        #print(Yh*Y)
+        X, d_R, Xh = tnd.tensor_eigh(V_R, self.get_left_labels_site(0), aster_labels(self.get_left_labels_site(0)), eigh_labels=dr_label)
+        Xh.unaster_labels(aster_labels(self.get_left_labels_site(0)))
+        #print(Xh*X)
+        l0 = self.bdts[0]
+        G = d_L.sqrt() * Yh * l0 * X * d_R.sqrt()
+        U, S, V = tnd.truncated_svd(G, dl_label, dr_label, chi=chi, relative_threshold=relative_threshold)
+        M = Y * d_L.inv().sqrt() * U
+        N = V * d_R.inv().sqrt() * Xh
+        # l0 == M*S*N
+        self.bdts[0] = S
+        self.tensors[0] = N * self.tensors[0]
+        self.tensors[len(self)-1] = self.tensors[len(self)-1] * M
+
+    left_canonize_site = Fin1DSimBTPS.left_canonize_not_end_site
+
+    def canonize(self, chi=None, relative_threshold=1e-14):
+        self.canonize_end(chi=chi, relative_threshold=relative_threshold)
+        self.left_canonize_site(0, chi=chi, relative_threshold=relative_threshold)
+        self.left_canonize_site(1, chi=chi, relative_threshold=relative_threshold)
+        self.left_canonize_site(2, chi=chi, relative_threshold=relative_threshold)

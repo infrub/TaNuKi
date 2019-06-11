@@ -2,7 +2,6 @@ from tanuki.tnxp import xp as xp
 from tanuki.utils import *
 import copy as copyModule
 import warnings
-from numpy import prod as soujou
 import textwrap
 from collections import OrderedDict
 import uuid
@@ -73,8 +72,15 @@ class TensorMixin:
                 self.labels[i] = newLabels[tempLabels.index(label)]
 
     @outofplacable_tensorMixin_method
-    def aster_labels(self, oldLabels):
+    def aster_labels(self, oldLabels=None):
+        if oldLabels is None: oldLabels=self.labels
         newLabels = aster_labels(oldLabels)
+        self.replace_labels(oldLabels, newLabels)
+
+    @outofplacable_tensorMixin_method
+    def unaster_labels(self, oldLabels=None):
+        if oldLabels is None: oldLabels=self.labels
+        newLabels = unaster_labels(oldLabels)
         self.replace_labels(oldLabels, newLabels)
 
     @outofplacable_tensorMixin_method
@@ -127,8 +133,12 @@ class TensorMixin:
     adj = adjoint
 
     @inplacable_tensorMixin_method
-    def hermite(self, row_labels, column_labels=None):
-        return (self + self.adjoint(row_labels,column_labels))/2
+    def hermite(self, row_labels, column_labels=None, assume_definite_and_if_negative_then_make_positive=False):
+        re = (self + self.adjoint(row_labels,column_labels))/2
+        if assume_definite_and_if_negative_then_make_positive:
+            if xp.real(re.data.item(0)) < 0:
+                re = re * (-1)
+        return re
 
     @inplacable_tensorMixin_method
     def antihermite(self, row_labels, column_labels=None):
@@ -429,8 +439,8 @@ class Tensor(TensorMixin):
     #methods for trace, contract
     @inplacable_tensorMixin_method
     def contract_internal(self, label1, label2):
-        index1 = indexs_duplable_front(self.labels, label1)
-        index2 = indexs_duplable_back(self.labels, label2)
+        index1 = indexs_duplable_front(self.labels, [label1])[0]
+        index2 = indexs_duplable_back(self.labels, [label2])[0]
         index1, index2 = min(index1,index2), max(index1,index2)
 
         newData = xp.trace(self.data, axis1=index1, axis2=index2)
@@ -520,10 +530,28 @@ class Tensor(TensorMixin):
         temp = self.data - xp.eye(*self.data.shape)
         return xp.linalg.norm(temp) <= absolute_threshold
 
+    def is_prop_identity(self, absolute_threshold=1e-10):
+        if not self.is_diagonal(absolute_threshold):
+            return False
+        d = xp.diag(self.data)
+        re = xp.real(d)
+        maxre = xp.amax(re)
+        minre = xp.amin(re)
+        if abs(maxre-minre) > absolute_threshold:
+            return False
+        im = xp.imag(d)
+        maxim = xp.amax(im)
+        minim = xp.amin(im)
+        if abs(maxim-minim) > absolute_threshold:
+            return False
+        return True
+
+
     def is_right_unitary(self, column_labels, absolute_threshold=1e-10):
         column_labels, row_labels = normalize_and_complement_argument_labels(self.labels, column_labels)
         M = self.to_matrix(row_labels, column_labels)
         temp = xp.dot(M, M.conj().transpose())
+        print(temp)
         temp = temp - xp.eye(*temp.shape)
         return xp.linalg.norm(temp) <= absolute_threshold
 
@@ -531,6 +559,7 @@ class Tensor(TensorMixin):
         row_labels, column_labels = normalize_and_complement_argument_labels(self.labels, row_labels)
         M = self.to_matrix(row_labels, column_labels)
         temp = xp.dot(M.conj().transpose(), M)
+        print(temp)
         temp = temp - xp.eye(*temp.shape)
         return xp.linalg.norm(temp) <= absolute_threshold
 
@@ -875,8 +904,8 @@ def tensor_to_matrix(tensor, row_labels, column_labels=None):
     row_labels, column_labels = normalize_and_complement_argument_labels(tensor.labels, row_labels, column_labels)
 
     t = tensor.move_all_indices(row_labels+column_labels, inplace=False)
-    total_row_dim = soujou(t.shape[:len(row_labels)], dtype=int)
-    total_column_dim = soujou(t.shape[len(row_labels):], dtype=int)
+    total_row_dim = soujou(t.shape[:len(row_labels)])
+    total_column_dim = soujou(t.shape[len(row_labels):])
 
     return xp.reshape(t.data, (total_row_dim, total_column_dim))
 

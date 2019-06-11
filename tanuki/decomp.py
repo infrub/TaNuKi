@@ -114,7 +114,7 @@ def normalize_argument_lq_labels(lq_labels):
     if not isinstance(lq_labels, list):
         lq_labels = [lq_labels]
     if len(lq_labels)==1:
-        lq_labels = [lq_labels[0]+"_lq", lq_labels[0]+"_lq"]
+        lq_labels = [lq_labels[0], lq_labels[0]]
     if len(lq_labels)!=2:
         raise ValueError(f"lq_labels must be a None or str or 1,2 length list. lq_labels=={lq_labels}")
     return lq_labels
@@ -137,10 +137,33 @@ def normalize_argument_eigh_labels(eigh_labels):
     if not isinstance(eigh_labels, list):
         eigh_labels = [eigh_labels]
     if len(eigh_labels)==1:
-        eigh_labels = [eigh_labels[0]+"_eigh", eigh_labels[0]+"_eigh"]
+        eigh_labels = [eigh_labels[0], eigh_labels[0]]
     if len(eigh_labels)!=2:
         raise ValueError(f"eigh_labels must be a None or str or 1,2 length list. eigh_labels=={eigh_labels}")
     return eigh_labels
 
-def tensor_eigh(A, row_labels, column_labels=None)
+# A == V*W*Vh
+def tensor_eigh(A, row_labels, column_labels=None, eigh_labels=None):
     row_labels, column_labels = normalize_and_complement_argument_labels(A.labels, row_labels, column_labels)
+    eigh_labels = normalize_argument_eigh_labels(eigh_labels)
+    row_shape = A.dims_of_labels_front(row_labels)
+    column_shape = A.dims_of_labels_back(column_labels)
+    dim = soujou(row_shape)
+    a = A.to_matrix(row_labels, column_labels)
+    w,v = xp.linalg.eigh(a)
+    V = matrix_to_tensor(v, row_shape+(dim,), row_labels+[eigh_labels[0]])
+    W = diagonalMatrix_to_diagonalTensor(w, eigh_labels)
+    Vh = matrix_to_tensor(xp.transpose(xp.conj(v)), (dim,)+column_shape, [eigh_labels[1]]+column_labels)
+    return V,W,Vh
+
+# A*V == w*V
+def tensor_eigsh(A, row_labels, column_labels=None):
+    row_labels, column_labels = normalize_and_complement_argument_labels(A.labels, row_labels, column_labels)
+    row_shape = A.dims_of_labels_front(row_labels)
+    column_shape = A.dims_of_labels_back(column_labels)
+    a = A.to_matrix(row_labels, column_labels)
+    w,v = xp.sparse.linalg.eigsh(a, k=1)
+    w = w[0]
+    v = v[:,0]
+    V = vector_to_tensor(v, column_shape, column_labels)
+    return w,V

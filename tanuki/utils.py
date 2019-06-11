@@ -1,12 +1,19 @@
 from collections import Counter
 import random
 
+
+def soujou(xs):
+    re = 1
+    for x in xs:
+        re *= x
+    return re
+
 #utils
 def eq_list(xs, ys):
     xc = Counter(xs)
     yc = Counter(ys)
-    zc = xc.subtract(yc)
-    zs = list(zc.elements())
+    xc.subtract(yc)
+    zs = list(xc.elements())
     return len(zs)==0
 
 def diff_list(univ, see):
@@ -74,6 +81,15 @@ def aster_label(label):
     else:
         return label+"*"
 
+def unaster_label(label):
+    if type(label)==tuple:
+        return tuple(unaster_label(x) for x in label)
+    else:
+        if label[-1] == "*":
+            return label[:-1]
+        else:
+            return label
+
 def prime_label(label):
     if type(label)==tuple:
         return tuple(prime_label(x) for x in label)
@@ -83,5 +99,17 @@ def prime_label(label):
 def aster_labels(labels):
     return [aster_label(label) for label in labels]
 
+def unaster_labels(labels):
+    return [unaster_label(label) for label in labels]
+
 def prime_labels(labels):
     return [prime_label(label) for label in labels]
+
+
+class CyclicList(list):
+    def __init__(self, *args, **kwargs):
+        list.__init__(self, *args, **kwargs)
+    def __getitem__(self, i):
+        return list.__getitem__(self, i%len(self))
+    def __setitem__(self, i, v):
+        return list.__setitem__(self, i%len(self), v)
