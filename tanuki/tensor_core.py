@@ -519,10 +519,7 @@ class Tensor(TensorMixin):
         return self.ndim==0
 
     def is_diagonal(self, absolute_threshold=1e-10):
-        if self.ndim != 2:
-            return False
-        temp = self.data[xp.eye(*self.data.shape)==0]
-        return xp.linalg.norm(temp) <= absolute_threshold
+        return is_diagonal_matrix(self.data, absolute_threshold=absolute_threshold)
 
     def is_identity(self, absolute_threshold=1e-10):
         if self.ndim != 2:
@@ -531,27 +528,12 @@ class Tensor(TensorMixin):
         return xp.linalg.norm(temp) <= absolute_threshold
 
     def is_prop_identity(self, absolute_threshold=1e-10):
-        if not self.is_diagonal(absolute_threshold):
-            return False
-        d = xp.diag(self.data)
-        re = xp.real(d)
-        maxre = xp.amax(re)
-        minre = xp.amin(re)
-        if abs(maxre-minre) > absolute_threshold:
-            return False
-        im = xp.imag(d)
-        maxim = xp.amax(im)
-        minim = xp.amin(im)
-        if abs(maxim-minim) > absolute_threshold:
-            return False
-        return True
-
+        return is_prop_identity_matrix(self.data, absolute_threshold=absolute_threshold)
 
     def is_right_unitary(self, column_labels, absolute_threshold=1e-10):
         column_labels, row_labels = normalize_and_complement_argument_labels(self.labels, column_labels)
         M = self.to_matrix(row_labels, column_labels)
         temp = xp.dot(M, M.conj().transpose())
-        print(temp)
         temp = temp - xp.eye(*temp.shape)
         return xp.linalg.norm(temp) <= absolute_threshold
 
@@ -559,9 +541,20 @@ class Tensor(TensorMixin):
         row_labels, column_labels = normalize_and_complement_argument_labels(self.labels, row_labels)
         M = self.to_matrix(row_labels, column_labels)
         temp = xp.dot(M.conj().transpose(), M)
-        print(temp)
         temp = temp - xp.eye(*temp.shape)
         return xp.linalg.norm(temp) <= absolute_threshold
+
+    def is_right_prop_unitary(self, column_labels, absolute_threshold=1e-10):
+        column_labels, row_labels = normalize_and_complement_argument_labels(self.labels, column_labels)
+        M = self.to_matrix(row_labels, column_labels)
+        temp = xp.dot(M, M.conj().transpose())
+        return is_prop_identity_matrix(temp, absolute_threshold=absolute_threshold)
+
+    def is_left_prop_unitary(self, row_labels, absolute_threshold=1e-10):
+        row_labels, column_labels = normalize_and_complement_argument_labels(self.labels, row_labels)
+        M = self.to_matrix(row_labels, column_labels)
+        temp = xp.dot(M.conj().transpose(), M)
+        return is_prop_identity_matrix(temp, absolute_threshold=absolute_threshold)
 
     def is_unitary(self, row_labels, column_labels=None, absolute_threshold=1e-10):
         row_labels, column_labels = normalize_and_complement_argument_labels(self.labels, row_labels, column_labels)
@@ -937,3 +930,32 @@ def diagonalMatrix_to_diagonalTensor(diagonalMatrix, labels):
 
 def diagonalTensor_to_diagonalMatrix(diagonalTensor):
     return diagonalTensor.data
+
+
+
+# iroiro
+
+def is_diagonal_matrix(matrix, absolute_threshold=1e-10):
+    if matrix.ndim != 2:
+        return False
+    temp = matrix[xp.eye(*matrix.shape)==0]
+    return xp.linalg.norm(temp) <= absolute_threshold
+
+def is_prop_identity_matrix(matrix, absolute_threshold=1e-10):
+    if not is_diagonal_matrix(matrix, absolute_threshold=absolute_threshold):
+        print("not diagonal!")
+        return False
+    d = xp.diag(matrix)
+    re = xp.real(d)
+    maxre = xp.amax(re)
+    minre = xp.amin(re)
+    if abs(maxre-minre) > absolute_threshold:
+        print("re is bad!")
+        return False
+    im = xp.imag(d)
+    maxim = xp.amax(im)
+    minim = xp.amin(im)
+    if abs(maxim-minim) > absolute_threshold:
+        print("im is bad!")
+        return False
+    return True

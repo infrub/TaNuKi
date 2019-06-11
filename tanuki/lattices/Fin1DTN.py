@@ -397,16 +397,16 @@ class Fin1DSimBTPS:
         S = self.bdts[site]
         V = self.tensors[site]
         SV = S*V
-        re = SV.is_left_unitary(self.get_right_labels_site(site-1)+self.get_phys_labels_site(site))
-        print(site,re)
+        re = SV.is_left_prop_unitary(self.get_right_labels_site(site-1)+self.get_phys_labels_site(site))
+        #print(site,re)
         return re
 
     def is_right_canonical_site(self, site):
         U = self.tensors[site]
         S = self.bdts[site+1]
         US = U*S
-        re = US.is_right_unitary(self.get_phys_labels_site(site)+self.get_left_labels_site(site+1))
-        print(site,re)
+        re = US.is_right_prop_unitary(self.get_phys_labels_site(site)+self.get_left_labels_site(site+1))
+        #print(site,re)
         return re
 
     def is_left_canonical_upto(self, interval=None):
@@ -602,6 +602,16 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
 
     def canonize(self, chi=None, relative_threshold=1e-14):
         self.canonize_end(chi=chi, relative_threshold=relative_threshold)
-        self.left_canonize_site(0, chi=chi, relative_threshold=relative_threshold)
-        self.left_canonize_site(1, chi=chi, relative_threshold=relative_threshold)
-        self.left_canonize_site(2, chi=chi, relative_threshold=relative_threshold)
+        for i in range(len(self)-1):
+            self.left_canonize_site(i, chi=chi, relative_threshold=relative_threshold)
+        for i in range(len(self)-1,0,-1):
+            self.right_canonize_site(i, chi=chi, relative_threshold=relative_threshold)
+
+    def is_canonical(self):
+        for i in range(len(self)):
+            if not self.is_left_canonical_site(i):
+                return False
+        for i in range(len(self)-1,-1,-1):
+            if not self.is_right_canonical_site(i):
+                return False
+        return True
