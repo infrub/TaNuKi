@@ -50,7 +50,7 @@ class TensorMixin:
         return self._labels
 
     def set_labels(self, labels):
-        if len(labels) != len(self.shape):
+        if len(labels) != self.ndim:
             raise ValueError(f"labels do not match shape of data. labels=={labels}, shape=={self.shape}")
         #if len(labels) != len(set(labels)):
         #    warnings.warn(f"labels are not unique. labels=={labels}")
@@ -60,8 +60,13 @@ class TensorMixin:
 
 
 
-    def index_of_label(self, label):
+    def index_of_label_front(self, label):
         return self.labels.index(label)
+
+    def index_of_label_back(self, label):
+        return self.ndim - 1 - list(reversed(self.labels)).index(label)
+
+    index_of_label = index_of_label_front
 
     def indices_of_labels_front(self, labels): #list[int] #TOIMPR
         return indexs_duplable_front(self.labels, labels)
@@ -79,13 +84,23 @@ class TensorMixin:
         return [self.labels[index] for index in indices]
 
 
-    def normarg_index(self, indexOrLabel):
+    def normarg_index_front(self, indexOrLabel):
         if type(indexOrLabel)==int:
             return indexOrLabel
         elif type(indexOrLabel)==tuple or type(indexOrLabel)==str:
-            return self.index_of_label(indexOrLabel)
+            return self.index_of_label_front(indexOrLabel)
         else:
             raise TypeError
+
+    def normarg_index_back(self, indexOrLabel):
+        if type(indexOrLabel)==int:
+            return indexOrLabel
+        elif type(indexOrLabel)==tuple or type(indexOrLabel)==str:
+            return self.index_of_label_back(indexOrLabel)
+        else:
+            raise TypeError
+
+    normarg_index = normarg_index_front
 
     def normarg_indices_front(self, indicesOrLabels):
         if type(indicesOrLabels)!=list:
@@ -488,10 +503,10 @@ class Tensor(TensorMixin):
     conj = conjugate
 
     @inplacable_tensorMixin_method
-    def pad_indices(self, labels, npads):
-        indices = self.indices_of_labels(labels)
+    def pad_indices(self, indices, npads):
+        indices = self.normarg_indices(indices)
         wholeNpad = [(0,0)] * self.ndim
-        for index,npad in zip(indices, npads):
+        for index, npad in zip(indices, npads):
             wholeNpad[index] = npad
         newData = xp.pad(self.data, wholeNpad, mode="constant", constant_values=0)
         return Tensor(newData, labels=self.labels)
@@ -508,9 +523,9 @@ class Tensor(TensorMixin):
 
     #methods for trace, contract
     @inplacable_tensorMixin_method
-    def contract_internal(self, label1, label2):
-        index1 = indexs_duplable_front(self.labels, [label1])[0]
-        index2 = indexs_duplable_back(self.labels, [label2])[0]
+    def contract_internal(self, index1, index2):
+        index1 = self.normarg_index_front(index1)
+        index2 = self.normarg_index_back(index2)
         index1, index2 = min(index1,index2), max(index1,index2)
 
         newData = xp.trace(self.data, axis1=index1, axis2=index2)
@@ -527,11 +542,11 @@ class Tensor(TensorMixin):
         return temp
 
     @inplacable_tensorMixin_method
-    def trace(self, label1=None, label2=None):
-        if label1 is None:
+    def trace(self, index1=None, index2=None):
+        if index1 is None:
             return self.contract_common_internal()
         else:
-            return self.contract_internal(label1, label2)
+            return self.contract_internal(index1, index2)
 
     tr = trace
 
