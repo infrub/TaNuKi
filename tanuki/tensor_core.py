@@ -63,13 +63,20 @@ class TensorMixin:
     def index_of_label(self, label):
         return self.labels.index(label)
 
-    def indices_of_labels_front(self, labels): #list[int] #TOBEDE
+    def indices_of_labels_front(self, labels): #list[int] #TOIMPR
         return indexs_duplable_front(self.labels, labels)
 
-    def indices_of_labels_back(self, labels): #list[int] #TOBEDE
+    def indices_of_labels_back(self, labels): #list[int] #TOIMPR
         return indexs_duplable_back(self.labels, labels)
 
     indices_of_labels = indices_of_labels_front
+
+
+    def label_of_index(self, index):
+        return self.labels[index]
+
+    def labels_of_indices(self, indices):
+        return [self.labels[index] for index in indices]
 
 
     def normarg_index(self, indexOrLabel):
@@ -124,46 +131,38 @@ class TensorMixin:
 
     def dims_front(self, indices):
         indices = self.normarg_indices_front(indices)
-        return tuple(self.dim(index) for index in indices)
+        return tuple(self.shape[index] for index in indices)
 
     def dims_back(self, indices):
         indices = self.normarg_indices_back(indices)
-        return tuple(self.dim(index) for index in indices)
+        return tuple(self.shape[index] for index in indices)
 
     dims = dims_front
 
 
 
     @outofplacable_tensorMixin_method
-    def replace_labels(self, oldLabels, newLabels):
-        #if tensor has labels with same name, all labels with the name is replaced. 
-        oldLabels = normalize_argument_labels(oldLabels)
-        tempLabelBase = unique_label()
-        tempLabels = ["temp_replace_labels_"+tempLabelBase+"_"+str(i) for i in range(len(oldLabels))]
-        newLabels = normalize_argument_labels(newLabels)
-        for i, label in enumerate(self.labels):
-            if label in oldLabels:
-                self.labels[i] = tempLabels[oldLabels.index(label)]
-        for i, label in enumerate(self.labels):
-            if label in tempLabels:
-                self.labels[i] = newLabels[tempLabels.index(label)]
+    def replace_labels(self, oldIndices, newLabels):
+        oldIndices = self.normarg_indices(oldIndices)
+        newLabels = normarg_labels(newLabels)
+        for oldIndex, newLabel in zip(oldIndices, newLabels):
+            self.labels[oldIndex] = newLabel
 
     @outofplacable_tensorMixin_method
-    def aster_labels(self, oldLabels=None):
-        if oldLabels is None: oldLabels=self.labels
+    def aster_labels(self, oldIndices=None):
+        if oldIndices is None: oldIndices=self.labels
+        oldIndices = self.normarg_indices_front(oldIndices)
+        oldLabels = self.labels_of_indices(oldIndices)
         newLabels = aster_labels(oldLabels)
-        self.replace_labels(oldLabels, newLabels)
+        self.replace_labels(oldIndices, newLabels)
 
     @outofplacable_tensorMixin_method
-    def unaster_labels(self, oldLabels=None):
-        if oldLabels is None: oldLabels=self.labels
+    def unaster_labels(self, oldIndices=None):
+        if oldIndices is None: oldIndices=self.labels
+        oldIndices = self.normarg_indices_front(oldIndices)
+        oldLabels = self.labels_of_indices(oldIndices)
         newLabels = unaster_labels(oldLabels)
-        self.replace_labels(oldLabels, newLabels)
-
-    @outofplacable_tensorMixin_method
-    def prime_labels(self, oldLabels):
-        newLabels = prime_labels(oldLabels)
-        self.replace_labels(oldLabels, newLabels)
+        self.replace_labels(oldIndices, newLabels)
 
     def assign_labels(self, base_label):
         self.labels = [base_label+"_"+str(i) for i in range(self.ndim)]
@@ -289,7 +288,7 @@ class Tensor(TensorMixin):
 
     @outofplacable_tensorMixin_method
     def move_indices_to_top(self, labelsMove):
-        labelsMove = normalize_argument_labels(labelsMove)
+        labelsMove = normarg_labels(labelsMove)
 
         oldIndicesMoveFrom = self.indices_of_labels(labelsMove)
         newIndicesMoveTo = list(range(len(oldIndicesMoveFrom)))
@@ -305,7 +304,7 @@ class Tensor(TensorMixin):
 
     @outofplacable_tensorMixin_method
     def move_indices_to_bottom(self, labelsMove):
-        labelsMove = normalize_argument_labels(labelsMove)
+        labelsMove = normarg_labels(labelsMove)
 
         oldIndicesMoveFrom = self.indices_of_labels(labelsMove)
         newIndicesMoveTo = list(range(self.ndim-len(oldIndicesMoveFrom), self.ndim))
@@ -321,7 +320,7 @@ class Tensor(TensorMixin):
 
     @outofplacable_tensorMixin_method
     def move_indices_to_position(self, labelsMove, position):
-        labelsMove = normalize_argument_labels(labelsMove)
+        labelsMove = normarg_labels(labelsMove)
 
         oldIndicesMoveFrom = self.indices_of_labels(labelsMove)
         newIndicesMoveTo = list(range(position, position+len(labelsMove)))
@@ -341,7 +340,7 @@ class Tensor(TensorMixin):
 
     @outofplacable_tensorMixin_method
     def move_all_indices(self, newLabels):
-        newLabels = normalize_argument_labels(newLabels)
+        newLabels = normarg_labels(newLabels)
         oldLabels = self.labels
 
         if not eq_list(newLabels, oldLabels):
@@ -359,7 +358,7 @@ class Tensor(TensorMixin):
     #["a","b","c","d"] <=split / fuse=> ["a",("b","c"),"d"]
     @outofplacable_tensorMixin_method
     def fuse_indices(self, labelsFuse, newLabelFuse=None):
-        labelsFuse = normalize_argument_labels(labelsFuse)
+        labelsFuse = normarg_labels(labelsFuse)
         if newLabelFuse is None:
             newLabelFuse = tuple(labelsFuse)
 
@@ -390,7 +389,7 @@ class Tensor(TensorMixin):
             if len(newLabelsSplit) != len(newShapeSplit):
                 raise ValueError(f"newLabelsSplit is not defined and could not be assumed. labelSplit=={labelSplit}, newShapeSplit=={newShapeSplit}")
         else:
-            newLabelsSplit = normalize_argument_labels(newLabelsSplit)
+            newLabelsSplit = normarg_labels(newLabelsSplit)
 
         indexSplit = self.index_of_label(labelSplit)
         newShape = self.shape[:indexSplit] + newShapeSplit + self.shape[indexSplit+1:]
@@ -711,23 +710,23 @@ class DiagonalTensor(TensorMixin):
 
     @outofplacable_tensorMixin_method
     def move_indices_to_top(self, labelsMove):
-        labelsMove = normalize_argument_labels(labelsMove)
+        labelsMove = normarg_labels(labelsMove)
         self.labels = labelsMove + diff_list(self.labels, labelsMove)
 
     @outofplacable_tensorMixin_method
     def move_indices_to_bottom(self, labelsMove):
-        labelsMove = normalize_argument_labels(labelsMove)
+        labelsMove = normarg_labels(labelsMove)
         self.labels = diff_list(self.labels, labelsMove) + labelsMove
 
     @outofplacable_tensorMixin_method
     def move_indices_to_position(self, labelsMove, position):
-        labelsMove = normalize_argument_labels(labelsMove)
+        labelsMove = normarg_labels(labelsMove)
         labelsNotMove = diff_list(self.labels, labelsMove)
         self.labels = labelsNotMove[:position] + labelsMove + labelsNotMove[position:]
 
     @outofplacable_tensorMixin_method
     def move_all_indices(self, newLabels):
-        newLabels = normalize_argument_labels(newLabels)
+        newLabels = normarg_labels(newLabels)
         oldLabels = self.labels
         if sorted(newLabels) != sorted(oldLabels):
             raise ValueError(f"newLabels do not match oldLabels. oldLabels=={oldLabels}, newLabels=={newLabels}")
@@ -878,8 +877,8 @@ class ToContract:
 
 def contract(aTensor, bTensor, aLabelsContract, bLabelsContract):
     #Be careful to cLabels must be unique
-    aLabelsContract = normalize_argument_labels(aLabelsContract)
-    bLabelsContract = normalize_argument_labels(bLabelsContract)
+    aLabelsContract = normarg_labels(aLabelsContract)
+    bLabelsContract = normarg_labels(bLabelsContract)
 
     aIndicesContract = aTensor.indices_of_labels_back(aLabelsContract)
     bIndicesContract = bTensor.indices_of_labels_front(bLabelsContract)

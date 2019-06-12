@@ -58,18 +58,18 @@ def indexs_duplable_back(univ, see):
 
 #label covering methods
 #label :== string | tuple[label]
-def normalize_argument_labels(labels):
+def normarg_labels(labels):
     if isinstance(labels, list):
         return labels
     else:
         return [labels]
 
 def normalize_and_complement_argument_labels(all_labels, row_labels, column_labels=None):
-    row_labels = normalize_argument_labels(row_labels)
+    row_labels = normarg_labels(row_labels)
     if column_labels is None:
         column_labels = diff_list(all_labels, row_labels)
     else:
-        column_labels = normalize_argument_labels(column_labels)
+        column_labels = normarg_labels(column_labels)
     return row_labels, column_labels
 
 def unique_label():
