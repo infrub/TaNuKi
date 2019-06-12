@@ -44,6 +44,7 @@ class TensorMixin:
         return self.copy(shallow=False)
 
 
+
     #methods for labels
     def get_labels(self):
         return self._labels
@@ -56,6 +57,82 @@ class TensorMixin:
         self._labels = list(labels)
 
     labels = property(get_labels, set_labels)
+
+
+
+    def index_of_label(self, label):
+        return self.labels.index(label)
+
+    def indices_of_labels_front(self, labels): #list[int] #TOBEDE
+        return indexs_duplable_front(self.labels, labels)
+
+    def indices_of_labels_back(self, labels): #list[int] #TOBEDE
+        return indexs_duplable_back(self.labels, labels)
+
+    indices_of_labels = indices_of_labels_front
+
+
+    def normarg_index(self, indexOrLabel):
+        if type(indexOrLabel)==int:
+            return indexOrLabel
+        elif type(indexOrLabel)==tuple or type(indexOrLabel)==str:
+            return self.index_of_label(indexOrLabel)
+        else:
+            raise TypeError
+
+    def normarg_indices_front(self, indicesOrLabels):
+        if type(indicesOrLabels)!=list:
+            indicesOrLabels = [indicesOrLabels]
+        temp = list(self.labels)
+        res = []
+        for indexOrLabel in indicesOrLabels:
+            if type(indexOrLabel)==int:
+                index = indexOrLabel
+            elif type(indexOrLabel)==tuple or type(indexOrLabel)==str:
+                index = temp.index(indexOrLabel)
+            else:
+                raise TypeError(f"indicesOrLabels=={indicesOrLabels}, type(indicesOrLabels)=={type(indicesOrLabels)}")
+            res.append(index)
+            temp[index] = None
+        return res
+
+    def normarg_indices_back(self, indicesOrLabels):
+        if type(indicesOrLabels)!=list:
+            indicesOrLabels = [indicesOrLabels]
+        indicesOrLabels = reversed(indicesOrLabels)
+        temp = list(reversed(self.labels))
+        res = []
+        for indexOrLabel in indicesOrLabels:
+            if type(indexOrLabel)==int:
+                index = indexOrLabel
+                revindex = len(temp)-1-index
+            elif type(indexOrLabel)==tuple or type(indexOrLabel)==str:
+                revindex = temp.index(indexOrLabel)
+                index = len(temp)-1-revindex
+            else:
+                raise TypeError(f"indicesOrLabels=={indicesOrLabels}, type(indicesOrLabels)=={type(indicesOrLabels)}")
+            res.append(index)
+            temp[revindex] = None
+        return list(reversed(res))
+
+    normarg_indices = normarg_indices_front
+
+
+    def dim(self, index):
+        index = self.normarg_index(index)
+        return self.shape[index]
+
+    def dims_front(self, indices):
+        indices = self.normarg_indices_front(indices)
+        return tuple(self.dim(index) for index in indices)
+
+    def dims_back(self, indices):
+        indices = self.normarg_indices_back(indices)
+        return tuple(self.dim(index) for index in indices)
+
+    dims = dims_front
+
+
 
     @outofplacable_tensorMixin_method
     def replace_labels(self, oldLabels, newLabels):
@@ -91,30 +168,6 @@ class TensorMixin:
     def assign_labels(self, base_label):
         self.labels = [base_label+"_"+str(i) for i in range(self.ndim)]
 
-
-    def index_of_label(self, label):
-        return self.labels.index(label)
-
-    def dim_of_index(self, index):
-        return self.shape[index]
-
-    def dim_of_label(self, label):
-        return self.dim_of_index(self.index_of_label(label))
-
-    def indices_of_labels_front(self,labels): #list[int]
-        return indexs_duplable_front(self.labels, labels)
-    def indices_of_labels_back(self,labels): #list[int]
-        return indexs_duplable_back(self.labels, labels)
-    indices_of_labels = indices_of_labels_front
-
-    def dims_of_indices(self,indices): #tuple[int]
-        return tuple(self.dim_of_index(index) for index in indices)
-
-    def dims_of_labels_front(self,labels): #tuple[int]
-        return self.dims_of_indices(self.indices_of_labels_front(labels))
-    def dims_of_labels_back(self,labels): #tuple[int]
-        return self.dims_of_indices(self.indices_of_labels_back(labels))
-    dims_of_labels = dims_of_labels_front
 
     #methods for basic operations
     @inplacable_tensorMixin_method
@@ -558,7 +611,7 @@ class Tensor(TensorMixin):
 
     def is_unitary(self, row_labels, column_labels=None, absolute_threshold=1e-10):
         row_labels, column_labels = normalize_and_complement_argument_labels(self.labels, row_labels, column_labels)
-        if soujou(self.dims_of_labels_front(row_labels)) != soujou(self.dims_of_labels_back(column_labels)):
+        if soujou(self.dims_front(row_labels)) != soujou(self.dims_back(column_labels)):  #TODO6
             return False
         M = self.to_matrix(row_labels, column_labels)
         Mh = M.conj().transpose()
@@ -616,12 +669,12 @@ class DiagonalTensor(TensorMixin):
 
     #properties
     @property
-    def dim(self):
+    def dimdayo(self):
         return self.data.shape[0]
     
     @property
     def shape(self): #tuple
-        return (self.dim, self.dim)
+        return (self.dimdayo, self.dimdayo)
     
     @property
     def ndim(self):
@@ -831,8 +884,8 @@ def contract(aTensor, bTensor, aLabelsContract, bLabelsContract):
     aIndicesContract = aTensor.indices_of_labels_back(aLabelsContract)
     bIndicesContract = bTensor.indices_of_labels_front(bLabelsContract)
 
-    aDimsContract = aTensor.dims_of_indices(aIndicesContract)
-    bDimsContract = bTensor.dims_of_indices(bIndicesContract)
+    aDimsContract = aTensor.dims(aIndicesContract)
+    bDimsContract = bTensor.dims(bIndicesContract)
 
     if aDimsContract != bDimsContract:
         raise ValueError(f"Dimss in contraction do not match. aLabelsContract=={aLabelsContract}, bLabelsContract=={bLabelsContract}, aDimsContract=={aDimsContract}, bDimsContract=={bDimsContract}")

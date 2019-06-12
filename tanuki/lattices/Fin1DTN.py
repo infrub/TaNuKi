@@ -102,10 +102,10 @@ class Fin1DSimTPS:
 
 
     def get_left_dim_site(self, site):
-        return soujou(self.tensors[site].dims_of_labels(self.get_left_labels_site(site)))
+        return soujou(self.tensors[site].dims(self.get_left_labels_site(site)))
 
     def get_right_dim_site(self, site):
-        return soujou(self.tensors[site].dims_of_labels(self.get_right_labels_site(site)))
+        return soujou(self.tensors[site].dims(self.get_right_labels_site(site)))
 
 
     # (site=1):
@@ -257,16 +257,16 @@ class Fin1DSimBTPS:
 
 
     def get_left_shape_site(self, site):
-        return self.tensors[site].dims_of_labels(self.get_left_labels_site(site))
+        return self.tensors[site].dims(self.get_left_labels_site(site))
 
     def get_right_shape_site(self, site):
-        return self.tensors[site].dims_of_labels(self.get_right_labels_site(site))
+        return self.tensors[site].dims(self.get_right_labels_site(site))
 
     def get_left_dim_site(self, site):
-        return soujou(self.tensors[site].dims_of_labels(self.get_left_labels_site(site)))
+        return soujou(self.tensors[site].dims(self.get_left_labels_site(site)))
 
     def get_right_dim_site(self, site):
-        return soujou(self.tensors[site].dims_of_labels(self.get_right_labels_site(site)))
+        return soujou(self.tensors[site].dims(self.get_right_labels_site(site)))
 
 
     def left_canonize_right_end(self, chi=None, relative_threshold=1e-14, end_dealing="normalize"):

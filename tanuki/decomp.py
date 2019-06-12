@@ -24,8 +24,8 @@ def tensor_svd(A, row_labels, column_labels=None, svd_labels=None):
 
     svd_labels = normalize_argument_svd_labels(svd_labels)
 
-    row_dims = A.dims_of_labels_front(row_labels)
-    column_dims = A.dims_of_labels_back(column_labels)
+    row_dims = A.dims_front(row_labels)
+    column_dims = A.dims_back(column_labels)
 
     a = A.to_matrix(row_labels, column_labels)
 
@@ -93,8 +93,8 @@ def tensor_qr(A, row_labels, column_labels=None, qr_labels=None, mode="economic"
     row_labels, column_labels = normalize_and_complement_argument_labels(A.labels, row_labels, column_labels)
     qr_labels = normalize_argument_qr_labels(qr_labels)
 
-    row_dims = A.dims_of_labels_front(row_labels)
-    column_dims = A.dims_of_labels_back(column_labels)
+    row_dims = A.dims_front(row_labels)
+    column_dims = A.dims_back(column_labels)
 
     a = A.to_matrix(row_labels, column_labels)
 
@@ -146,8 +146,8 @@ def normalize_argument_eigh_labels(eigh_labels):
 def tensor_eigh(A, row_labels, column_labels=None, eigh_labels=None):
     row_labels, column_labels = normalize_and_complement_argument_labels(A.labels, row_labels, column_labels)
     eigh_labels = normalize_argument_eigh_labels(eigh_labels)
-    row_shape = A.dims_of_labels_front(row_labels)
-    column_shape = A.dims_of_labels_back(column_labels)
+    row_shape = A.dims_front(row_labels)
+    column_shape = A.dims_back(column_labels)
     dim = soujou(row_shape)
     a = A.to_matrix(row_labels, column_labels)
     w,v = xp.linalg.eigh(a)
@@ -159,8 +159,8 @@ def tensor_eigh(A, row_labels, column_labels=None, eigh_labels=None):
 # A*V == w*V
 def tensor_eigsh(A, row_labels, column_labels=None):
     row_labels, column_labels = normalize_and_complement_argument_labels(A.labels, row_labels, column_labels)
-    row_shape = A.dims_of_labels_front(row_labels)
-    column_shape = A.dims_of_labels_back(column_labels)
+    row_shape = A.dims_front(row_labels)
+    column_shape = A.dims_back(column_labels)
     a = A.to_matrix(row_labels, column_labels)
     w,v = xp.sparse.linalg.eigsh(a, k=1)
     w = w[0]
