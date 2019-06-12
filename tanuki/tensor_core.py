@@ -168,6 +168,7 @@ class TensorMixin:
         self.labels = [base_label+"_"+str(i) for i in range(self.ndim)]
 
 
+
     #methods for basic operations
     @inplacable_tensorMixin_method
     def adjoint(self,row_labels,column_labels=None,style="transpose"):
@@ -195,6 +196,7 @@ class TensorMixin:
     @inplacable_tensorMixin_method
     def antihermite(self, row_labels, column_labels=None):
         return (self - self.adjoint(row_labels,column_labels))/2
+
 
 
 
@@ -238,6 +240,7 @@ class Tensor(TensorMixin):
         return re
 
 
+
     #properties
     @property
     def shape(self): #tuple
@@ -261,144 +264,158 @@ class Tensor(TensorMixin):
     #I assumed that rollaxis is better than moveaxis in terms of computing costs
     #TODO pass if newIndices==oldIndices
     @outofplacable_tensorMixin_method
-    def move_index_to_top(self, labelMove):
-        indexMoveFrom = self.index_of_label(labelMove)
-        self.labels.pop(indexMoveFrom)
+    def move_index_to_top(self, indexMoveFrom):
+        indexMoveFrom = self.normarg_index(indexMoveFrom)
+        labelMove = self.labels.pop(indexMoveFrom)
         self.labels.insert(0, labelMove)
         self.data = xp.rollaxis(self.data, indexMoveFrom, 0)
 
     @outofplacable_tensorMixin_method
-    def move_index_to_bottom(self, labelMove):
-        indexMoveFrom = self.index_of_label(labelMove)
-        self.labels.pop(indexMoveFrom)
+    def move_index_to_bottom(self, indexMoveFrom):
+        indexMoveFrom = self.normarg_index(indexMoveFrom)
+        labelMove = self.labels.pop(indexMoveFrom)
         self.labels.append(labelMove)
         self.data = xp.rollaxis(self.data, indexMoveFrom, self.ndim)
 
     @outofplacable_tensorMixin_method
-    def move_index_to_position(self, labelMove, position, inplace=True):
-        indexMoveFrom = self.index_of_label(labelMove)
-        if position == indexMoveFrom:
-            return
-        self.labels.pop(indexMoveFrom)
+    def move_index_to_position(self, indexMoveFrom, position):
+        indexMoveFrom = self.normarg_index(indexMoveFrom)
+        labelMove = self.labels.pop(indexMoveFrom)
         self.labels.insert(position, labelMove)
-        if position < indexMoveFrom:
+        if position <= indexMoveFrom:
             self.data = xp.rollaxis(self.data, indexMoveFrom, position)
         else:
             self.data = xp.rollaxis(self.data, indexMoveFrom, position+1)
 
     @outofplacable_tensorMixin_method
-    def move_indices_to_top(self, labelsMove):
-        labelsMove = normarg_labels(labelsMove)
-
-        oldIndicesMoveFrom = self.indices_of_labels(labelsMove)
-        newIndicesMoveTo = list(range(len(oldIndicesMoveFrom)))
-
-        oldIndicesNotMoveFrom = diff_list(range(len(self.labels)), oldIndicesMoveFrom)
-        #newIndicesNotMoveTo = list(range(len(oldIndicesMoveFrom), len(self.labels)))
-
-        oldLabels = self.labels
-        newLabels = [oldLabels[oldIndex] for oldIndex in oldIndicesMoveFrom] + [oldLabels[oldIndex] for oldIndex in oldIndicesNotMoveFrom]
-
-        self.data = xp.moveaxis(self.data, oldIndicesMoveFrom, newIndicesMoveTo)
+    def move_indices_to_top(self, moveFrom):
+        moveFrom = self.normarg_indices_front(moveFrom)
+        moveTo = list(range(len(moveFrom)))
+        notMoveFrom = diff_list(list(range(self.ndim)), moveFrom)
+        newLabels = self.labels_of_indices(moveFrom) + self.labels_of_indices(notMoveFrom)
+        self.data = xp.moveaxis(self.data, moveFrom, moveTo)
         self.labels = newLabels
 
     @outofplacable_tensorMixin_method
-    def move_indices_to_bottom(self, labelsMove):
-        labelsMove = normarg_labels(labelsMove)
-
-        oldIndicesMoveFrom = self.indices_of_labels(labelsMove)
-        newIndicesMoveTo = list(range(self.ndim-len(oldIndicesMoveFrom), self.ndim))
-
-        oldIndicesNotMoveFrom = diff_list(range(len(self.labels)), oldIndicesMoveFrom)
-        #newIndicesNotMoveTo = list(range(self.ndim-len(oldIndicesMoveFrom)))
-
-        oldLabels = self.labels
-        newLabels = [oldLabels[oldIndex] for oldIndex in oldIndicesNotMoveFrom] + [oldLabels[oldIndex] for oldIndex in oldIndicesMoveFrom]
-
-        self.data = xp.moveaxis(self.data, oldIndicesMoveFrom, newIndicesMoveTo)
+    def move_indices_to_bottom(self, moveFrom):
+        moveFrom = self.normarg_indices_back(moveFrom)
+        moveTo = list(range(self.ndim-len(moveFrom), self.ndim))
+        notMoveFrom = diff_list(list(range(self.ndim)), moveFrom)
+        newLabels = self.labels_of_indices(notMoveFrom) + self.labels_of_indices(moveFrom)
+        self.data = xp.moveaxis(self.data, moveFrom, moveTo)
         self.labels = newLabels
 
     @outofplacable_tensorMixin_method
-    def move_indices_to_position(self, labelsMove, position):
-        labelsMove = normarg_labels(labelsMove)
-
-        oldIndicesMoveFrom = self.indices_of_labels(labelsMove)
-        newIndicesMoveTo = list(range(position, position+len(labelsMove)))
-
-        oldIndicesNotMoveFrom = diff_list(range(len(self.labels)), oldIndicesMoveFrom)
-        newIndicesNotMoveTo = list(range(position)) + list(range(position+len(labelsMove), self.ndim))
-
-        oldLabels = self.labels
-        newLabels = [None]*len(oldLabels)
-        for oldIndex, newIndex in zip(oldIndicesMoveFrom, newIndicesMoveTo):
-            newLabels[newIndex] = oldLabels[oldIndex]
-        for oldIndex, newIndex in zip(oldIndicesNotMoveFrom, newIndicesNotMoveTo):
-            newLabels[newIndex] = oldLabels[oldIndex]
-
-        self.data = xp.moveaxis(self.data, oldIndicesMoveFrom, newIndicesMoveTo)
+    def move_indices_to_position(self, moveFrom, position):
+        moveFrom = self.normarg_indices_front(moveFrom)
+        moveTo = list(range(position, position+len(moveFrom)))
+        notMoveFrom = diff_list(list(range(self.ndim)), moveFrom)
+        newLabels = self.labels_of_indices(notMoveFrom)
+        newLabels = newLabels[:position] + self.labels_of_indices(moveFrom) + newLabels[position:]
+        self.data = xp.moveaxis(self.data, moveFrom, moveTo)
         self.labels = newLabels
 
     @outofplacable_tensorMixin_method
-    def move_all_indices(self, newLabels):
-        newLabels = normarg_labels(newLabels)
-        oldLabels = self.labels
+    def move_all_indices(self, moveFrom):
+        moveFrom = self.normarg_indices_front(moveFrom)
+        moveTo = list(range(self.ndim))
+        newLabels = self.labels_of_indices(moveFrom)
 
-        if not eq_list(newLabels, oldLabels):
-            raise ValueError(f"newLabels do not match oldLabels. oldLabels=={oldLabels}, newLabels=={newLabels}")
+        oldPos_NewPos = [None for _ in range(self.ndim)]
+        for i in range(self.ndim):
+            oldPos_NewPos[moveTo[i]] = moveFrom[i]
 
-        #oldPositions = list(range(self.ndim))
-        newPositions = indexs_duplable_front(newLabels, oldLabels)
-
-        self.data = xp.transpose(self.data, newPositions)
+        self.data = xp.transpose(self.data, oldPos_NewPos)
         self.labels = newLabels
+
 
 
     #methods for fuse/split
     #if new.. is no specified, assume like following:
     #["a","b","c","d"] <=split / fuse=> ["a",("b","c"),"d"]
     @outofplacable_tensorMixin_method
-    def fuse_indices(self, labelsFuse, newLabelFuse=None):
-        labelsFuse = normarg_labels(labelsFuse)
-        if newLabelFuse is None:
-            newLabelFuse = tuple(labelsFuse)
+    def fuse_indices(self, splittedLabels=None, fusedLabel=None, memo=None):
+        if memo is None:
+            memo = {}
 
-        position = min(self.indices_of_labels(labelsFuse))
-        self.move_indices_to_position(labelsFuse, position)
+        if splittedLabels is None:
+            if "splittedLabels" in memo:
+                splittedLabels = memo["splittedLabels"]
+            else:
+                raise ValueError
+        splittedIndices = self.normarg_indices(splittedLabels)
+        splittedLabels = self.labels_of_indices(splittedIndices)
+
+        if fusedLabel is None:
+            if "fusedLabel" in memo:
+                fusedLabel = memo["fusedLabel"]
+            else:
+                fusedLabel = tuple(splittedLabels)
+
+
+        position = min(splittedIndices)
+        self.move_indices_to_position(splittedIndices, position)
+        del splittedIndices
 
         oldShape = self.shape
-        oldShapeFuse = oldShape[position:position+len(labelsFuse)]
-        newDimFuse = soujou(oldShapeFuse)
-        newShape = oldShape[:position] + (newDimFuse,) + oldShape[position+len(labelsFuse):]
+        splittedShape = oldShape[position:position+len(splittedLabels)]
+        fusedDim = soujou(splittedShape)
+        newShape = oldShape[:position] + (fusedDim,) + oldShape[position+len(splittedLabels):]
 
         oldLabels = self.labels
-        newLabels = oldLabels[:position] + [newLabelFuse] + oldLabels[position+len(labelsFuse):]
+        newLabels = oldLabels[:position] + [fusedLabel] + oldLabels[position+len(splittedLabels):]
 
         self.data = xp.reshape(self.data, newShape)
         self.labels = newLabels
 
-        return OrderedDict(oldShapeFuse=oldShapeFuse, oldLabelsFuse=labelsFuse, labelsFuse=labelsFuse, newDimFuse=newDimFuse, newLabelFuse=newLabelFuse) #useful info (this is missed if out-of-place)
+        memo.update({"splittedShape":splittedShape, "splittedLabels":splittedLabels, "fusedDim":fusedDim, "fusedLabel":fusedLabel})
+        return memo #if out-of-place not returned. if you want, prepare a dict as memo in argument
+
 
     @outofplacable_tensorMixin_method
-    def split_index(self, labelSplit, newShapeSplit, newLabelsSplit=None):
-        newShapeSplit = tuple(newShapeSplit)
-        if newLabelsSplit is None:
-            if isinstance(labelSplit, tuple):
-                newLabelsSplit = list(labelSplit)
-            else:
-                newLabelsSplit = [labelSplit]
-            if len(newLabelsSplit) != len(newShapeSplit):
-                raise ValueError(f"newLabelsSplit is not defined and could not be assumed. labelSplit=={labelSplit}, newShapeSplit=={newShapeSplit}")
-        else:
-            newLabelsSplit = normarg_labels(newLabelsSplit)
+    def split_index(self, fusedLabel=None, splittedShape=None, splittedLabels=None, memo=None):
+        if memo is None:
+            memo = {}
 
-        indexSplit = self.index_of_label(labelSplit)
-        newShape = self.shape[:indexSplit] + newShapeSplit + self.shape[indexSplit+1:]
-        newLabels = self.labels[:indexSplit] + newLabelsSplit + self.labels[indexSplit+1:]
+        if fusedLabel is None:
+            if "fusedLabel" in memo:
+                fusedLabel = memo["fusedLabel"]
+            else:
+                raise ValueError
+        fusedIndex = self.normarg_index(fusedLabel)
+        fusedLabel = self.label_of_index(fusedIndex)
+
+        if splittedShape is None:
+            if "splittedShape" in memo:
+                splittedShape = memo["splittedShape"]
+            else:
+                raise ValueError
+        splittedShape = tuple(splittedShape)
+
+        if splittedLabels is None:
+            if "splittedLabels" in memo:
+                splittedLabels = memo["splittedLabels"]
+            else:
+                splittedLabels = list(fusedLabel)
+        splittedLabels = normarg_labels(splittedLabels)
+
+        
+        if len(splittedLabels) != len(splittedShape):
+            raise ValueError(f"splittedShape=={splittedShape}, splittedLabels=={splittedLabels}")
+
+        fusedDim = self.dim(fusedIndex)
+        position = fusedIndex
+        del fusedIndex
+
+        newShape = self.shape[:position] + splittedShape + self.shape[position+1:]
+        newLabels = self.labels[:position] + splittedLabels + self.labels[position+1:]
 
         self.data = xp.reshape(self.data, newShape)
         self.labels = newLabels
 
-        return OrderedDict(oldDimSplit=soujou(newShapeSplit), oldLabelSplit=labelSplit, labelSplit=labelSplit, newShapeSplit=newShapeSplit, newLabelsSplit=newLabelsSplit)
+        memo.update({"fusedDim":fusedDim, "fusedLabel":fusedLabel, "splittedShape":splittedShape, "splittedLabels":splittedLabels})
+        return memo #if out-of-place not returned. if you want, prepare a dict as memo in argument
+
 
 
     #methods for basic operations
@@ -486,6 +503,7 @@ class Tensor(TensorMixin):
     def normalize(self):
         norm = self.norm()
         return self / norm
+
 
 
     #methods for trace, contract
