@@ -4,6 +4,7 @@ from tanuki import tensor_instant as tni
 from tanuki import decomp as tnd
 from tanuki.utils import *
 import textwrap
+from math import sqrt
 
 #Finite 1D Simple Tensor Product State (wholly used when making BTPS through)
 class Fin1DSimTPS:
@@ -513,7 +514,7 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
     # /-(0)-[0]-...-(len-1)-[len-1]-          /-
     # L      |                 |      ==  c * L
     # \-(0)-[0]-...-(len-1)-[len-1]-          \-
-    def get_left_eigenvector(self): #TOCHUU
+    def get_left_eigen(self): #TOCHUU
         label_base = "TFL" #unique_label()
         inbra = label_base + "_inbra"
         inket = label_base + "_inket"
@@ -539,13 +540,13 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
         V_L.split_index(inket, shape, rawl)
         V_L.split_index(inbra, shape, aster_labels(rawl))
 
-        return V_L
+        return w_L, V_L
 
     # get R s.t.
     # -[0]-...-(len-1)-[len-1]-(0)-\          -\
     #   |                 |        R  ==  c *  R
     # -[0]-...-(len-1)-[len-1]-(0)-/          -/
-    def get_right_eigenvector(self): #TOCHUU
+    def get_right_eigen(self): #TOCHUU
         label_base = "TFR" #unique_label()
         inbra = label_base + "_inbra"
         inket = label_base + "_inket"
@@ -570,31 +571,29 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
         V_R.split_index(inket, shape, rawl)
         V_R.split_index(inbra, shape, aster_labels(rawl))
         
-        return V_R
+        return w_R, V_R
 
     # ref: https://arxiv.org/abs/0711.3960
-    def canonize_end(self, chi=None, relative_threshold=1e-14):
+    def canonize_end(self, chi=None, relative_threshold=1e-14, normalize=True):
         dl_label = unique_label()
         dr_label = unique_label()
-        V_L = self.get_left_eigenvector()
-        V_R = self.get_right_eigenvector()
-        #print("V_L:", V_L)
-        #print("V_R:", V_R)
+        w_L, V_L = self.get_left_eigen()
+        w_R, V_R = self.get_right_eigen()
+        assert abs(w_L-w_R) < 1e-10*abs(w_L)
         Yh, d_L, Y = tnd.tensor_eigh(V_L, self.get_right_labels_site(len(self)-1), aster_labels(self.get_right_labels_site(len(self)-1)), eigh_labels=dl_label)
-        #print("sahen", tensou*Yh*d_L*Y)
-        #print("uhen", Yh*d_L*Y)
         Y.unaster_labels(aster_labels(self.get_right_labels_site(len(self)-1)))
-        #print(Yh*Y)
         X, d_R, Xh = tnd.tensor_eigh(V_R, self.get_left_labels_site(0), aster_labels(self.get_left_labels_site(0)), eigh_labels=dr_label)
         Xh.unaster_labels(aster_labels(self.get_left_labels_site(0)))
-        #print(Xh*X)
         l0 = self.bdts[0]
         G = d_L.sqrt() * Yh * l0 * X * d_R.sqrt()
         U, S, V = tnd.truncated_svd(G, dl_label, dr_label, chi=chi, relative_threshold=relative_threshold)
         M = Y * d_L.inv().sqrt() * U
         N = V * d_R.inv().sqrt() * Xh
         # l0 == M*S*N
-        self.bdts[0] = S
+        if normalize:
+            self.bdts[0] = S / sqrt(w_L)
+        else:
+            self.bdts[0] = S
         self.tensors[0] = N * self.tensors[0]
         self.tensors[len(self)-1] = self.tensors[len(self)-1] * M
 
