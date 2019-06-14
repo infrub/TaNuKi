@@ -139,6 +139,15 @@ class TensorMixin:
 
     normarg_indices = normarg_indices_front
 
+    def normarg_complement_indices(self, row_indices, column_indices=None):
+        row_indices = self.normarg_indices_front(row_indices)
+        if column_indices is None:
+            column_indices = diff_list(list(range(self.ndim)), row_indices)
+        else:
+            column_indices = self.normarg_indices_back(column_indices)
+        return row_indices, column_indices
+
+
 
     def dim(self, index):
         index = self.normarg_index(index)
@@ -186,31 +195,31 @@ class TensorMixin:
 
     #methods for basic operations
     @inplacable_tensorMixin_method
-    def adjoint(self,row_labels,column_labels=None,style="transpose"):
-        row_labels, column_labels = normalize_and_complement_argument_labels(self.labels,row_labels,column_labels)
+    def adjoint(self, row_indices, column_indices=None, style="transpose"):
+        row_indices, column_indices = self.normarg_complement_indices(row_indices,column_indices)
         if style=="transpose":
-            if len(row_labels) != len(column_labels):
-                raise ValueError(f"adjoint arg must be len(row_labels)==len(column_labels). but row_labels=={row_labels}, column_labels=={column_labels}")
+            if len(row_indices) != len(column_indices):
+                raise ValueError(f"adjoint arg must be len(row_indices)==len(column_indices). but row_indices=={row_indices}, column_indices=={column_indices}")
             out = self.conjugate()
-            out.replace_labels(row_labels+column_labels, column_labels+row_labels)
+            out.replace_indices(row_indices+column_indices, column_indices+row_indices)
         elif style=="aster":
             out = self.conjugate()
-            out.aster_labels(row_labels+column_labels)
+            out.aster_labels(row_indices+column_indices)
         return out
 
     adj = adjoint
 
     @inplacable_tensorMixin_method
-    def hermite(self, row_labels, column_labels=None, assume_definite_and_if_negative_then_make_positive=False):
-        re = (self + self.adjoint(row_labels,column_labels))/2
+    def hermite(self, row_indices, column_indices=None, assume_definite_and_if_negative_then_make_positive=False):
+        re = (self + self.adjoint(row_indices,column_indices))/2
         if assume_definite_and_if_negative_then_make_positive:
             if xp.real(re.data.item(0)) < 0:
                 re = re * (-1)
         return re
 
     @inplacable_tensorMixin_method
-    def antihermite(self, row_labels, column_labels=None):
-        return (self - self.adjoint(row_labels,column_labels))/2
+    def antihermite(self, row_indices, column_indices=None):
+        return (self - self.adjoint(row_indices,column_indices))/2
 
 
 
@@ -589,11 +598,11 @@ class Tensor(TensorMixin):
     def to_diagonalTensor(self):
         return tensor_to_diagonalTensor(self)
 
-    def to_matrix(self, row_labels, column_labels=None):
-        return tensor_to_matrix(self, row_labels, column_labels)
+    def to_matrix(self, row_indices, column_indices=None):
+        return tensor_to_matrix(self, row_indices, column_indices)
 
-    def to_vector(self, labels):
-        return tensor_to_vector(self, labels)
+    def to_vector(self, indices):
+        return tensor_to_vector(self, indices)
 
     def to_scalar(self):
         return tensor_to_scalar(self)
@@ -615,37 +624,37 @@ class Tensor(TensorMixin):
     def is_prop_identity(self, absolute_threshold=1e-10):
         return is_prop_identity_matrix(self.data, absolute_threshold=absolute_threshold)
 
-    def is_right_unitary(self, column_labels, absolute_threshold=1e-10):
-        column_labels, row_labels = normalize_and_complement_argument_labels(self.labels, column_labels)
-        M = self.to_matrix(row_labels, column_labels)
+    def is_right_unitary(self, column_indices, absolute_threshold=1e-10):
+        column_indices, row_indices = self.normarg_complement_indices(column_indices)
+        M = self.to_matrix(row_indices, column_indices)
         temp = xp.dot(M, M.conj().transpose())
         temp = temp - xp.eye(*temp.shape)
         return xp.linalg.norm(temp) <= absolute_threshold
 
-    def is_left_unitary(self, row_labels, absolute_threshold=1e-10):
-        row_labels, column_labels = normalize_and_complement_argument_labels(self.labels, row_labels)
-        M = self.to_matrix(row_labels, column_labels)
+    def is_left_unitary(self, row_indices, absolute_threshold=1e-10):
+        row_indices, column_indices = self.normarg_complement_indices(row_indices)
+        M = self.to_matrix(row_indices, column_indices)
         temp = xp.dot(M.conj().transpose(), M)
         temp = temp - xp.eye(*temp.shape)
         return xp.linalg.norm(temp) <= absolute_threshold
 
-    def is_right_prop_unitary(self, column_labels, absolute_threshold=1e-10):
-        column_labels, row_labels = normalize_and_complement_argument_labels(self.labels, column_labels)
-        M = self.to_matrix(row_labels, column_labels)
+    def is_right_prop_unitary(self, column_indices, absolute_threshold=1e-10):
+        column_indices, row_indices = self.normarg_complement_indices(column_indices)
+        M = self.to_matrix(row_indices, column_indices)
         temp = xp.dot(M, M.conj().transpose())
         return is_prop_identity_matrix(temp, absolute_threshold=absolute_threshold)
 
-    def is_left_prop_unitary(self, row_labels, absolute_threshold=1e-10):
-        row_labels, column_labels = normalize_and_complement_argument_labels(self.labels, row_labels)
-        M = self.to_matrix(row_labels, column_labels)
+    def is_left_prop_unitary(self, row_indices, absolute_threshold=1e-10):
+        row_indices, column_indices = self.normarg_complement_indices(row_indices)
+        M = self.to_matrix(row_indices, column_indices)
         temp = xp.dot(M.conj().transpose(), M)
         return is_prop_identity_matrix(temp, absolute_threshold=absolute_threshold)
 
-    def is_unitary(self, row_labels, column_labels=None, absolute_threshold=1e-10):
-        row_labels, column_labels = normalize_and_complement_argument_labels(self.labels, row_labels, column_labels)
-        if soujou(self.dims_front(row_labels)) != soujou(self.dims_back(column_labels)):  #TODO6
+    def is_unitary(self, row_indices, column_indices=None, absolute_threshold=1e-10):
+        row_indices, column_indices = self.normarg_complement_indices(row_indices, column_indices)
+        if soujou(self.dims_front(row_indices)) != soujou(self.dims_back(column_indices)):
             return False
-        M = self.to_matrix(row_labels, column_labels)
+        M = self.to_matrix(row_indices, column_indices)
         Mh = M.conj().transpose()
         temp = xp.dot(M, Mh)
         temp = temp - xp.eye(*temp.shape)
