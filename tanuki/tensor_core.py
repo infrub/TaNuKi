@@ -50,10 +50,7 @@ class TensorMixin:
         return self._labels
 
     def set_labels(self, labels):
-        if len(labels) != self.ndim:
-            raise ValueError(f"labels do not match shape of data. labels=={labels}, shape=={self.shape}")
-        #if len(labels) != len(set(labels)):
-        #    warnings.warn(f"labels are not unique. labels=={labels}")
+        assert len(labels) == self.ndim, f"{labels}, {self.shape}"
         self._labels = list(labels)
 
     labels = property(get_labels, set_labels)
@@ -198,8 +195,7 @@ class TensorMixin:
     def adjoint(self, row_indices, column_indices=None, style="transpose"):
         row_indices, column_indices = self.normarg_complement_indices(row_indices,column_indices)
         if style=="transpose":
-            if len(row_indices) != len(column_indices):
-                raise ValueError(f"adjoint arg must be len(row_indices)==len(column_indices). but row_indices=={row_indices}, column_indices=={column_indices}")
+            assert len(row_indices) == len(column_indices), f"adjoint arg must be len(row_indices)==len(column_indices). but row_indices=={row_indices}, column_indices=={column_indices}"
             out = self.conjugate()
             out.replace_indices(row_indices+column_indices, column_indices+row_indices)
         elif style=="aster":
@@ -424,12 +420,13 @@ class Tensor(TensorMixin):
         splittedLabels = normarg_labels(splittedLabels)
 
         
-        if len(splittedLabels) != len(splittedShape):
-            raise ValueError(f"splittedShape=={splittedShape}, splittedLabels=={splittedLabels}")
+        assert len(splittedLabels) == len(splittedShape)
 
         fusedDim = self.dim(fusedIndex)
         position = fusedIndex
         del fusedIndex
+
+        assert soujou(splittedShape) == fusedDim
 
         newShape = self.shape[:position] + splittedShape + self.shape[position+1:]
         newLabels = self.labels[:position] + splittedLabels + self.labels[position+1:]
@@ -928,8 +925,7 @@ def contract(aTensor, bTensor, aLabelsContract, bLabelsContract):
     aDimsContract = aTensor.dims(aIndicesContract)
     bDimsContract = bTensor.dims(bIndicesContract)
 
-    if aDimsContract != bDimsContract:
-        raise ValueError(f"Dimss in contraction do not match. aLabelsContract=={aLabelsContract}, bLabelsContract=={bLabelsContract}, aDimsContract=={aDimsContract}, bDimsContract=={bDimsContract}")
+    assert aDimsContract == bDimsContract: f"{aTensor}, {bTensor}, {aLabelsContract}, {bLabelsContract}"
 
     cLabels = diff_list(aTensor.labels, aLabelsContract) + diff_list(bTensor.labels, bLabelsContract)
 
