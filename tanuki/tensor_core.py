@@ -34,6 +34,15 @@ def inplacable_tensorMixin_method(f):
 
 
 
+
+
+class CantKeepDiagonalityError(Exception):
+    pass
+
+
+
+
+
 #classes
 class TensorMixin:
     def __copy__(self):
@@ -258,7 +267,8 @@ class Tensor(TensorMixin):
     @inplacable_tensorMixin_method
     def arrange_indices(self, moveFrom):
         moveFrom = self.normarg_indices_front(moveFrom)
-        moveTo = list(range(len(moveFrom)))
+        assert len(moveFrom) == self.ndim
+        moveTo = list(range(self.ndim))
         newLabels = self.labels_of_indices(moveFrom)
         newData = xp.moveaxis(self.data, moveFrom, moveTo)
         return Tensor(newData, newLabels)
@@ -296,10 +306,115 @@ class Tensor(TensorMixin):
     tr = trace
 
 
-    
+
     def __getitem__(self, *indices):
         if len(indices)==1 and isinstance(indices[0],list): #if called like as A[["a"]]
             indices = indices[0]
         else:
             indices = list(indices)
         return ToContract(self, indices)
+
+
+
+
+
+# A[i,j,k,l] = [i==k][j==l]A.data[i,j]
+class DiagonalTensor(TensorMixin):
+    #basic methods
+    def __init__(self, data, labels=None, base_label=None, copy=False):
+        if not copy and isinstance(data, xp.ndarray):
+            self.data = data
+        else:
+            self.data = xp.asarray(data)
+        if labels is None:
+            if base_label is None:
+                base_label = unique_label()
+            self.assign_labels(base_label)
+        else:
+            self.labels = labels
+
+    def copy(self, shallow=False):
+        return DiagonalTensor(self.data, self.labels, copy=not(shallow))
+
+    def __repr__(self):
+        return f"DiagonalTensor(data={self.data}, labels={self.labels})"
+
+    def __str__(self):
+        if self.halfsize > 100:
+            dataStr = \
+            "["*self.halfndim + " ... " + "]"*self.halfndim
+        else:
+            dataStr = str(self.data)
+        dataStr = textwrap.indent(dataStr, "    ")
+
+        re = \
+        f"DiagonalTensor(\n" + \
+        dataStr + "\n" + \
+        f"    labels={self.labels},\n" + \
+        f"    shape={self.shape},\n" + \
+        f")"
+
+        return re
+
+
+
+    #properties
+    @property
+    def halfshape(self): #tuple
+        return self.data.shape
+    
+    @property
+    def halfndim(self):
+        return self.data.ndim
+
+    @property
+    def halfsize(self):
+        return self.data.size
+    
+    @property
+    def halfshape(self):
+        return self.halfshape + self.halfshape
+    
+    @property
+    def halfndim(self):
+        return self.halfndim * 2
+
+    @property
+    def halfsize(self):
+        return self.halfsize * self.halfsize
+
+    @property
+    def dtype(self):
+        return self.data.dtype
+
+
+
+    @inplacable_tensorMixin_method
+    def arrange_indices_assuming_can_keep_diagonality(self, moveFrom):
+        moveFrom = self.normarg_indices_front(moveFrom)
+
+        data = self.data
+        labels = copyModule.copy(self.labels)
+
+        for x in range(self.halfndim):
+            i,j = moveFrom[x], moveFrom[self.halfndim+x]
+            if i+self.halfndim==j:
+                continue
+            elif j+self.halfndim==i:
+                labels[i], labels[j] = labels[j], labels[i]
+                moveFrom[x], moveFrom[self.halfndim+x] = j, i
+            else:
+                raise CantKeepDiagonalityError()
+
+        halfMoveFrom = moveFrom[:self.halfndim]
+        halfMoveTo = list(range(self.halfndim))
+        data = xp.moveaxis(data, halfMoveFrom, halfMoveTo)
+        labels = [labels[i] for i in moveFrom]
+
+        return DiagonalTensor(data, labels)
+
+    def arrange_indices(self, moveFrom):
+        try:
+            return self.arrange_indices_assuming_can_keep_diagonality(moveFrom)
+        except CantKeepDiagonalityError as e:
+            return self.to_tensor().arrange_indices(moveFrom)

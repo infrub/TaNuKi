@@ -2,7 +2,7 @@
 
 
 
-# A[i,j,k,l] = i==k and j==l and A.data[i,j]
+# A[i,j,k,l] = [i==k][j==l]A.data[i,j]
 class DiagonalTensor(TensorMixin):
     #basic methods
     def __init__(self, data, labels=None, base_label=None, copy=False):
