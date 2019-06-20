@@ -222,3 +222,105 @@
             return False
         return True
 
+
+
+
+
+
+class DiagonalTensor(TensorMixin):
+    #methods for basic operations
+    def __mul__(self, other):
+        if isinstance(other, TensorMixin):
+            return contract_common(self, other)
+        elif xp.isscalar(other):
+            return DiagonalTensor(self.data*other, labels=self.labels)
+        return NotImplemented
+
+    def __rmul__(self, other):
+        if isinstance(other, TensorMixin):
+            return contract_common(other, self)
+        elif xp.isscalar(other):
+            return DiagonalTensor(self.data*other, labels=self.labels)
+        return NotImplemented
+
+    def __truediv__(self, other):
+        if xp.isscalar(other):
+            return DiagonalTensor(self.data/other, labels=self.labels)
+        return NotImplemented
+
+    def __rtruediv__(self, other):
+        if isinstance(other, TensorMixin):
+            return other * self.inv()
+        return NotImplemented
+
+    def __add__(self, other, skipLabelSort=False):
+        if type(other)==DiagonalTensor:
+            if not skipLabelSort:
+                other = other.move_all_indices(self.labels, inplace=False)
+            return DiagonalTensor(self.data+other.data, self.labels)
+        return NotImplemented
+
+    def __sub__(self, other, skipLabelSort=False):
+        if type(other)==DiagonalTensor:
+            if not skipLabelSort:
+                other = other.move_all_indices(self.labels, inplace=False)
+            return DiagonalTensor(self.data-other.data, self.labels)
+        return NotImplemented
+
+    def __eq__(self, other, skipLabelSort=False, absolute_threshold=1e-10):
+        if type(other)==DiagonalTensor:
+            diff = self.__sub__(other, skipLabelSort=skipLabelSort)
+            return diff.norm() <= absolute_threshold
+        return NotImplemented
+
+
+    @inplacable_tensorMixin_method
+    def conjugate(self):
+        return DiagonalTensor(data=self.data.conj(), labels=self.labels)
+
+    conj = conjugate
+
+    def norm(self): #Frobenius norm
+        return xp.linalg.norm(self.data)
+
+    @inplacable_tensorMixin_method
+    def normalize(self):
+        norm = self.norm()
+        return self / norm
+
+    @inplacable_tensorMixin_method
+    def inv(self):
+        return DiagonalTensor(1.0/self.data, labels=self.labels)
+
+    @inplacable_tensorMixin_method
+    def sqrt(self):
+        return DiagonalTensor(xp.sqrt(self.data), labels=self.labels)
+
+
+
+    #methods for converting to simple linalg object
+    def to_tensor(self):
+        return diagonalTensor_to_tensor(self)
+
+    def to_matrix(self, row_indices, column_indices=None):
+        return tensor_to_matrix(self.to_tensor(), row_indices, column_indices)
+
+    def to_vector(self, indices):
+        return tensor_to_vector(self.to_tensor(), indices)
+
+    def to_scalar(self):
+        return tensor_to_scalar(self.to_tensor())
+
+    def to_diagonalElements(self):
+        return diagonalTensor_to_diagonalElements(self)
+
+    """
+    Methods not in DiagonalTensor:
+        fuse_indices
+        split_index
+        pad_indices
+        add_dummy_index
+        remove_all_dummy_indices
+    """
+
+

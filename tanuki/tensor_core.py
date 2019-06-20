@@ -202,6 +202,13 @@ class TensorMixin:
 
 
 
+    def __getitem__(self, *indices):
+        if len(indices)==1 and isinstance(indices[0],list): #if called like as A[["a"]]
+            indices = indices[0]
+        else:
+            indices = list(indices)
+        return ToContract(self, indices)
+
 
 
 
@@ -307,12 +314,6 @@ class Tensor(TensorMixin):
 
 
 
-    def __getitem__(self, *indices):
-        if len(indices)==1 and isinstance(indices[0],list): #if called like as A[["a"]]
-            indices = indices[0]
-        else:
-            indices = list(indices)
-        return ToContract(self, indices)
 
 
 
@@ -418,3 +419,51 @@ class DiagonalTensor(TensorMixin):
             return self.arrange_indices_assuming_can_keep_diagonality(moveFrom)
         except CantKeepDiagonalityError as e:
             return self.to_tensor().arrange_indices(moveFrom)
+
+
+
+    #methods for trace, contract
+    # A[i,j,k,l,m,n] = [i==l][j==m][k==n]a[i,j,k]
+    # \sum[j==k]A[i,j,k,l,m,n] = \sum_j [i==l][j==m][j==n]a[i,j,j] = [i==l][m==n] \sum_j a[i,j,j]
+    # TODO not tested
+    @inplacable_tensorMixin_method
+    def contract_internal_index(self, index1, index2):
+        index1 = self.normarg_index_front(index1)
+        index2 = self.normarg_index_back(index2)
+        index1, index2 = min(index1,index2), max(index1,index2)
+
+        if index1+self.halfndim == index2:
+            newData = xp.sum(self.data, axis=index1)
+            newLabels = self.labels[:index1]+self.labels[index1+1:index2]+self.labels[index2+1:]
+            return Tensor(newData, newLabels)
+
+        coindex1, coindex2 = (index1+self.halfndim)%self.ndim, (index1+self.halfndim)%self.ndim
+        halfindex1, halfindex2 = index1%self.halfndim, index2%self.halfndim
+        halfindex1, halfindex2 = min(halfindex1, halfindex2), max(halfindex1, halfindex2)
+
+        newData = xp.trace(self.data, axis1=halfindex1, axis2=halfindex2)
+        newData = xp.tile(newData, (self.dim(coindex1),)+(1,)*(self.halfndim-2)) #TODO tadasii?
+
+        newLabels = self.labels[coindex1:coindex1+1]
+                    +self.labels[0:halfindex1]+self.labels[halfindex1+1:halfindex2]+self.labels[halfindex2+1:self.halfndim]
+                    +self.labels[coindex2:coindex2+1]
+                    +self.labels[self.halfndim:self.halfndim+halfindex1]+self.labels[self.halfndim+halfindex1+1:self.halfndim+halfindex2]+self.labels[self.halfndim+halfindex2+1:self.ndim]
+
+        return Tensor(newData, newLabels)
+
+    @inplacable_tensorMixin_method
+    def contract_internal_common(self):
+        temp = self
+        commons = floor_half_list(temp.labels)
+        for common in commons:
+            temp = temp.contract_internal(common, common)
+        return temp
+
+    def contract_internal(self, index1=None, index2=None):
+        if index1 is None:
+            return self.contract_internal_common()
+        else:
+            return self.contract_internal_index(index1, index2)
+
+    trace = contract_internal
+    tr = contract_internal
