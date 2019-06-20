@@ -666,7 +666,7 @@ class Tensor(TensorMixin):
 
 
 
-
+# A[i,j,k,l] = i==k and j==l and A.data[i,j]
 class DiagonalTensor(TensorMixin):
     #basic methods
     def __init__(self, data, labels=None, base_label=None, copy=False):
@@ -688,9 +688,9 @@ class DiagonalTensor(TensorMixin):
         return f"DiagonalTensor(data={self.data}, labels={self.labels})"
 
     def __str__(self):
-        if self.size > 100:
+        if self.halfsize > 100:
             dataStr = \
-            "["*self.ndim + " ... " + "]"*self.ndim
+            "["*self.halfndim + " ... " + "]"*self.halfndim
         else:
             dataStr = str(self.data)
         dataStr = textwrap.indent(dataStr, "    ")
@@ -707,21 +707,29 @@ class DiagonalTensor(TensorMixin):
 
     #properties
     @property
-    def dimdayo(self):
-        return self.data.shape[0]
+    def halfshape(self): #tuple
+        return self.data.shape
     
     @property
-    def shape(self): #tuple
-        return (self.dimdayo, self.dimdayo)
-    
-    @property
-    def ndim(self):
-        return 2
+    def halfndim(self):
+        return self.data.ndim
 
     @property
-    def size(self):
+    def halfsize(self):
         return self.data.size
     
+    @property
+    def halfshape(self):
+        return self.halfshape + self.halfshape
+    
+    @property
+    def halfndim(self):
+        return self.halfndim * 2
+
+    @property
+    def halfsize(self):
+        return self.halfsize * self.halfsize
+
     @property
     def dtype(self):
         return self.data.dtype
@@ -821,7 +829,7 @@ class DiagonalTensor(TensorMixin):
 
     @inplacable_tensorMixin_method
     def conjugate(self):
-        return DiagonalTensor(data=self.data.conj(),labels=self.labels)
+        return DiagonalTensor(data=self.data.conj(), labels=self.labels)
 
     conj = conjugate
 
@@ -843,24 +851,48 @@ class DiagonalTensor(TensorMixin):
 
 
     #methods for trace, contract
-    def contract_internal(self, label1, label2):
-        index1, index2 = tuple(indexs_duplable_front(self.labels, [label1, label2]))
+    # A[i,j,k,l,m,n] = [i==l][j==m][k==n]a[i,j,k]
+    # \sum[j==k]A[i,j,k,l,m,n] = \sum_j [i==l][j==m][j==n]a[i,j,j] = [i==l][m==n] \sum_j a[i,j,j]
+    # TODO not tested
+    @inplacable_tensorMixin_method
+    def contract_internal(self, index1, index2):
+        index1 = self.normarg_index_front(index1)
+        index2 = self.normarg_index_back(index2)
         index1, index2 = min(index1,index2), max(index1,index2)
-        if not(index1==0 and index2==1):
-            warnings.warn(f"DiagonalTensor.contract_internal(label1, label2) must be index1,index2=0,1. but label1=={label1}, label2=={label2}, tensor=={self}. ignore.")
-        return Tensor(xp.sum(self.data), [])
 
+        if index1+self.halfndim == index2:
+            newData = xp.sum(self.data, axis=index1)
+            newLabels = self.labels[:index1]+self.labels[index1+1:index2]+self.labels[index2+1:]
+            return Tensor(newData, newLabels)
+
+        coindex1, coindex2 = (index1+self.halfndim)%self.ndim, (index1+self.halfndim)%self.ndim
+        halfindex1, halfindex2 = index1%self.halfndim, index2%self.halfndim
+        halfindex1, halfindex2 = min(halfindex1, halfindex2), max(halfindex1, halfindex2)
+
+        newData = xp.trace(self.data, axis1=halfindex1, axis2=halfindex2)
+        newData = xp.tile(newData, (self.dim(coindex1),)+(1,)*(self.halfndim-2)) #TODO tadasii?
+
+        newLabels = self.labels[coindex1:coindex1+1]
+                    +self.labels[0:halfindex1]+self.labels[halfindex1+1:halfindex2]+self.labels[halfindex2+1:self.halfndim]
+                    +self.labels[coindex2:coindex2+1]
+                    +self.labels[self.halfndim:self.halfndim+halfindex1]+self.labels[self.halfndim+halfindex1+1:self.halfndim+halfindex2]+self.labels[self.halfndim+halfindex2+1:self.ndim]
+
+        return Tensor(newData, newLabels)
+
+    @inplacable_tensorMixin_method
     def contract_common_internal(self):
-        if self.labels[0]==self.labels[1]:
-            return Tensor(xp.sum(self.data), [])
-        else:
-            return self.copy()
+        temp = self
+        commons = floor_half_list(temp.labels)
+        for common in commons:
+            temp = temp.contract_internal(common, common)
+        return temp
 
-    def trace(self, label1=None, label2=None):
-        if label1 is None:
+    @inplacable_tensorMixin_method
+    def trace(self, index1=None, index2=None):
+        if index1 is None:
             return self.contract_common_internal()
         else:
-            return self.contract_internal(label1, label2)
+            return self.contract_internal(index1, index2)
 
     tr = trace
 
@@ -879,17 +911,17 @@ class DiagonalTensor(TensorMixin):
     def to_tensor(self):
         return diagonalTensor_to_tensor(self)
 
-    def to_matrix(self, row_labels, column_labels=None):
-        return tensor_to_matrix(self.to_tensor(), row_labels, column_labels)
+    def to_matrix(self, row_indices, column_indices=None):
+        return tensor_to_matrix(self.to_tensor(), row_indices, column_indices)
 
-    def to_vector(self, labels):
-        return tensor_to_vector(self.to_tensor(), labels)
+    def to_vector(self, indices):
+        return tensor_to_vector(self.to_tensor(), indices)
 
     def to_scalar(self):
         return tensor_to_scalar(self.to_tensor())
 
-    def to_diagonalMatrix(self):
-        return diagonalTensor_to_diagonalMatrix(self)
+    def to_diagonalElements(self):
+        return diagonalTensor_to_diagonalElements(self)
 
     """
     Methods not in DiagonalTensor:
@@ -1015,10 +1047,10 @@ def diagonalTensor_to_tensor(diagonalTensor):
 def tensor_to_diagonalTensor(tensor):
     return DiagonalTensor(xp.diag(tensor.data), tensor.labels)
 
-def diagonalMatrix_to_diagonalTensor(diagonalMatrix, labels):
-    return DiagonalTensor(diagonalMatrix, labels)
+def diagonalElements_to_diagonalTensor(diagonalElements, labels):
+    return DiagonalTensor(diagonalElements, labels)
 
-def diagonalTensor_to_diagonalMatrix(diagonalTensor):
+def diagonalTensor_to_diagonalElements(diagonalTensor):
     return diagonalTensor.data
 
 
