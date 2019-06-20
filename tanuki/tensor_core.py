@@ -192,3 +192,114 @@ class TensorMixin:
         self.labels = [base_label+"_"+str(i) for i in range(self.ndim)]
 
 
+
+
+
+
+
+class Tensor(TensorMixin):
+    #basic methods
+    def __init__(self, data, labels=None, base_label=None, copy=False):
+        if not copy and isinstance(data, xp.ndarray):
+            self.data = data
+        else:
+            self.data = xp.asarray(data)
+        if labels is None:
+            if base_label is None:
+                base_label = unique_label()
+            self.assign_labels(base_label)
+        else:
+            self.labels = labels
+
+    def copy(self, shallow=False):
+        return Tensor(self.data, self.labels, copy=not(shallow))
+
+    def __repr__(self):
+        return f"Tensor(data={self.data}, labels={self.labels})"
+
+    def __str__(self):
+        if self.size > 100:
+            dataStr = \
+            "["*self.ndim + " ... " + "]"*self.ndim
+        else:
+            dataStr = str(self.data)
+        dataStr = textwrap.indent(dataStr, "    ")
+
+        re = \
+        f"Tensor(\n" + \
+        dataStr + "\n" + \
+        f"    labels={self.labels},\n" + \
+        f"    shape={self.shape},\n" + \
+        f")"
+
+        return re
+
+
+
+    #properties
+    @property
+    def shape(self): #tuple
+        return self.data.shape
+    
+    @property
+    def ndim(self):
+        return self.data.ndim
+
+    @property
+    def size(self):
+        return self.data.size
+    
+    @property
+    def dtype(self):
+        return self.data.dtype
+
+
+
+    @inplacable_tensorMixin_method
+    def arrange_indices(self, moveFrom):
+        moveFrom = self.normarg_indices_front(moveFrom)
+        moveTo = list(range(len(moveFrom)))
+        newLabels = self.labels_of_indices(moveFrom)
+        newData = xp.moveaxis(self.data, moveFrom, moveTo)
+        return Tensor(newData, newLabels)
+
+
+
+    #methods for trace, contract
+    @inplacable_tensorMixin_method
+    def contract_internal_index(self, index1, index2):
+        index1 = self.normarg_index_front(index1)
+        index2 = self.normarg_index_back(index2)
+        index1, index2 = min(index1,index2), max(index1,index2)
+
+        newData = xp.trace(self.data, axis1=index1, axis2=index2)
+        newLabels = self.labels[:index1]+self.labels[index1+1:index2]+self.labels[index2+1:]
+
+        return Tensor(newData, newLabels)
+
+    @inplacable_tensorMixin_method
+    def contract_internal_common(self):
+        temp = self
+        commons = floor_half_list(temp.labels)
+        for common in commons:
+            temp = temp.contract_internal(common, common)
+        return temp
+
+    @inplacable_tensorMixin_method
+    def contract_internal(self, index1=None, index2=None):
+        if index1 is None:
+            return self.contract_common_internal()
+        else:
+            return self.contract_internal(index1, index2)
+
+    trace = contract_internal
+    tr = trace
+
+
+    
+    def __getitem__(self, *indices):
+        if len(indices)==1 and isinstance(indices[0],list): #if called like as A[["a"]]
+            indices = indices[0]
+        else:
+            indices = list(indices)
+        return ToContract(self, indices)
