@@ -36,6 +36,9 @@ def inplacable_tensorMixin_method(f):
 
 
 
+class InputLengthError(Exception):
+    pass
+
 class CantKeepDiagonalityError(Exception):
     pass
 
@@ -272,13 +275,100 @@ class Tensor(TensorMixin):
 
 
     @inplacable_tensorMixin_method
-    def arrange_indices(self, moveFrom):
+    def move_all_indices(self, moveFrom):
         moveFrom = self.normarg_indices_front(moveFrom)
-        assert len(moveFrom) == self.ndim
+        if len(moveFrom) != self.ndim:
+            raise InputLengthError()
         moveTo = list(range(self.ndim))
         newLabels = self.labels_of_indices(moveFrom)
         newData = xp.moveaxis(self.data, moveFrom, moveTo)
         return Tensor(newData, newLabels)
+
+    #methods for fuse/split
+    #if new.. is no specified, assume like following:
+    #["a","b","c","d"] <=split / fuse=> ["a",("b","c"),"d"]
+    @outofplacable_tensorMixin_method
+    def fuse_indices(self, splittedLabels=None, fusedLabel=None, memo=None):
+        if memo is None:
+            memo = {}
+
+        if splittedLabels is None:
+            if "splittedLabels" in memo:
+                splittedLabels = memo["splittedLabels"]
+            else:
+                raise ValueError
+        splittedIndices = self.normarg_indices(splittedLabels)
+        splittedLabels = self.labels_of_indices(splittedIndices)
+
+        if fusedLabel is None:
+            if "fusedLabel" in memo:
+                fusedLabel = memo["fusedLabel"]
+            else:
+                fusedLabel = tuple(splittedLabels)
+
+
+        position = min(splittedIndices)
+        self.move_indices_to_position(splittedIndices, position)
+        del splittedIndices
+
+        oldShape = self.shape
+        splittedShape = oldShape[position:position+len(splittedLabels)]
+        fusedDim = soujou(splittedShape)
+        newShape = oldShape[:position] + (fusedDim,) + oldShape[position+len(splittedLabels):]
+
+        oldLabels = self.labels
+        newLabels = oldLabels[:position] + [fusedLabel] + oldLabels[position+len(splittedLabels):]
+
+        self.data = xp.reshape(self.data, newShape)
+        self.labels = newLabels
+
+        memo.update({"splittedShape":splittedShape, "splittedLabels":splittedLabels, "fusedDim":fusedDim, "fusedLabel":fusedLabel})
+        return memo #if out-of-place not returned. if you want, prepare a dict as memo in argument
+
+    @outofplacable_tensorMixin_method
+    def split_index(self, fusedLabel=None, splittedShape=None, splittedLabels=None, memo=None):
+        if memo is None:
+            memo = {}
+
+        if fusedLabel is None:
+            if "fusedLabel" in memo:
+                fusedLabel = memo["fusedLabel"]
+            else:
+                raise ValueError
+        fusedIndex = self.normarg_index(fusedLabel)
+        fusedLabel = self.label_of_index(fusedIndex)
+
+        if splittedShape is None:
+            if "splittedShape" in memo:
+                splittedShape = memo["splittedShape"]
+            else:
+                raise ValueError
+        splittedShape = tuple(splittedShape)
+
+        if splittedLabels is None:
+            if "splittedLabels" in memo:
+                splittedLabels = memo["splittedLabels"]
+            else:
+                splittedLabels = list(fusedLabel)
+        splittedLabels = normarg_labels(splittedLabels)
+
+        
+        assert len(splittedLabels) == len(splittedShape)
+
+        fusedDim = self.dim(fusedIndex)
+        position = fusedIndex
+        del fusedIndex
+
+        assert soujou(splittedShape) == fusedDim
+
+        newShape = self.shape[:position] + splittedShape + self.shape[position+1:]
+        newLabels = self.labels[:position] + splittedLabels + self.labels[position+1:]
+
+        self.data = xp.reshape(self.data, newShape)
+        self.labels = newLabels
+
+        memo.update({"fusedDim":fusedDim, "fusedLabel":fusedLabel, "splittedShape":splittedShape, "splittedLabels":splittedLabels})
+        return memo #if out-of-place not returned. if you want, prepare a dict as memo in argument
 
 
 
@@ -390,9 +480,13 @@ class DiagonalTensor(TensorMixin):
 
 
 
+    # MUST bag{moveFrom}==bag{0:self.ndim} (else: idk)
+    # WILL moveFrom keep diagonality (else: CantKeepDiagonalityError)
     @inplacable_tensorMixin_method
-    def arrange_indices_assuming_can_keep_diagonality(self, moveFrom):
+    def move_all_indices_assuming_can_keep_diagonality(self, moveFrom):
         moveFrom = self.normarg_indices_front(moveFrom)
+        if len(moveFrom)!=self.ndim:
+            raise InputLengthError()
 
         data = self.data
         labels = copyModule.copy(self.labels)
@@ -414,11 +508,20 @@ class DiagonalTensor(TensorMixin):
 
         return DiagonalTensor(data, labels)
 
-    def arrange_indices(self, moveFrom):
+    def move_all_indices(self, moveFrom):
         try:
-            return self.arrange_indices_assuming_can_keep_diagonality(moveFrom)
-        except CantKeepDiagonalityError as e:
-            return self.to_tensor().arrange_indices(moveFrom)
+            return self.move_all_indices_assuming_can_keep_diagonality(moveFrom)
+        except CantKeepDiagonalityError:
+            return self.to_tensor().move_all_indices(moveFrom)
+
+    def move_half_all_indices_to_real_side(self, halfMoveFrom):
+        halfMoveFrom = self.normarg_indices_front(halfMoveFrom)
+        if len(halfMoveFrom) != self.halfndim:
+            raise InputLengthError()
+        moveFrom = halfMoveFrom + [(x+self.halfndim)%self.ndim for x in halfMoveFrom]
+        if not eq_list(moveFrom, list(range(self.ndim))):
+            raise CantKeepDiagonalityError()
+        return self.move_all_indices(moveFrom)
 
 
 
@@ -484,10 +587,8 @@ class DiagonalTensor(TensorMixin):
                     elif x==coindex2: return self.ndim-3
                     else: raise IndexError()
 
-            for xi, x in enumerate(indices1):
-                indices1[xi] = dokoiitta(indices1[xi])
-            for xi, x in enumerate(indices2):
-                indices2[xi] = dokoiitta(indices2[xi])
+            indices1 = [dokoitta(x) for x in indices1]
+            indices2 = [dokoitta(x) for x in indices2]
 
         return temp
 
@@ -502,6 +603,8 @@ class DiagonalTensor(TensorMixin):
     def contract_internal(self, index1=None, index2=None):
         if index1 is None:
             return self.contract_internal_common()
+        elif type(index1) == list:
+            return self.contract_internal_indices(index1, index2)
         else:
             return self.contract_internal_index(index1, index2)
 
@@ -535,6 +638,8 @@ def direct_product(A, B):
         return DiagonalTensor(cData, cLabels)
 
 
+
+
 def contract(A, B, aIndicesContract, bIndicesContract):
     aIndicesContract = A.normarg_indices_back(aIndicesContract)
     bIndicesContract = B.normarg_indices_front(bIndicesContract)
@@ -544,23 +649,28 @@ def contract(A, B, aIndicesContract, bIndicesContract):
     bDimsContract = A.dims(bIndicesContract)
     assert aDimsContract == bDimsContract: f"{A}, {B}, {aLabelsContract}, {bLabelsContract}"
 
-    cLabels = multiply_popped_list(A.labels, aIndicesContract) + multiply_popped_list(B.labels, bIndicesContract)
+    cLabels = more_popped_list(A.labels, aIndicesContract) + more_popped_list(B.labels, bIndicesContract)
 
     if type(A)==Tensor and type(B)==Tensor:
         cData = xp.tensordot(A.data, B.data, (aIndicesContract, bIndicesContract))
         return Tensor(cData, cLabels)
 
-    # A[a,b,c,d] = [a==c][b==d]A.data[a,b]
-    # \sum_de[d==e]A[a,b,c,d]B[e,f,g,h]
-    # == \sum_de[d==e][a==c][b==d]A.data[a,b][e==g][f==h]B.data[g,h]
-    # == \sum_de[d==e][b==d][e==g][a==c]A.data[a,b][f==h]B.data[g,h]
-    # == [b==g][a==c]A.data[a,b][f==h]B.data[g,h]
     elif type(A)==DiagonalTensor and type(B)==DiagonalTensor:
-        C = direct_product(A, B)
-        cIndicesContract1 = [x if x<A.halfndim else x+B.halfndim for x in aIndicesContract]
-        cIndicesContract2 = [x+A.halfndim if x<B.halfndim else x+A.ndim for x in aIndicesContract]
-        return C.contract_internal_indices(cIndicesContract1, cIndicesContract2)
+        try:
+            A = A.move_half_all_indices_to_real_side(aIndicesContract)
+            B = B.move_half_all_indices_to_real_side(bIndicesContract)
+            cData = A.data * B.data
+            cLabels = A.labels[A.halfndim:] + B.labels[B.halfndim]
+            return DiagonalTensor(cData, cLabels)
+        except (InputLengthError, CantKeepDiagonalityError):
+            C = direct_product(A, B)
+            cIndicesContract1 = [x if x<A.halfndim else x+B.halfndim for x in aIndicesContract]
+            cIndicesContract2 = [x+A.halfndim if x<B.halfndim else x+A.ndim for x in aIndicesContract]
+            return C.contract_internal_indices(cIndicesContract1, cIndicesContract2)
 
-
+    elif type(A)==DiagonalTensor and type(B)==Tensor:
+        try:
+            A = A.move_half_all_indices_to_real_side(aIndicesContract)
+            B = B.fuse_indices()
 
 

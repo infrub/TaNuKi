@@ -55,7 +55,7 @@ def indexs_duplable_back(univ, see):
         temp[i] = None
     return res
 
-def multiply_popped_list(xs, xis):
+def more_popped_list(xs, xis):
     xs = list(xs)
     for xi in xis:
         xs[xi] = None
