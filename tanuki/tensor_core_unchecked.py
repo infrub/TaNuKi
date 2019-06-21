@@ -68,44 +68,11 @@ def direct_product(aTensor, bTensor):
 
 
 
-#converting functions
-def tensor_to_matrix(tensor, row_labels, column_labels=None):
-    row_labels, column_labels = normalize_and_complement_argument_labels(tensor.labels, row_labels, column_labels)
-
-    t = tensor.move_all_indices(row_labels+column_labels, inplace=False)
-    total_row_dim = soujou(t.shape[:len(row_labels)])
-    total_column_dim = soujou(t.shape[len(row_labels):])
-
-    return xp.reshape(t.data, (total_row_dim, total_column_dim))
-
-def matrix_to_tensor(matrix, shape, labels):
-    return Tensor(xp.reshape(matrix, shape), labels)
-
-def tensor_to_vector(tensor, labels):
-    t = tensor.move_all_indices(labels, inplace=False)
-    return xp.reshape(t.data, (t.size,))
-
-def vector_to_tensor(vector, shape, labels):
-    return Tensor(xp.reshape(vector, shape), labels)
-
-def tensor_to_scalar(tensor):
-    return tensor.data.item(0)
-
-def scalar_to_tensor(scalar):
-    return Tensor(scalar, [])
 
 
-def diagonalTensor_to_tensor(diagonalTensor):
-    return Tensor(xp.diagflat(diagonalTensor.data), diagonalTensor.labels)
 
-def tensor_to_diagonalTensor(tensor):
-    return DiagonalTensor(xp.diagonal(tensor.data), tensor.labels)
 
-def diagonalElements_to_diagonalTensor(diagonalElements, labels):
-    return DiagonalTensor(diagonalElements, labels)
 
-def diagonalTensor_to_diagonalElements(diagonalTensor):
-    return diagonalTensor.data
 
 
 

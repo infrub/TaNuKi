@@ -6,6 +6,7 @@ import textwrap
 from collections import OrderedDict
 import uuid
 import random
+from math import sqrt
 
 
 
@@ -730,3 +731,64 @@ def contract(A, B, aIndicesContract, bIndicesContract):
 
 
 
+
+
+
+
+
+
+
+#converting functions
+def tensor_to_matrix(T, rows, cols=None):
+    rows, cols = T.normarg_complement_indices(rows, cols)
+
+    T = T.move_all_indices(rows+cols)
+    total_row_dim = soujou(T.shape[:len(rows)])
+    total_col_dim = soujou(T.shape[len(rows):])
+
+    return xp.reshape(t.data, (total_row_dim, total_col_dim))
+
+def tensor_to_vector(T, indices):
+    T = T.move_all_indices(indices)
+    return xp.reshape(T.data, (T.size,))
+
+def tensor_to_scalar(T):
+    return xp.asscalar(T.data)
+
+
+
+def matrix_to_tensor(matrix, shape, labels):
+    return Tensor(xp.reshape(matrix, shape), labels)
+
+def vector_to_tensor(vector, shape, labels):
+    return Tensor(xp.reshape(vector, shape), labels)
+
+def scalar_to_tensor(scalar):
+    return Tensor(scalar, [])
+
+
+
+def diagonalTensor_to_tensor(DT):
+    shape = DT.shape
+    return Tensor(xp.diagflat(diagonalTensor.data).reshape(shape), diagonalTensor.labels)
+
+def diagonalTensor_to_matrix(DT, rows, cols=None):
+    return tensor_to_matrix(diagonalTensor_to_tensor(DT), rows, cols)
+
+def diagonalTensor_to_vector(DT, indices):
+    return tensor_to_vector(diagonalTensor_to_tensor(DT), indices)
+
+def diagonalTensor_to_scalar(DT):
+    return xp.asscalar(DT.data)
+
+
+
+def scalar_to_diagonalTensor(scalar):
+    return DiagonalTensor(scalar, [])
+
+def diagonalElements_to_diagonalTensor(diagonalElements, labels):
+    return DiagonalTensor(diagonalElements, labels)
+
+def diagonalTensor_to_diagonalElements(DT, labels):
+    DT = DT.move_all_indices(labels)
+    return DT.data
