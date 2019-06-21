@@ -3,57 +3,60 @@ class Tensor(TensorMixin):
     #methods for moving indices
     #I assumed that rollaxis is better than moveaxis in terms of computing costs
     #TODO pass if newIndices==oldIndices
-    @outofplacable_tensorMixin_method
+    @inplacable_tensorMixin_method
     def move_index_to_top(self, indexMoveFrom):
         indexMoveFrom = self.normarg_index(indexMoveFrom)
         newData = xp.rollaxis(self.data, indexMoveFrom, 0)
         newLabels = self.labels[indexMoveFrom:indexMoveFrom+1] + self.labels[:indexMoveFrom] + self.labels[indexMoveFrom+1:]
         return Tensor(newData, newLabels)
 
-    @outofplacable_tensorMixin_method
+    @inplacable_tensorMixin_method
     def move_index_to_bottom(self, indexMoveFrom):
         indexMoveFrom = self.normarg_index(indexMoveFrom)
-        labelMove = self.labels.pop(indexMoveFrom)
-        self.labels.append(labelMove)
-        self.data = xp.rollaxis(self.data, indexMoveFrom, self.ndim)
+        newData = xp.rollaxis(self.data, indexMoveFrom, self.ndim)
+        newLabels = self.labels[:indexMoveFrom] + self.labels[indexMoveFrom+1:] + self.labels[indexMoveFrom:indexMoveFrom+1]
+        return Tensor(newData, newLabels)
 
-    @outofplacable_tensorMixin_method
+    @inplacable_tensorMixin_method
     def move_index_to_position(self, indexMoveFrom, position):
         indexMoveFrom = self.normarg_index(indexMoveFrom)
         labelMove = self.labels.pop(indexMoveFrom)
         self.labels.insert(position, labelMove)
         if position <= indexMoveFrom:
-            self.data = xp.rollaxis(self.data, indexMoveFrom, position)
+            newData = xp.rollaxis(self.data, indexMoveFrom, position)
+            newLabels = self.labels[:position] + self.labels[indexMoveFrom:indexMoveFrom+1] + self.labels[position:indexMoveFrom] + self.labels[indexMoveFrom+1:]
         else:
-            self.data = xp.rollaxis(self.data, indexMoveFrom, position+1)
+            newData = xp.rollaxis(self.data, indexMoveFrom, position+1)
+            newLabels = self.labels[:indexMoveFrom] + self.labels[indexMoveFrom+1:position+1] + self.labels[indexMoveFrom:indexMoveFrom+1] + self.labels[position+1:]
+        return Tensor(newData, newLabels)
 
-    @outofplacable_tensorMixin_method
+    @inplacable_tensorMixin_method
     def move_indices_to_top(self, moveFrom):
         moveFrom = self.normarg_indices_front(moveFrom)
         moveTo = list(range(len(moveFrom)))
         notMoveFrom = diff_list(list(range(self.ndim)), moveFrom)
         newLabels = self.labels_of_indices(moveFrom) + self.labels_of_indices(notMoveFrom)
-        self.data = xp.moveaxis(self.data, moveFrom, moveTo)
-        self.labels = newLabels
+        newData = xp.moveaxis(self.data, moveFrom, moveTo)
+        return Tensor(newData, newLabels)
 
-    @outofplacable_tensorMixin_method
+    @inplacable_tensorMixin_method
     def move_indices_to_bottom(self, moveFrom):
         moveFrom = self.normarg_indices_back(moveFrom)
         moveTo = list(range(self.ndim-len(moveFrom), self.ndim))
         notMoveFrom = diff_list(list(range(self.ndim)), moveFrom)
         newLabels = self.labels_of_indices(notMoveFrom) + self.labels_of_indices(moveFrom)
-        self.data = xp.moveaxis(self.data, moveFrom, moveTo)
-        self.labels = newLabels
+        newData = xp.moveaxis(self.data, moveFrom, moveTo)
+        return Tensor(newData, newLabels)
 
-    @outofplacable_tensorMixin_method
+    @inplacable_tensorMixin_method
     def move_indices_to_position(self, moveFrom, position):
         moveFrom = self.normarg_indices(moveFrom)
         moveTo = list(range(position, position+len(moveFrom)))
         notMoveFrom = diff_list(list(range(self.ndim)), moveFrom)
         newLabels = self.labels_of_indices(notMoveFrom)
         newLabels = newLabels[:position] + self.labels_of_indices(moveFrom) + newLabels[position:]
-        self.data = xp.moveaxis(self.data, moveFrom, moveTo)
-        self.labels = newLabels
+        newData = xp.moveaxis(self.data, moveFrom, moveTo)
+        return Tensor(newData, newLabels)
 
     @outofplacable_tensorMixin_method
     def move_all_indices(self, moveFrom):
