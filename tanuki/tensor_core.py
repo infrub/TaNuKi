@@ -424,7 +424,7 @@ class DiagonalTensor(TensorMixin):
 
     #methods for trace, contract
     # A[i,j,k,l,m,n] = [i==l][j==m][k==n]a[i,j,k]
-    # \sum[j==k]A[i,j,k,l,m,n] = \sum_j [i==l][j==m][j==n]a[i,j,j] = [i==l][m==n] \sum_j a[i,j,j]
+    # \sum[j==k]A[i,j,k,l,m,n] = \sum_j [i==l][j==m][j==n]a[i,m,n] = [i==l][m==n] \sum_j a[i,m,n]
     # TODO not tested
     @inplacable_tensorMixin_method
     def contract_internal_index(self, index1, index2):
@@ -441,15 +441,55 @@ class DiagonalTensor(TensorMixin):
         halfindex1, halfindex2 = index1%self.halfndim, index2%self.halfndim
         halfindex1, halfindex2 = min(halfindex1, halfindex2), max(halfindex1, halfindex2)
 
-        newData = xp.trace(self.data, axis1=halfindex1, axis2=halfindex2)
-        newData = xp.tile(newData, (self.dim(coindex1),)+(1,)*(self.halfndim-2)) #TODO tadasii?
+        newData = xp.diagonal(self.data, axis1=halfindex1, axis2=halfindex2)
 
-        newLabels = self.labels[coindex1:coindex1+1]
-                    +self.labels[0:halfindex1]+self.labels[halfindex1+1:halfindex2]+self.labels[halfindex2+1:self.halfndim]
-                    +self.labels[coindex2:coindex2+1]
-                    +self.labels[self.halfndim:self.halfndim+halfindex1]+self.labels[self.halfndim+halfindex1+1:self.halfndim+halfindex2]+self.labels[self.halfndim+halfindex2+1:self.ndim]
+        newLabels = self.labels[0:halfindex1]+self.labels[halfindex1+1:halfindex2]+self.labels[halfindex2+1:self.halfndim]
+            + self.labels[coindex1:coindex1+1]
+            + self.labels[self.halfndim:self.halfndim+halfindex1]+self.labels[self.halfndim+halfindex1+1:self.halfndim+halfindex2]+self.labels[self.halfndim+halfindex2+1:self.ndim]
+            + self.labels[coindex2:coindex2+1]
 
         return Tensor(newData, newLabels)
+
+    @inplacable_tensorMixin_method
+    def contract_internal_indices(self, indices1, indices2):
+        indices1 = self.normarg_indices_front(indices1)
+        indices2 = self.normarg_indices_front(indices2)
+
+        temp = self.copy(shallow=True)
+        while len(indices1)!=0:
+            index1 = indices1.pop()
+            index2 = indices2.pop()
+            index1, index2 = min(index1,index2), max(index1,index2)
+            coindex1, coindex2 = (index1+self.halfndim)%self.ndim, (index1+self.halfndim)%self.ndim
+            halfindex1, halfindex2 = index1%self.halfndim, index2%self.halfndim
+            halfindex1, halfindex2 = min(halfindex1, halfindex2), max(halfindex1, halfindex2)
+
+            temp = temp.contract_internal_index(index1, index2)
+
+            if index1+self.halfndim == index2:
+                def dokoitta(x):
+                    if 0<=x<index1: return x
+                    elif index1<x<index2: return x-1
+                    elif index2<x<self.ndim: return x-2
+                    else: raise IndexError()
+            else:
+                def dokoitta(x):
+                    if 0<=x<halfindex1: return x
+                    elif halfindex1<x<halfindex2: return x-1
+                    elif halfindex2<x<self.halfndim: return x-2
+                    elif x==coindex1: return self.halfndim-2
+                    elif self.halfndim<=x<self.halfndim+halfindex1: return x-1
+                    elif self.halfndim+halfindex1<x<self.halfndim+halfindex2: return x-2
+                    elif self.halfndim+halfindex2<x<self.ndim: return x-3
+                    elif x==coindex2: return self.ndim-3
+                    else: raise IndexError()
+
+            for xi, x in enumerate(indices1):
+                indices1[xi] = dokoiitta(indices1[xi])
+            for xi, x in enumerate(indices2):
+                indices2[xi] = dokoiitta(indices2[xi])
+
+        return temp
 
     @inplacable_tensorMixin_method
     def contract_internal_common(self):
@@ -467,3 +507,60 @@ class DiagonalTensor(TensorMixin):
 
     trace = contract_internal
     tr = contract_internal
+
+
+
+
+
+#contract functions
+class ToContract:
+    #A["a"]*B["b"] == contract(A,B,["a"],["b"])
+    def __init__(self, tensor, labels):
+        self.tensor = tensor
+        self.labels = labels
+
+    def __mul__(self, other):
+        return contract(self.tensor, other.tensor, self.labels, other.labels)
+
+
+
+def direct_product(A, B):
+    if type(A)==Tensor and type(B)==Tensor:
+        cData = xp.tensordot(A.data, B.data, 0)
+        cLabels = A.labels + B.labels
+        return Tensor(cData, cLabels)
+    elif type(A)==DiagonalTensor and type(B)==DiagonalTensor:
+        cData = xp.tensordot(A.data, B.data, 0)
+        cLabels = A.labels[:A.halfndim] + B.labels[:B.halfndim] + A.labels[A.halfndim:] + B.labels[B.halfndim:]
+        return DiagonalTensor(cData, cLabels)
+
+
+def contract(A, B, aIndicesContract, bIndicesContract):
+    aIndicesContract = A.normarg_indices_back(aIndicesContract)
+    bIndicesContract = B.normarg_indices_front(bIndicesContract)
+    aLabelsContract = A.labels_of_indices(aIndicesContract)
+    bLabelsContract = B.labels_of_indices(bIndicesContract)
+    aDimsContract = A.dims(aIndicesContract)
+    bDimsContract = A.dims(bIndicesContract)
+    assert aDimsContract == bDimsContract: f"{A}, {B}, {aLabelsContract}, {bLabelsContract}"
+
+    cLabels = multiply_popped_list(A.labels, aIndicesContract) + multiply_popped_list(B.labels, bIndicesContract)
+
+    if type(A)==Tensor and type(B)==Tensor:
+        cData = xp.tensordot(A.data, B.data, (aIndicesContract, bIndicesContract))
+        return Tensor(cData, cLabels)
+
+    # A[a,b,c,d] = [a==c][b==d]A.data[a,b]
+    # \sum_de[d==e]A[a,b,c,d]B[e,f,g,h]
+    # == \sum_de[d==e][a==c][b==d]A.data[a,b][e==g][f==h]B.data[g,h]
+    # == \sum_de[d==e][b==d][e==g][a==c]A.data[a,b][f==h]B.data[g,h]
+    # == [b==g][a==c]A.data[a,b][f==h]B.data[g,h]
+    elif type(A)==DiagonalTensor and type(B)==DiagonalTensor:
+        C = direct_product(A, B)
+        cIndicesContract1 = [x if x<A.halfndim else x+B.halfndim for x in aIndicesContract]
+        cIndicesContract2 = [x+A.halfndim if x<B.halfndim else x+A.ndim for x in aIndicesContract]
+        return C.contract_internal_indices(cIndicesContract1, cIndicesContract2)
+
+
+
+

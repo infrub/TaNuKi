@@ -1,16 +1,5 @@
 
 
-
-#contract functions
-class ToContract:
-    #A["a"]*B["b"] == contract(A,B,["a"],["b"])
-    def __init__(self, tensor, labels):
-        self.tensor = tensor
-        self.labels = labels
-
-    def __mul__(self, other):
-        return contract(self.tensor, other.tensor, self.labels, other.labels)
-
 def contract(aTensor, bTensor, aLabelsContract, bLabelsContract):
     #Be careful to cLabels must be unique
     aLabelsContract = normarg_labels(aLabelsContract)
@@ -107,10 +96,10 @@ def scalar_to_tensor(scalar):
 
 
 def diagonalTensor_to_tensor(diagonalTensor):
-    return Tensor(xp.diag(diagonalTensor.data), diagonalTensor.labels)
+    return Tensor(xp.diagflat(diagonalTensor.data), diagonalTensor.labels)
 
 def tensor_to_diagonalTensor(tensor):
-    return DiagonalTensor(xp.diag(tensor.data), tensor.labels)
+    return DiagonalTensor(xp.diagonal(tensor.data), tensor.labels)
 
 def diagonalElements_to_diagonalTensor(diagonalElements, labels):
     return DiagonalTensor(diagonalElements, labels)
@@ -132,7 +121,7 @@ def is_prop_identity_matrix(matrix, absolute_threshold=1e-10):
     if not is_diagonal_matrix(matrix, absolute_threshold=absolute_threshold):
         print("not diagonal!")
         return False
-    d = xp.diag(matrix)
+    d = xp.diagonal(matrix)
     re = xp.real(d)
     maxre = xp.amax(re)
     minre = xp.amin(re)

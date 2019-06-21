@@ -55,6 +55,13 @@ def indexs_duplable_back(univ, see):
         temp[i] = None
     return res
 
+def multiply_popped_list(xs, xis):
+    xs = list(xs)
+    for xi in xis:
+        xs[xi] = None
+    xs = [x for x in xs if x is not None]
+    return xs
+
 
 #label covering methods
 #label :== string | tuple[label]
