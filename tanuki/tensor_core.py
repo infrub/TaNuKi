@@ -366,7 +366,6 @@ class Tensor(TensorMixin):
             else:
                 fusedLabel = tuple(splittedLabels)
 
-
         position = min(splittedIndices)
         self.move_indices_to_position(splittedIndices, position)
         del splittedIndices
@@ -411,7 +410,6 @@ class Tensor(TensorMixin):
             else:
                 splittedLabels = list(fusedLabel)
         splittedLabels = normarg_labels(splittedLabels)
-
         
         assert len(splittedLabels) == len(splittedShape)
 
@@ -720,7 +718,7 @@ def contract(A, B, aIndicesContract, bIndicesContract):
             A = A.move_half_all_indices_to_real_side(aIndicesContract)
             B = B.move_half_all_indices_to_real_side(bIndicesContract)
             cData = A.data * B.data
-            cLabels = A.labels[A.halfndim:] + B.labels[B.halfndim]
+            cLabels = A.labels[A.halfndim:] + B.labels[B.halfndim:]
             return DiagonalTensor(cData, cLabels)
         except (InputLengthError, CantKeepDiagonalityError):
             C = direct_product(A, B)
@@ -728,9 +726,7 @@ def contract(A, B, aIndicesContract, bIndicesContract):
             cIndicesContract2 = [x+A.halfndim if x<B.halfndim else x+A.ndim for x in aIndicesContract]
             return C.contract_internal_indices(cIndicesContract1, cIndicesContract2)
 
-    elif type(A)==DiagonalTensor and type(B)==Tensor:
-        try:
-            A = A.move_half_all_indices_to_real_side(aIndicesContract)
-            B = B.fuse_indices()
+    elif type(A)==Tensor and type(B)==DiagonalTensor:
+
 
 
