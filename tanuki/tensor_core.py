@@ -43,6 +43,17 @@ class InputLengthError(Exception):
 class CantKeepDiagonalityError(Exception):
     pass
 
+class CollateralBool:
+    def __init__(self, trueOrFalse, expression):
+        self.trueOrFalse = trueOrFalse
+        self.expression = expression
+    def __bool__(self):
+        return self.trueOrFalse
+    def __repr__(self):
+        return f"CollateralBool({self.trueOrFalse}, {self.expression})"
+    def __str__(self):
+        return f"{self.trueOrFalse}({self.expression})"
+
 
 
 
@@ -863,4 +874,36 @@ def vector_to_diagonalTensor(vector, halfshape, labels):
 
 def scalar_to_diagonalTensor(scalar):
     return DiagonalTensor(scalar, [])
+
+
+
+
+
+def matrix_is_diagonal(matrix, rtol=1e-5, atol=1e-8):
+    if matrix.ndim != 2:
+        return CollateralBool(False, {"reason":"NOT_MATRIX"})
+    zeros = xp.zeros(matrix.shape)
+    eye = xp.eye(*matrix.shape)
+    notDiagonals = xp.where(eye==zeros, matrix, zeros)
+    if not xp.allclose(notDiagonals, zeros, rtol=rtol, atol=atol):
+        return CollateralBool(False, {"reason":"NOT_DIAGONAL"})
+    return CollateralBool(True, {})
+
+def matrix_is_identity(matrix, rtol=1e-5, atol=1e-8):
+    if matrix.ndim != 2:
+        return CollateralBool(False, {"reason":"NOT_MATRIX"})
+    eye = xp.eye(*matrix.shape)
+    if not xp.allclose(matrix, eye, rtol=rtol, atol=atol):
+        return CollateralBool(False, {"reason":"NOT_IDENTITY"})
+    return CollateralBool(True, {})
+
+def matrix_is_prop_identity(matrix, rtol=1e-5, atol=1e-8):
+    hoge = is_diagonal_matrix(matrix, rtol=rtol, atol=atol):
+    if not hoge: return hoge
+    d = xp.diagonal(matrix)
+    factor = xp.average(d)
+    ones = xp.ones_like(d)
+    if not xp.allclose(d, factor*ones, rtol=rtol, atol=atol):
+        return CollateralBool(False, {"reason":"NOT_PROP_IDENTITY"})
+    return CollateralBool(True, {"factor":factor})
 
