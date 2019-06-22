@@ -505,10 +505,7 @@ class TensorMixin:
 class Tensor(TensorMixin):
     #basic methods
     def __init__(self, data, labels=None, base_label=None, copy=False):
-        if not copy and isinstance(data, xp.ndarray):
-            self.data = data
-        else:
-            self.data = xp.asarray(data)
+        self.data = xp.array(data, copy=copy)
         if labels is None:
             if base_label is None:
                 base_label = unique_label()
@@ -840,10 +837,7 @@ class Tensor(TensorMixin):
 class DiagonalTensor(TensorMixin):
     #basic methods
     def __init__(self, data, labels=None, base_label=None, copy=False):
-        if not copy and isinstance(data, xp.ndarray):
-            self.data = data
-        else:
-            self.data = xp.asarray(data)
+        self.data = xp.array(data, copy=copy)
         if labels is None:
             if base_label is None:
                 base_label = unique_label()
