@@ -36,78 +36,6 @@
 
 
 
-
-
-
-    #methods for basic operations
-    def __mul__(self, other):
-        if isinstance(other, TensorMixin):
-            return contract_common(self, other)
-        elif xp.isscalar(other):
-            return Tensor(self.data*other, labels=self.labels)
-        return NotImplemented
-
-    def __rmul__(self, other):
-        if isinstance(other, TensorMixin):
-            return contract_common(other, self)
-        elif xp.isscalar(other):
-            return Tensor(self.data*other, labels=self.labels)
-        return NotImplemented
-
-    def __truediv__(self, other):
-        if xp.isscalar(other):
-            return Tensor(self.data/other, labels=self.labels)
-        return NotImplemented
-
-    def __add__(self, other, skipLabelSort=False):
-        if isinstance(other, TensorMixin):
-            if not skipLabelSort:
-                other = other.move_all_indices(self.labels, inplace=False)
-            if type(other)==DiagonalTensor:
-                other = other.to_tensor()
-            return Tensor(self.data+other.data, self.labels)
-        return NotImplemented
-
-    def __radd__(self, other, skipLabelSort=False):
-        if isinstance(other, TensorMixin):
-            if not skipLabelSort:
-                other = other.move_all_indices(self.labels, inplace=False)
-            if type(other)==DiagonalTensor:
-                other = other.to_tensor()
-            return Tensor(other.data+self.data, self.labels)
-        return NotImplemented
-
-    def __sub__(self, other, skipLabelSort=False):
-        if isinstance(other, TensorMixin):
-            if not skipLabelSort:
-                other = other.move_all_indices(self.labels, inplace=False)
-            if type(other)==DiagonalTensor:
-                other = other.to_tensor()
-            return Tensor(self.data-other.data, self.labels)
-        return NotImplemented
-
-    def __rsub__(self, other, skipLabelSort=False):
-        if isinstance(other, TensorMixin):
-            if not skipLabelSort:
-                other = other.move_all_indices(self.labels, inplace=False)
-            if type(other)==DiagonalTensor:
-                other = other.to_tensor()
-            return Tensor(other.data-self.data, self.labels)
-        return NotImplemented
-
-    def __eq__(self, other, skipLabelSort=False, absolute_threshold=1e-10):
-        if isinstance(other, TensorMixin):
-            diff = self.__sub__(other, skipLabelSort=skipLabelSort)
-            return diff.norm() <= absolute_threshold
-        return NotImplemented
-
-
-    @inplacable_tensorMixin_method
-    def conjugate(self):
-        return Tensor(data=self.data.conj(),labels=self.labels)
-
-    conj = conjugate
-
     @inplacable_tensorMixin_method
     def pad_indices(self, indices, npads):
         indices = self.normarg_indices(indices)
@@ -228,55 +156,7 @@
 
 
 class DiagonalTensor(TensorMixin):
-    #methods for basic operations
-    def __mul__(self, other):
-        if isinstance(other, TensorMixin):
-            return contract_common(self, other)
-        elif xp.isscalar(other):
-            return DiagonalTensor(self.data*other, labels=self.labels)
-        return NotImplemented
 
-    def __rmul__(self, other):
-        if isinstance(other, TensorMixin):
-            return contract_common(other, self)
-        elif xp.isscalar(other):
-            return DiagonalTensor(self.data*other, labels=self.labels)
-        return NotImplemented
-
-    def __truediv__(self, other):
-        if xp.isscalar(other):
-            return DiagonalTensor(self.data/other, labels=self.labels)
-        return NotImplemented
-
-    def __rtruediv__(self, other):
-        if isinstance(other, TensorMixin):
-            return other * self.inv()
-        return NotImplemented
-
-    def __add__(self, other, skipLabelSort=False):
-        if type(other)==DiagonalTensor:
-            if not skipLabelSort:
-                other = other.move_all_indices(self.labels, inplace=False)
-            return DiagonalTensor(self.data+other.data, self.labels)
-        return NotImplemented
-
-    def __sub__(self, other, skipLabelSort=False):
-        if type(other)==DiagonalTensor:
-            if not skipLabelSort:
-                other = other.move_all_indices(self.labels, inplace=False)
-            return DiagonalTensor(self.data-other.data, self.labels)
-        return NotImplemented
-
-    def __eq__(self, other, skipLabelSort=False, absolute_threshold=1e-10):
-        if type(other)==DiagonalTensor:
-            diff = self.__sub__(other, skipLabelSort=skipLabelSort)
-            return diff.norm() <= absolute_threshold
-        return NotImplemented
-
-
-    @inplacable_tensorMixin_method
-    def conjugate(self):
-        return DiagonalTensor(data=self.data.conj(), labels=self.labels)
 
     conj = conjugate
 

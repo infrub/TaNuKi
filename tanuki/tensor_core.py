@@ -75,41 +75,42 @@ class TensorMixin:
     #methods for labels
     def get_labels(self):
         return self._labels
-
     def set_labels(self, labels):
         assert len(labels) == self.ndim, f"{labels}, {self.shape}"
         self._labels = list(labels)
-
     labels = property(get_labels, set_labels)
-
-
 
     def label_of_index(self, index):
         return self.labels[index]
-
     def labels_of_indices(self, indices):
         return [self.labels[index] for index in indices]
 
-
-
     def index_of_label_front(self, label):
         return self.labels.index(label)
-
     def index_of_label_back(self, label):
         return self.ndim - 1 - list(reversed(self.labels)).index(label)
-
     index_of_label = index_of_label_front
 
     def indices_of_labels_front(self, labels): #list[int]
         return indexs_duplable_front(self.labels, labels)
-
     def indices_of_labels_back(self, labels): #list[int]
         return indexs_duplable_back(self.labels, labels)
-
     indices_of_labels = indices_of_labels_front
 
+    def dim(self, index):
+        index = self.normarg_index(index)
+        return self.shape[index]
+    def dims_front(self, indices):
+        indices = self.normarg_indices_front(indices)
+        return tuple(self.shape[index] for index in indices)
+    def dims_back(self, indices):
+        indices = self.normarg_indices_back(indices)
+        return tuple(self.shape[index] for index in indices)
+    dims = dims_front
 
 
+
+    #methods for normarg
     def normarg_index_front(self, indexOrLabel):
         if type(indexOrLabel)==int:
             return indexOrLabel
@@ -175,22 +176,6 @@ class TensorMixin:
 
 
 
-    def dim(self, index):
-        index = self.normarg_index(index)
-        return self.shape[index]
-
-    def dims_front(self, indices):
-        indices = self.normarg_indices_front(indices)
-        return tuple(self.shape[index] for index in indices)
-
-    def dims_back(self, indices):
-        indices = self.normarg_indices_back(indices)
-        return tuple(self.shape[index] for index in indices)
-
-    dims = dims_front
-
-
-
     @outofplacable_tensorMixin_method
     def replace_labels(self, oldIndices, newLabels):
         oldIndices = self.normarg_indices(oldIndices)
@@ -219,12 +204,103 @@ class TensorMixin:
 
 
 
+    #methods for basic operations
+    def __neg__(self):
+        return self.__class__(-self.data, labels=self.labels)
+
+    @inplacable_tensorMixin_method
+    def conjugate(self):
+        return self.__class__(self.data.conj(), labels=self.labels)
+    conj = conjugate
+
+
+
+    def __add__(self, other, skipLabelSort=False):
+        if isinstance(other, TensorMixin):
+            if isinstance(self, DiagonalTensor) and isinstance(other, DiagonalTensor):
+                try:
+                    if not skipLabelSort:
+                        other = other.move_all_indices(self.labels)
+                    return DiagonalTensor(self.data+other.data, self.labels)
+                except:
+                    pass
+            if isinstance(self, DiagonalTensor)
+                self = self.to_tensor()
+            if isinstance(other, DiagonalTensor):
+                other = other.to_tensor()
+            if not skipLabelSort:
+                other = other.move_all_indices(self.labels)
+            return Tensor(self.data+other.data, self.labels)
+        return NotImplemented
+
+    def __sub__(self, other, skipLabelSort=False):
+        if isinstance(other, TensorMixin):
+            if isinstance(self, DiagonalTensor) and isinstance(other, DiagonalTensor):
+                try:
+                    if not skipLabelSort:
+                        other = other.move_all_indices(self.labels)
+                    return DiagonalTensor(self.data-other.data, self.labels)
+                except:
+                    pass
+            if isinstance(self, DiagonalTensor)
+                self = self.to_tensor()
+            if isinstance(other, DiagonalTensor):
+                other = other.to_tensor()
+            if not skipLabelSort:
+                other = other.move_all_indices(self.labels)
+            return Tensor(self.data-other.data, self.labels)
+        return NotImplemented
+
+    def __mul__(self, other):
+        if isinstance(other, TensorMixin):
+            return contract_common(self, other)
+        elif xp.isscalar(other):
+            return self.__class__(self.data*other, labels=self.labels)
+        return NotImplemented
+
+    def __rmul__(self, other):
+        if isinstance(other, TensorMixin):
+            return contract_common(other, self)
+        elif xp.isscalar(other):
+            return self.__class__(self.data*other, labels=self.labels)
+        return NotImplemented
+
+    def __truediv__(self, other):
+        if isinstance(other, DiagonalTensor):
+            return self * other.inv()
+        elif xp.isscalar(other):
+            return self.__class__(self.data/other, labels=self.labels)
+        return NotImplemented
+
+    def __eq__(self, other, skipLabelSort=False, rtol=1e-5, atol=1e-8):
+        if isinstance(other, TensorMixin):
+            if isinstance(self, DiagonalTensor) and isinstance(other, DiagonalTensor):
+                try:
+                    if not skipLabelSort:
+                        other = other.move_all_indices(self.labels)
+                    return xp.allclose(self.data, other.data, rtol=rtol, atol=atol)
+                except:
+                    pass
+            if isinstance(self, DiagonalTensor)
+                self = self.to_tensor()
+            if isinstance(other, DiagonalTensor):
+                other = other.to_tensor()
+            if not skipLabelSort:
+                other = other.move_all_indices(self.labels)
+            return xp.allclose(self.data, other.data, rtol=rtol, atol=atol)
+        return NotImplemented
+
+
+
+
     def __getitem__(self, *indices):
         if len(indices)==1 and isinstance(indices[0],list): #if called like as A[["a"]]
             indices = indices[0]
         else:
             indices = list(indices)
         return ToContract(self, indices)
+
+
 
 
 
@@ -580,13 +656,13 @@ class DiagonalTensor(TensorMixin):
         labels = [labels[i] for i in moveFrom]
 
         return DiagonalTensor(data, labels)
-    """
+    
     def move_all_indices(self, moveFrom):
         try:
             return self.move_all_indices_assuming_can_keep_diagonality(moveFrom)
         except CantKeepDiagonalityError:
             return self.to_tensor().move_all_indices(moveFrom)
-    """
+    
     def move_half_all_indices_to_top(self, halfMoveFrom):
         halfMoveFrom = self.normarg_indices_front(halfMoveFrom)
         if len(halfMoveFrom) != self.halfndim:
