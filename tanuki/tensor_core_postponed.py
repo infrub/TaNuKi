@@ -34,11 +34,3 @@
         self.data = self.data.reshape(newShape)
         self.labels = newLabels
 
-
-
-class DiagonalTensor(TensorMixin):
-
-
-
-
-

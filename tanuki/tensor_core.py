@@ -400,6 +400,27 @@ class Tensor(TensorMixin):
 
 
 
+    @inplacable_tensorMixin_method
+    def truncate_index(self, index, fromto1, fromto2=None):
+        index = self.normarg_index(index)
+        if fromto2 is None:
+            fromto2 = fromto1
+            fromto1 = 0
+        data = self.data
+        data = xp.split(data, [fromto1, fromto2], axis=index)[1]
+        return Tensor(data, self.labels)
+
+    @inplacable_tensorMixin_method
+    def pad_indices(self, indices, npads):
+        indices = self.normarg_indices(indices)
+        wholeNpad = [(0,0)] * self.ndim
+        for index, npad in zip(indices, npads):
+            wholeNpad[index] = npad
+        newData = xp.pad(self.data, wholeNpad, mode="constant", constant_values=0)
+        return Tensor(newData, labels=self.labels)
+
+
+        
     #methods for moving indices
     #I assumed that rollaxis is better than moveaxis in terms of computing costs
     #TODO pass if newIndices==oldIndices
