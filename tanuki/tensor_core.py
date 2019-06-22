@@ -60,6 +60,166 @@ class CollateralBool:
 
 
 
+#converting functions
+def tensor_to_ndarray(T, indices):
+    T = T.move_all_indices(indices)
+    return T.data
+
+def tensor_to_matrix(T, rows, cols=None):
+    rows, cols = T.normarg_complement_indices(rows, cols)
+    T = T.move_all_indices(rows+cols)
+    total_row_dim = soujou(T.shape[:len(rows)])
+    total_col_dim = soujou(T.shape[len(rows):])
+    return xp.reshape(t.data, (total_row_dim, total_col_dim))
+
+def tensor_to_vector(T, indices):
+    T = T.move_all_indices(indices)
+    return xp.reshape(T.data, (T.size,))
+
+def tensor_to_scalar(T):
+    return xp.asscalar(T.data)
+
+
+
+def ndarray_to_tensor(ndarray, labels):
+    return Tensor(ndarray, labels)
+
+def matrix_to_tensor(matrix, shape, labels):
+    return Tensor(xp.reshape(matrix, shape), labels)
+
+def vector_to_tensor(vector, shape, labels):
+    return Tensor(xp.reshape(vector, shape), labels)
+
+def scalar_to_tensor(scalar):
+    return Tensor(scalar, [])
+
+
+
+def diagonalTensor_to_diagonalElementsNdarray(DT, indices):
+    DT = DT.move_all_indices_assuming_can_keep_diagonality(indices)
+    return DT.data
+
+def diagonalTensor_to_diagonalElementsVector(DT, indices):
+    DT = DT.move_all_indices_assuming_can_keep_diagonality(indices)
+    return xp.flatten(DT.data)
+
+
+
+def diagonalElementsNdarray_to_diagonalTensor(ndarray, labels):
+    return DiagonalTensor(ndarray, labels)
+
+def diagonalElementsVector_to_diagonalTensor(vector, halfshape, labels):
+    return diagonalElementsNdarray_to_diagonalTensor(vector.reshape(halfshape), labels)
+
+
+
+def diagonalTensor_to_tensor(DT):
+    shape = DT.shape
+    return Tensor(xp.diagflat(diagonalTensor.data).reshape(shape), diagonalTensor.labels)
+
+def diagonalTensor_to_matrix(DT, rows, cols=None):
+    return tensor_to_matrix(diagonalTensor_to_tensor(DT), rows, cols)
+
+def diagonalTensor_to_vector(DT, indices):
+    return tensor_to_vector(diagonalTensor_to_tensor(DT), indices)
+
+def diagonalTensor_to_scalar(DT):
+    return xp.asscalar(DT.data)
+
+
+
+def tensor_to_diagonalTensor(T, indices):
+    T = T.move_all_indices(indices)
+    halfshape = T.shape[:T.ndim//2]
+    halfsize = soujou(halfshape)
+    t = T.data
+    t = t.reshape((halfsize, halfsize))
+    dt = xp.diagonal(t)
+    dt = dt.reshape(halfshape)
+    return DiagonalTensor(dt, T.labels)
+
+def matrix_to_diagonalTensor(matrix, halfshape, labels):
+    dt = xp.diagonal(matrix)
+    dt = dt.reshape(halfshape)
+    return DiagonalTensor(dt, labels)
+
+def vector_to_diagonalTensor(vector, halfshape, labels):
+    halfsize = soujou(halfshape)
+    matrix = vector.reshape((halfsize, halfsize))
+    dt = xp.diagonal(matrix)
+    dt = dt.reshape(halfshape)
+    return DiagonalTensor(dt, labels)
+
+def scalar_to_diagonalTensor(scalar):
+    return DiagonalTensor(scalar, [])
+
+
+
+
+
+#confirming functions
+def matrix_is_diagonal(M, rtol=1e-5, atol=1e-8):
+    if M.ndim != 2:
+        return CollateralBool(False, {"reason":"NOT_MATRIX"})
+    zeros = xp.zeros(M.shape)
+    eye = xp.eye(*M.shape)
+    notDiagonals = xp.where(eye==zeros, M, zeros)
+    if not xp.allclose(notDiagonals, zeros, rtol=rtol, atol=atol):
+        return CollateralBool(False, {"reason":"NOT_DIAGONAL"})
+    return CollateralBool(True, {})
+
+def matrix_is_identity(M, rtol=1e-5, atol=1e-8):
+    if M.ndim != 2:
+        return CollateralBool(False, {"reason":"NOT_MATRIX"})
+    eye = xp.eye(*M.shape)
+    if not xp.allclose(M, eye, rtol=rtol, atol=atol):
+        return CollateralBool(False, {"reason":"NOT_IDENTITY"})
+    return CollateralBool(True, {})
+
+def matrix_is_prop_identity(M, rtol=1e-5, atol=1e-8):
+    hoge = is_diagonal_matrix(M, rtol=rtol, atol=atol)
+    if not hoge: return hoge
+    d = xp.diagonal(M)
+    factor = xp.average(d)
+    ones = xp.ones_like(d)
+    if not xp.allclose(d, factor*ones, rtol=rtol, atol=atol):
+        return CollateralBool(False, {"reason":"NOT_PROP_IDENTITY"})
+    return CollateralBool(True, {"factor":factor})
+
+def matrix_is_left_semi_unitary(M, rtol=1e-5, atol=1e-8):
+    N = xp.dot(M.conj().transpose(), M)
+    return matrix_is_identity(N, rtol=rtol, atol=atol)
+
+def matrix_is_right_semi_unitary(M, rtol=1e-5, atol=1e-8):
+    N = xp.dot(M, M.conj().transpose())
+    return matrix_is_identity(N, rtol=rtol, atol=atol)
+
+def matrix_is_unitary(M, rtol=1e-5, atol=1e-8):
+    is_left_semi_unitary = matrix_is_left_semi_unitary(M, rtol=rtol, atol=atol)
+    is_right_semi_unitary = matrix_is_right_semi_unitary(M, rtol=rtol, atol=atol)
+    is_unitary = bool(is_left_semi_unitary) and bool(is_right_semi_unitary)
+    expression = {"left":is_left_semi_unitary.expression, "right":is_right_semi_unitary.expression}
+    return CollateralBool(is_unitary, expression)
+
+def matrix_is_prop_left_semi_unitary(M, rtol=1e-5, atol=1e-8):
+    N = xp.dot(M.conj().transpose(), M)
+    return matrix_is_prop_identity(N, rtol=rtol, atol=atol)
+
+def matrix_is_prop_right_semi_unitary(M, rtol=1e-5, atol=1e-8):
+    N = xp.dot(M, M.conj().transpose())
+    return matrix_is_prop_identity(N, rtol=rtol, atol=atol)
+
+def matrix_is_prop_unitary(M, rtol=1e-5, atol=1e-8):
+    is_prop_left_semi_unitary = matrix_is_prop_left_semi_unitary(M, rtol=rtol, atol=atol)
+    is_prop_right_semi_unitary = matrix_is_prop_right_semi_unitary(M, rtol=rtol, atol=atol)
+    is_prop_unitary = bool(is_prop_left_semi_unitary) and bool(is_prop_right_semi_unitary)
+    expression = {"left":is_prop_left_semi_unitary.expression, "right":is_prop_right_semi_unitary.expression}
+    return CollateralBool(is_prop_unitary, expression)
+
+
+
+
+
 #classes
 class TensorMixin:
     def __copy__(self):
@@ -262,7 +422,7 @@ class TensorMixin:
                     return DiagonalTensor(self.data+other.data, self.labels)
                 except:
                     pass
-            if isinstance(self, DiagonalTensor)
+            if isinstance(self, DiagonalTensor):
                 self = self.to_tensor()
             if isinstance(other, DiagonalTensor):
                 other = other.to_tensor()
@@ -280,7 +440,7 @@ class TensorMixin:
                     return DiagonalTensor(self.data-other.data, self.labels)
                 except:
                     pass
-            if isinstance(self, DiagonalTensor)
+            if isinstance(self, DiagonalTensor):
                 self = self.to_tensor()
             if isinstance(other, DiagonalTensor):
                 other = other.to_tensor()
@@ -319,7 +479,7 @@ class TensorMixin:
                     return xp.allclose(self.data, other.data, rtol=rtol, atol=atol)
                 except:
                     pass
-            if isinstance(self, DiagonalTensor)
+            if isinstance(self, DiagonalTensor):
                 self = self.to_tensor()
             if isinstance(other, DiagonalTensor):
                 other = other.to_tensor()
@@ -824,9 +984,9 @@ class DiagonalTensor(TensorMixin):
 
         newData = xp.diagonal(self.data, axis1=halfindex1, axis2=halfindex2)
 
-        newLabels = self.labels[0:halfindex1]+self.labels[halfindex1+1:halfindex2]+self.labels[halfindex2+1:self.halfndim]
-            + self.labels[coindex1:coindex1+1]
-            + self.labels[self.halfndim:self.halfndim+halfindex1]+self.labels[self.halfndim+halfindex1+1:self.halfndim+halfindex2]+self.labels[self.halfndim+halfindex2+1:self.ndim]
+        newLabels = self.labels[0:halfindex1]+self.labels[halfindex1+1:halfindex2]+self.labels[halfindex2+1:self.halfndim] \
+            + self.labels[coindex1:coindex1+1] \
+            + self.labels[self.halfndim:self.halfndim+halfindex1]+self.labels[self.halfndim+halfindex1+1:self.halfndim+halfindex2]+self.labels[self.halfndim+halfindex2+1:self.ndim] \
             + self.labels[coindex2:coindex2+1]
 
         return Tensor(newData, newLabels)
@@ -934,7 +1094,7 @@ def contract_indices(A, B, aIndicesContract, bIndicesContract):
     bLabelsContract = B.labels_of_indices(bIndicesContract)
     aDimsContract = A.dims(aIndicesContract)
     bDimsContract = A.dims(bIndicesContract)
-    assert aDimsContract == bDimsContract: f"{A}, {B}, {aLabelsContract}, {bLabelsContract}"
+    assert aDimsContract == bDimsContract, f"{A}, {B}, {aLabelsContract}, {bLabelsContract}"
 
     if type(A)==Tensor and type(B)==Tensor:
         cData = xp.tensordot(A.data, B.data, (aIndicesContract, bIndicesContract))
@@ -970,7 +1130,7 @@ def contract_indices(A, B, aIndicesContract, bIndicesContract):
             c = c.reshape(aDimsNotContract+bDimsNotContract)
             cLabels = aLabelsNotContract+bLabelsNotContract
             return Tensor(c, cLabels)
-        except InputLengthError, CantKeepDiagonalityError:
+        except (InputLengthError, CantKeepDiagonalityError):
             return contract(A, diagonalTensor_to_tensor(B), aIndicesContract, bIndicesContract)
 
     elif type(A)==DiagonalTensor and type(B)==Tensor:
@@ -989,171 +1149,13 @@ def contract_common(A, B):
 
 
 
-def contract(A, B, aIndicesContract=None, bIndicesContract=None)
+def contract(A, B, aIndicesContract=None, bIndicesContract=None):
     if aIndicesContract is None:
         return contract_common(A, B)
     else:
         return contract_indices(A, B, aIndicesContract, bIndicesContract)
 
 
-
-
-
-#converting functions
-def tensor_to_ndarray(T, indices):
-    T = T.move_all_indices(indices)
-    return T.data
-
-def tensor_to_matrix(T, rows, cols=None):
-    rows, cols = T.normarg_complement_indices(rows, cols)
-    T = T.move_all_indices(rows+cols)
-    total_row_dim = soujou(T.shape[:len(rows)])
-    total_col_dim = soujou(T.shape[len(rows):])
-    return xp.reshape(t.data, (total_row_dim, total_col_dim))
-
-def tensor_to_vector(T, indices):
-    T = T.move_all_indices(indices)
-    return xp.reshape(T.data, (T.size,))
-
-def tensor_to_scalar(T):
-    return xp.asscalar(T.data)
-
-
-
-def ndarray_to_tensor(ndarray, labels):
-    return Tensor(ndarray, labels)
-
-def matrix_to_tensor(matrix, shape, labels):
-    return Tensor(xp.reshape(matrix, shape), labels)
-
-def vector_to_tensor(vector, shape, labels):
-    return Tensor(xp.reshape(vector, shape), labels)
-
-def scalar_to_tensor(scalar):
-    return Tensor(scalar, [])
-
-
-
-def diagonalTensor_to_diagonalElementsNdarray(DT, indices):
-    DT = DT.move_all_indices_assuming_can_keep_diagonality(indices)
-    return DT.data
-
-def diagonalTensor_to_diagonalElementsVector(DT, indices):
-    DT = DT.move_all_indices_assuming_can_keep_diagonality(indices)
-    return xp.flatten(DT.data)
-
-
-
-def diagonalElementsNdarray_to_diagonalTensor(ndarray, labels):
-    return DiagonalTensor(ndarray, labels)
-
-def diagonalElementsVector_to_diagonalTensor(vector, halfshape, labels):
-    return diagonalElementsNdarray_to_diagonalTensor(vector.reshape(halfshape), labels)
-
-
-
-def diagonalTensor_to_tensor(DT):
-    shape = DT.shape
-    return Tensor(xp.diagflat(diagonalTensor.data).reshape(shape), diagonalTensor.labels)
-
-def diagonalTensor_to_matrix(DT, rows, cols=None):
-    return tensor_to_matrix(diagonalTensor_to_tensor(DT), rows, cols)
-
-def diagonalTensor_to_vector(DT, indices):
-    return tensor_to_vector(diagonalTensor_to_tensor(DT), indices)
-
-def diagonalTensor_to_scalar(DT):
-    return xp.asscalar(DT.data)
-
-
-
-def tensor_to_diagonalTensor(T, indices):
-    T = T.move_all_indices(indices)
-    halfshape = T.shape[:T.ndim//2]
-    halfsize = soujou(halfshape)
-    t = T.data
-    t = t.reshape((halfsize, halfsize))
-    dt = xp.diagonal(t)
-    dt = dt.reshape(halfshape)
-    return DiagonalTensor(dt, T.labels)
-
-def matrix_to_diagonalTensor(matrix, halfshape, labels):
-    dt = xp.diagonal(matrix)
-    dt = dt.reshape(halfshape)
-    return DiagonalTensor(dt, labels)
-
-def vector_to_diagonalTensor(vector, halfshape, labels):
-    halfsize = soujou(halfshape)
-    matrix = vector.reshape((halfsize, halfsize))
-    dt = xp.diagonal(matrix)
-    dt = dt.reshape(halfshape)
-    return DiagonalTensor(dt, labels)
-
-def scalar_to_diagonalTensor(scalar):
-    return DiagonalTensor(scalar, [])
-
-
-
-
-
-#confirming functions
-def matrix_is_diagonal(M, rtol=1e-5, atol=1e-8):
-    if M.ndim != 2:
-        return CollateralBool(False, {"reason":"NOT_MATRIX"})
-    zeros = xp.zeros(M.shape)
-    eye = xp.eye(*M.shape)
-    notDiagonals = xp.where(eye==zeros, M, zeros)
-    if not xp.allclose(notDiagonals, zeros, rtol=rtol, atol=atol):
-        return CollateralBool(False, {"reason":"NOT_DIAGONAL"})
-    return CollateralBool(True, {})
-
-def matrix_is_identity(M, rtol=1e-5, atol=1e-8):
-    if M.ndim != 2:
-        return CollateralBool(False, {"reason":"NOT_MATRIX"})
-    eye = xp.eye(*M.shape)
-    if not xp.allclose(M, eye, rtol=rtol, atol=atol):
-        return CollateralBool(False, {"reason":"NOT_IDENTITY"})
-    return CollateralBool(True, {})
-
-def matrix_is_prop_identity(M, rtol=1e-5, atol=1e-8):
-    hoge = is_diagonal_matrix(M, rtol=rtol, atol=atol):
-    if not hoge: return hoge
-    d = xp.diagonal(M)
-    factor = xp.average(d)
-    ones = xp.ones_like(d)
-    if not xp.allclose(d, factor*ones, rtol=rtol, atol=atol):
-        return CollateralBool(False, {"reason":"NOT_PROP_IDENTITY"})
-    return CollateralBool(True, {"factor":factor})
-
-def matrix_is_left_semi_unitary(M, rtol=1e-5, atol=1e-8):
-    N = xp.dot(M.conj().transpose(), M)
-    return matrix_is_identity(N, rtol=rtol, atol=atol)
-
-def matrix_is_right_semi_unitary(M, rtol=1e-5, atol=1e-8):
-    N = xp.dot(M, M.conj().transpose())
-    return matrix_is_identity(N, rtol=rtol, atol=atol)
-
-def matrix_is_unitary(M, rtol=1e-5, atol=1e-8):
-    is_left_semi_unitary = matrix_is_left_semi_unitary(M, rtol=rtol, atol=atol)
-    is_right_semi_unitary = matrix_is_right_semi_unitary(M, rtol=rtol, atol=atol)
-    is_unitary = bool(is_left_semi_unitary) and bool(is_right_semi_unitary)
-    expression = {"left":is_left_semi_unitary.expression, "right":is_right_semi_unitary.expression}
-    return CollateralBool(is_unitary, expression)
-
-def matrix_is_prop_left_semi_unitary(M, rtol=1e-5, atol=1e-8):
-    N = xp.dot(M.conj().transpose(), M)
-    return matrix_is_prop_identity(N, rtol=rtol, atol=atol)
-
-def matrix_is_prop_right_semi_unitary(M, rtol=1e-5, atol=1e-8):
-    N = xp.dot(M, M.conj().transpose())
-    return matrix_is_prop_identity(N, rtol=rtol, atol=atol)
-
-def matrix_is_prop_unitary(M, rtol=1e-5, atol=1e-8):
-    is_prop_left_semi_unitary = matrix_is_prop_left_semi_unitary(M, rtol=rtol, atol=atol)
-    is_prop_right_semi_unitary = matrix_is_prop_right_semi_unitary(M, rtol=rtol, atol=atol)
-    is_prop_unitary = bool(is_prop_left_semi_unitary) and bool(is_prop_right_semi_unitary)
-    expression = {"left":is_prop_left_semi_unitary.expression, "right":is_prop_right_semi_unitary.expression}
-    return CollateralBool(is_prop_unitary, expression)
 
 
 

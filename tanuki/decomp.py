@@ -131,7 +131,7 @@ def normarg_eigh_labels(eigh_labels):
         eigh_labels = [unique_label()]
     if not isinstance(eigh_labels, list):
         eigh_labels = [eigh_labels]
-    if len(eigh_labels)==1:ƒ
+    if len(eigh_labels)==1:
         eigh_labels = [eigh_labels[0], eigh_labels[0]]
     if len(eigh_labels)==2:
         eigh_labels = [eigh_labels[0],eigh_labels[0],eigh_labels[1],eigh_labels[1]]
