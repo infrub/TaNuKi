@@ -698,8 +698,7 @@ def direct_product(A, B):
 
 
 
-
-def contract(A, B, aIndicesContract, bIndicesContract):
+def contract_indices(A, B, aIndicesContract, bIndicesContract):
     aIndicesContract = A.normarg_indices_back(aIndicesContract)
     bIndicesContract = B.normarg_indices_front(bIndicesContract)
     aLabelsContract = A.labels_of_indices(aIndicesContract)
@@ -753,8 +752,19 @@ def contract(A, B, aIndicesContract, bIndicesContract):
 
 
 
+def contract_common(A, B):
+    aLabels = A.labels
+    bLabels = B.labels
+    commonLabels = intersection_list(aLabels, bLabels)
+    return contract_indices(A, B, commonLabels, commonLabels)
 
 
+
+def contract(A, B, aIndicesContract=None, bIndicesContract=None)
+    if aIndicesContract is None:
+        return contract_common(A, B)
+    else:
+        return contract_indices(A, B, aIndicesContract, bIndicesContract)
 
 
 
