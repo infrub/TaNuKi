@@ -157,7 +157,7 @@ def tensor_eigh(A, rows, cols=None, eigh_labels=None):
 
 # A*V == w*V
 def tensor_eigsh(A, rows, cols=None):
-    rows, cols = normalize_and_complement_argument_labels(A.labels, rows, cols)
+    rows, cols = A.normarg_complement_indices(rows, cols)
     row_labels, col_labels = A.labels_of_indices(rows), A.labels_of_indices(cols)
     row_dims, col_dims = A.dims(rows), A.dims(cols)
     a = A.to_matrix(rows, cols)

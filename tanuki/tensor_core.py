@@ -166,13 +166,13 @@ class TensorMixin:
 
     normarg_indices = normarg_indices_front
 
-    def normarg_complement_indices(self, row_indices, column_indices=None):
-        row_indices = self.normarg_indices_front(row_indices)
-        if column_indices is None:
-            column_indices = diff_list(list(range(self.ndim)), row_indices)
+    def normarg_complement_indices(self, rows, cols=None):
+        rows = self.normarg_indices_front(rows)
+        if cols is None:
+            cols = diff_list(list(range(self.ndim)), rows)
         else:
-            column_indices = self.normarg_indices_back(column_indices)
-        return row_indices, column_indices
+            cols = self.normarg_indices_back(cols)
+        return rows, cols
 
 
 

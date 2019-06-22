@@ -71,14 +71,6 @@ def normarg_labels(labels):
     else:
         return [labels]
 
-def normalize_and_complement_argument_labels(all_labels, row_labels, column_labels=None):
-    row_labels = normarg_labels(row_labels)
-    if column_labels is None:
-        column_labels = diff_list(all_labels, row_labels)
-    else:
-        column_labels = normarg_labels(column_labels)
-    return row_labels, column_labels
-
 def unique_label():
     return "".join(random.choices("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ",k=8))
 
@@ -103,6 +95,15 @@ def prime_label(label):
     else:
         return label+"'"
 
+def unprime_label(label):
+    if type(label)==tuple:
+        return tuple(unaster_label(x) for x in label)
+    else:
+        if label[-1] == "'":
+            return label[:-1]
+        else:
+            return label
+
 def aster_labels(labels):
     return [aster_label(label) for label in labels]
 
@@ -111,6 +112,9 @@ def unaster_labels(labels):
 
 def prime_labels(labels):
     return [prime_label(label) for label in labels]
+
+def unprime_labels(labels):
+    return [unprime_label(label) for label in labels]
 
 
 class CyclicList(list):
