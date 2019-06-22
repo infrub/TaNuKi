@@ -920,8 +920,9 @@ def matrix_is_right_semi_unitary(M, rtol=1e-5, atol=1e-8):
 def matrix_is_unitary(M, rtol=1e-5, atol=1e-8):
     is_left_semi_unitary = matrix_is_left_semi_unitary(M, rtol=rtol, atol=atol)
     is_right_semi_unitary = matrix_is_right_semi_unitary(M, rtol=rtol, atol=atol)
+    is_unitary = bool(is_left_semi_unitary) and bool(is_right_semi_unitary)
     expression = {"left":is_left_semi_unitary.expression, "right":is_right_semi_unitary.expression}
-    return CollateralBool(is_left_semi_unitary and is_right_semi_unitary, expression)
+    return CollateralBool(is_unitary, expression)
 
 def matrix_is_prop_left_semi_unitary(M, rtol=1e-5, atol=1e-8):
     N = xp.dot(M.conj().transpose(), M)
@@ -934,8 +935,9 @@ def matrix_is_prop_right_semi_unitary(M, rtol=1e-5, atol=1e-8):
 def matrix_is_prop_unitary(M, rtol=1e-5, atol=1e-8):
     is_prop_left_semi_unitary = matrix_is_prop_left_semi_unitary(M, rtol=rtol, atol=atol)
     is_prop_right_semi_unitary = matrix_is_prop_right_semi_unitary(M, rtol=rtol, atol=atol)
+    is_prop_unitary = bool(is_prop_left_semi_unitary) and bool(is_prop_right_semi_unitary)
     expression = {"left":is_prop_left_semi_unitary.expression, "right":is_prop_right_semi_unitary.expression}
-    return CollateralBool(is_prop_left_semi_unitary and is_prop_right_semi_unitary, expression)
+    return CollateralBool(is_prop_unitary, expression)
 
 
 
