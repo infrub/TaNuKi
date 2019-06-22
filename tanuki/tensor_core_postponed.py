@@ -1,39 +1,4 @@
 
-    #methods for basic operations
-    @inplacable_tensorMixin_method
-    def adjoint(self, row_indices, column_indices=None, style="transpose"):
-        row_indices, column_indices = self.normarg_complement_indices(row_indices,column_indices)
-        if style=="transpose":
-            assert len(row_indices) == len(column_indices), f"adjoint arg must be len(row_indices)==len(column_indices). but row_indices=={row_indices}, column_indices=={column_indices}"
-            out = self.conjugate()
-            out.replace_indices(row_indices+column_indices, column_indices+row_indices)
-        elif style=="aster":
-            out = self.conjugate()
-            out.aster_labels(row_indices+column_indices)
-        return out
-
-    adj = adjoint
-
-    @inplacable_tensorMixin_method
-    def hermite(self, row_indices, column_indices=None, assume_definite_and_if_negative_then_make_positive=False):
-        re = (self + self.adjoint(row_indices,column_indices))/2
-        if assume_definite_and_if_negative_then_make_positive:
-            if xp.real(re.data.item(0)) < 0:
-                re = re * (-1)
-        return re
-
-    @inplacable_tensorMixin_method
-    def antihermite(self, row_indices, column_indices=None):
-        return (self - self.adjoint(row_indices,column_indices))/2
-
-
-
-
-
-
-
-
-
 
 
     @inplacable_tensorMixin_method
@@ -44,14 +9,6 @@
             wholeNpad[index] = npad
         newData = xp.pad(self.data, wholeNpad, mode="constant", constant_values=0)
         return Tensor(newData, labels=self.labels)
-
-    def norm(self): #Frobenius norm
-        return xp.linalg.norm(self.data)
-
-    @inplacable_tensorMixin_method
-    def normalize(self):
-        norm = self.norm()
-        return self / norm
 
 
 
@@ -157,24 +114,6 @@
 
 class DiagonalTensor(TensorMixin):
 
-
-    conj = conjugate
-
-    def norm(self): #Frobenius norm
-        return xp.linalg.norm(self.data)
-
-    @inplacable_tensorMixin_method
-    def normalize(self):
-        norm = self.norm()
-        return self / norm
-
-    @inplacable_tensorMixin_method
-    def inv(self):
-        return DiagonalTensor(1.0/self.data, labels=self.labels)
-
-    @inplacable_tensorMixin_method
-    def sqrt(self):
-        return DiagonalTensor(xp.sqrt(self.data), labels=self.labels)
 
 
 

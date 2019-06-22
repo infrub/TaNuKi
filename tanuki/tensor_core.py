@@ -176,6 +176,7 @@ class TensorMixin:
 
 
 
+    #methods for changing labels
     @outofplacable_tensorMixin_method
     def replace_labels(self, oldIndices, newLabels):
         oldIndices = self.normarg_indices(oldIndices)
@@ -204,17 +205,54 @@ class TensorMixin:
 
 
 
-    #methods for basic operations
+    #methods for basic unary operations
+    def norm(self): #Frobenius norm
+        return xp.linalg.norm(self.data)
+
+    @inplacable_tensorMixin_method
+    def normalize(self):
+        norm = self.norm()
+        return self / norm
+
     def __neg__(self):
         return self.__class__(-self.data, labels=self.labels)
 
     @inplacable_tensorMixin_method
     def conjugate(self):
         return self.__class__(self.data.conj(), labels=self.labels)
+
     conj = conjugate
 
+    @inplacable_tensorMixin_method
+    def adjoint(self, rows, cols=None, style="transpose"):
+        rows, cols = self.normarg_complement_indices(rows, cols)
+        row_labels, col_labels = self.labels_of_indices(rows), self.indices_of_labels(cols)
+        if style=="transpose":
+            assert len(rows) == len(cols), f"adjoint arg must be len(rows)==len(cols). but rows=={rows}, cols=={cols}"
+            out = self.conjugate()
+            out.replace_labels(rows+cols, col_labels+row_labels)
+        elif style=="aster":
+            out = self.conjugate()
+            out.aster_labels(rows+cols)
+        return out
+
+    adj = adjoint
+
+    @inplacable_tensorMixin_method
+    def hermite(self, rows, cols=None, assume_definite_and_if_negative_then_make_positive=False):
+        re = (self + self.adjoint(rows,cols,style="transpose"))/2
+        if assume_definite_and_if_negative_then_make_positive:
+            if xp.real(re.data.item(0)) < 0:
+                re = re * (-1)
+        return re
+
+    @inplacable_tensorMixin_method
+    def antihermite(self, rows, cols=None):
+        return (self - self.adjoint(rows,cols,style="transpose"))/2
 
 
+
+    #methods for basic binary operations
     def __add__(self, other, skipLabelSort=False):
         if isinstance(other, TensorMixin):
             if isinstance(self, DiagonalTensor) and isinstance(other, DiagonalTensor):
@@ -292,15 +330,13 @@ class TensorMixin:
 
 
 
-
+    #methods for contract
     def __getitem__(self, *indices):
         if len(indices)==1 and isinstance(indices[0],list): #if called like as A[["a"]]
             indices = indices[0]
         else:
             indices = list(indices)
         return ToContract(self, indices)
-
-
 
 
 
@@ -553,6 +589,12 @@ class Tensor(TensorMixin):
 
 
 
+    #converting methods
+    to_diagonalTensor = tensor_to_diagonalTensor
+    to_ndarray = tensor_to_ndarray
+    to_matrix = tensor_to_matrix
+    to_vector = tensor_to_vector
+    to_scalar = tensor_to_scalar
 
 
 
@@ -626,6 +668,17 @@ class DiagonalTensor(TensorMixin):
     @property
     def dtype(self):
         return self.data.dtype
+
+
+
+    #methods for basic binary operations
+    @inplacable_tensorMixin_method
+    def inv(self):
+        return DiagonalTensor(1.0/self.data, labels=self.labels)
+
+    @inplacable_tensorMixin_method
+    def sqrt(self):
+        return DiagonalTensor(xp.sqrt(self.data), labels=self.labels)
 
 
 
@@ -759,6 +812,16 @@ class DiagonalTensor(TensorMixin):
 
     trace = contract_internal
     tr = contract_internal
+
+
+
+    #converting methods
+    to_tensor = diagonalTensor_to_tensor
+    to_diagonalElementsNdarray = diagonalTensor_to_diagonalElementsNdarray
+    to_diagonalElementsVector = diagonalTensor_to_diagonalElementsVector
+    to_matrix = diagonalTensor_to_matrix
+    to_vector = diagonalTensor_to_vector
+    to_scalar = diagonalTensor_to_scalar
 
 
 
@@ -957,6 +1020,7 @@ def scalar_to_diagonalTensor(scalar):
 
 
 
+#confirming functions
 def matrix_is_diagonal(matrix, rtol=1e-5, atol=1e-8):
     if matrix.ndim != 2:
         return CollateralBool(False, {"reason":"NOT_MATRIX"})
