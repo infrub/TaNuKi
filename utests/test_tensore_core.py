@@ -11,7 +11,7 @@ class TestTensor(unittest.TestCase):
         a = Tensor([[1,2],[3,4]],base_label="a")
         self.assertEqual(a.labels, ["a_0", "a_1"])
         a = Tensor([[1,2],[3,4]])
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(LabelsLengthError):
             a = Tensor([[1,2],[3,4]], ["a"])
 
     def test_copy(self):
@@ -36,6 +36,34 @@ class TestTensor(unittest.TestCase):
         a3.data[0,0]=9
         self.assertEqual(a1.data[0,0],a3.data[0,0])
         self.assertNotEqual(a3.data[0,0],d[0,0])
+
+    def test_labels(self):
+        a = random_tensor((2,3,4,5,6,7),["a","b","c","b","d","a"])
+        self.assertEqual(a.labels_of_indices([2,3]),["c","b"])
+        self.assertEqual(a.indices_of_labels_front(["b","c","b","a"]),[1,2,3,0])
+        self.assertEqual(a.indices_of_labels_back(["b","c","d","a","b"]),[3,2,4,5,1])
+        with self.assertRaises(ValueError):
+            a.indices_of_labels(["b","b","b"])
+
+    def test_normarg(self):
+        a = random_tensor((2,3,4,5,6),["a","b",("c","b"),"c","a"])
+        self.assertEqual(a.normarg_indices_front(["c","b"]),[3,1])
+        self.assertEqual(a.normarg_indices_front([("c","b")]),[2])
+        self.assertEqual(a.normarg_indices_front(("c","b")),[2])
+        self.assertEqual(a.normarg_indices_back(4),[4])
+        self.assertEqual(a.normarg_indices_front([0,"a"]),[0,4])
+        self.assertEqual(a.normarg_indices_front([4,"a"]),[4,0])
+        self.assertEqual(a.normarg_indices_back([0,"a"]),[0,4])
+        self.assertEqual(a.normarg_indices_back([4,"a"]),[4,0])
+        self.assertEqual(a.normarg_indices_front(["a","a"]),[0,4])
+        self.assertEqual(a.normarg_indices_back(["a","a"]),[0,4])
+        with self.assertRaises(ValueError):
+            a.normarg_indices(["e"])
+        with self.assertRaises(ValueError):
+            a.normarg_indices(["a","a","a"])
+        self.assertEqual(a.normarg_complement_indices([3,"a"]),([3,0],[1,2,4]))
+
+
 
 
 

@@ -37,6 +37,13 @@ def inplacable_tensorMixin_method(f):
 
 
 
+
+class LabelsLengthError(Exception):
+    pass
+
+class LabelsTypeError(TypeError):
+    pass
+
 class InputLengthError(Exception):
     pass
 
@@ -236,7 +243,8 @@ class TensorMixin:
     def get_labels(self):
         return self._labels
     def set_labels(self, labels):
-        assert len(labels) == self.ndim, f"{labels}, {self.shape}"
+        if len(labels) != self.ndim:
+            raise LabelsLengthError(f"{labels}, {self.shape}")
         self._labels = list(labels)
     labels = property(get_labels, set_labels)
 
@@ -277,7 +285,7 @@ class TensorMixin:
         elif type(indexOrLabel)==tuple or type(indexOrLabel)==str:
             return self.index_of_label_front(indexOrLabel)
         else:
-            raise TypeError
+            raise LabelsTypeError(f"indexOrLabel={indexOrLabel}")
 
     def normarg_index_back(self, indexOrLabel):
         if type(indexOrLabel)==int:
@@ -285,42 +293,56 @@ class TensorMixin:
         elif type(indexOrLabel)==tuple or type(indexOrLabel)==str:
             return self.index_of_label_back(indexOrLabel)
         else:
-            raise TypeError
+            raise LabelsTypeError(f"indexOrLabel={indexOrLabel}")
 
     normarg_index = normarg_index_front
 
     def normarg_indices_front(self, indicesOrLabels):
         if type(indicesOrLabels)!=list:
             indicesOrLabels = [indicesOrLabels]
+        res = [None] * len(indicesOrLabels)
         temp = list(self.labels)
-        res = []
-        for indexOrLabel in indicesOrLabels:
+        for rei, indexOrLabel in enumerate(indicesOrLabels):
             if type(indexOrLabel)==int:
                 index = indexOrLabel
+            else:
+                continue
+            res[rei] = index
+            temp[index] = None
+        for rei, indexOrLabel in enumerate(indicesOrLabels):
+            if type(indexOrLabel)==int:
+                continue
             elif type(indexOrLabel)==tuple or type(indexOrLabel)==str:
                 index = temp.index(indexOrLabel)
             else:
-                raise TypeError(f"indicesOrLabels=={indicesOrLabels}, type(indicesOrLabels)=={type(indicesOrLabels)}")
-            res.append(index)
+                raise LabelsTypeError(f"indexOrLabel={indexOrLabel}")
+            res[rei] = index
             temp[index] = None
         return res
 
     def normarg_indices_back(self, indicesOrLabels):
         if type(indicesOrLabels)!=list:
             indicesOrLabels = [indicesOrLabels]
-        indicesOrLabels = reversed(indicesOrLabels)
+        res = [None] * len(indicesOrLabels)
+        indicesOrLabels = list(reversed(indicesOrLabels))
         temp = list(reversed(self.labels))
-        res = []
-        for indexOrLabel in indicesOrLabels:
+        for rei,indexOrLabel in enumerate(indicesOrLabels):
             if type(indexOrLabel)==int:
                 index = indexOrLabel
                 revindex = len(temp)-1-index
+            else:
+                continue
+            res[rei] = index
+            temp[revindex] = None
+        for rei,indexOrLabel in enumerate(indicesOrLabels):
+            if type(indexOrLabel)==int:
+                continue
             elif type(indexOrLabel)==tuple or type(indexOrLabel)==str:
                 revindex = temp.index(indexOrLabel)
                 index = len(temp)-1-revindex
             else:
-                raise TypeError(f"indicesOrLabels=={indicesOrLabels}, type(indicesOrLabels)=={type(indicesOrLabels)}")
-            res.append(index)
+                raise LabelsTypeError(f"indexOrLabel={indexOrLabel}")
+            res[rei] = index
             temp[revindex] = None
         return list(reversed(res))
 
