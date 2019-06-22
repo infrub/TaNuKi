@@ -598,6 +598,38 @@ class Tensor(TensorMixin):
 
 
 
+    #confirming methods
+    def is_diagonal(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_diagonal(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_identity(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_identity(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_prop_identity(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_prop_identity(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_left_semi_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_left_semi_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_right_semi_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_right_semi_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_semi_unitary(T, inds, rtol=1e-5, atol=1e-8):
+        return matrix_is_left_semi_unitary(T.to_matrix(inds, None), rtol=rtol, atol=atol)
+
+    def is_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_prop_left_semi_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_prop_left_semi_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_prop_right_semi_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_prop_right_semi_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_prop_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_prop_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+
 
 
 # A[i,j,k,l] = [i==k][j==l]A.data[i,j]
@@ -1021,28 +1053,28 @@ def scalar_to_diagonalTensor(scalar):
 
 
 #confirming functions
-def matrix_is_diagonal(matrix, rtol=1e-5, atol=1e-8):
-    if matrix.ndim != 2:
+def matrix_is_diagonal(M, rtol=1e-5, atol=1e-8):
+    if M.ndim != 2:
         return CollateralBool(False, {"reason":"NOT_MATRIX"})
-    zeros = xp.zeros(matrix.shape)
-    eye = xp.eye(*matrix.shape)
-    notDiagonals = xp.where(eye==zeros, matrix, zeros)
+    zeros = xp.zeros(M.shape)
+    eye = xp.eye(*M.shape)
+    notDiagonals = xp.where(eye==zeros, M, zeros)
     if not xp.allclose(notDiagonals, zeros, rtol=rtol, atol=atol):
         return CollateralBool(False, {"reason":"NOT_DIAGONAL"})
     return CollateralBool(True, {})
 
-def matrix_is_identity(matrix, rtol=1e-5, atol=1e-8):
-    if matrix.ndim != 2:
+def matrix_is_identity(M, rtol=1e-5, atol=1e-8):
+    if M.ndim != 2:
         return CollateralBool(False, {"reason":"NOT_MATRIX"})
-    eye = xp.eye(*matrix.shape)
-    if not xp.allclose(matrix, eye, rtol=rtol, atol=atol):
+    eye = xp.eye(*M.shape)
+    if not xp.allclose(M, eye, rtol=rtol, atol=atol):
         return CollateralBool(False, {"reason":"NOT_IDENTITY"})
     return CollateralBool(True, {})
 
-def matrix_is_prop_identity(matrix, rtol=1e-5, atol=1e-8):
-    hoge = is_diagonal_matrix(matrix, rtol=rtol, atol=atol):
+def matrix_is_prop_identity(M, rtol=1e-5, atol=1e-8):
+    hoge = is_diagonal_matrix(M, rtol=rtol, atol=atol):
     if not hoge: return hoge
-    d = xp.diagonal(matrix)
+    d = xp.diagonal(M)
     factor = xp.average(d)
     ones = xp.ones_like(d)
     if not xp.allclose(d, factor*ones, rtol=rtol, atol=atol):
