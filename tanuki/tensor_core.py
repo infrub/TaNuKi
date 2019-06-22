@@ -573,7 +573,7 @@ class DiagonalTensor(TensorMixin):
         except CantKeepDiagonalityError:
             return self.to_tensor().move_all_indices(moveFrom)
 
-    def move_half_all_indices_to_real_side(self, halfMoveFrom):
+    def move_half_all_indices_to_top(self, halfMoveFrom):
         halfMoveFrom = self.normarg_indices_front(halfMoveFrom)
         if len(halfMoveFrom) != self.halfndim:
             raise InputLengthError()
@@ -708,16 +708,15 @@ def contract(A, B, aIndicesContract, bIndicesContract):
     bDimsContract = A.dims(bIndicesContract)
     assert aDimsContract == bDimsContract: f"{A}, {B}, {aLabelsContract}, {bLabelsContract}"
 
-    cLabels = more_popped_list(A.labels, aIndicesContract) + more_popped_list(B.labels, bIndicesContract)
-
     if type(A)==Tensor and type(B)==Tensor:
         cData = xp.tensordot(A.data, B.data, (aIndicesContract, bIndicesContract))
+        cLabels = more_popped_list(A.labels, aIndicesContract) + more_popped_list(B.labels, bIndicesContract)
         return Tensor(cData, cLabels)
 
     elif type(A)==DiagonalTensor and type(B)==DiagonalTensor:
         try:
-            A = A.move_half_all_indices_to_real_side(aIndicesContract)
-            B = B.move_half_all_indices_to_real_side(bIndicesContract)
+            A = A.move_half_all_indices_to_top(aIndicesContract)
+            B = B.move_half_all_indices_to_top(bIndicesContract)
             cData = A.data * B.data
             cLabels = A.labels[A.halfndim:] + B.labels[B.halfndim:]
             return DiagonalTensor(cData, cLabels)
@@ -728,6 +727,29 @@ def contract(A, B, aIndicesContract, bIndicesContract):
             return C.contract_internal_indices(cIndicesContract1, cIndicesContract2)
 
     elif type(A)==Tensor and type(B)==DiagonalTensor:
+        try:
+            B = B.move_half_all_indices_to_top(bIndicesContract)
+            A = A.move_indices_to_bottom(aIndicesContract)
+            aIndicesNotContract = diff_list(list(range(A.ndim)), aIndicesContract)
+            bIndicesNotContract = diff_list(list(range(B.ndim)), bIndicesContract)
+            aLabelsNotContract = A.labels_of_indices(aIndicesNotContract)
+            bLabelsNotContract = B.labels_of_indices(bIndicesNotContract)
+            aDimsNotContract = A.dims(aIndicesNotContract)
+            bDimsNotContract = B.dims(bIndicesNotContract)
+            a = A.data.reshape((soujou(aDimsNotContract), soujou(aDimsContract)))
+            b = B.data.flatten()
+            c = xp.multiply(a,b)
+            c = c.reshape(aDimsNotContract+bDimsNotContract)
+            cLabels = aLabelsNotContract+bLabelsNotContract
+            return Tensor(c, cLabels)
+        except InputLengthError, CantKeepDiagonalityError:
+            return contract(A, diagonalTensor_to_tensor(B), aIndicesContract, bIndicesContract)
+
+    elif type(A)==DiagonalTensor and type(B)==Tensor:
+        return contract(B, A, bIndicesContract, aIndicesContract)
+
+    else:
+        return NotImplemented
 
 
 
