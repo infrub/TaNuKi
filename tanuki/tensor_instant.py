@@ -10,7 +10,7 @@ def random_tensor(shape, labels=None, base_label=None, dtype=float):
     elif dtype==complex:
         data = (xp.random.rand(*shape)*2-1) + 1j*(xp.random.rand(*shape)*2-1)
     else:
-        raise ValueError("random_tensor argument dtype must be float or complex")
+        raise ValueError(f"dtype==f{dtype}")
     return tnc.Tensor(data, labels=labels, base_label=base_label)
 
 def random_diagonalTensor(dim, labels=None, base_label=None, dtype=float):
@@ -19,7 +19,7 @@ def random_diagonalTensor(dim, labels=None, base_label=None, dtype=float):
     elif dtype==complex:
         data = (xp.random.rand(dim)*2-1) + 1j*(xp.random.rand(dim)*2-1)
     else:
-        raise ValueError("random_tensor argument dtype must be float or complex")
+        raise ValueError(f"dtype==f{dtype}")
     return tnc.DiagonalTensor(data, labels=labels, base_label=base_label)
 
 def zeros_tensor(shape, labels=None, base_label=None, dtype=float):
