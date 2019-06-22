@@ -278,6 +278,7 @@ class Tensor(TensorMixin):
     #methods for moving indices
     #I assumed that rollaxis is better than moveaxis in terms of computing costs
     #TODO pass if newIndices==oldIndices
+    """
     @inplacable_tensorMixin_method
     def move_index_to_top(self, indexMoveFrom):
         indexMoveFrom = self.normarg_index(indexMoveFrom)
@@ -313,7 +314,7 @@ class Tensor(TensorMixin):
         newLabels = self.labels_of_indices(moveFrom) + self.labels_of_indices(notMoveFrom)
         newData = xp.moveaxis(self.data, moveFrom, moveTo)
         return Tensor(newData, newLabels)
-
+    """
     @inplacable_tensorMixin_method
     def move_indices_to_bottom(self, moveFrom):
         moveFrom = self.normarg_indices_back(moveFrom)
@@ -322,7 +323,7 @@ class Tensor(TensorMixin):
         newLabels = self.labels_of_indices(notMoveFrom) + self.labels_of_indices(moveFrom)
         newData = xp.moveaxis(self.data, moveFrom, moveTo)
         return Tensor(newData, newLabels)
-
+    """
     @inplacable_tensorMixin_method
     def move_indices_to_position(self, moveFrom, position):
         moveFrom = self.normarg_indices(moveFrom)
@@ -332,7 +333,7 @@ class Tensor(TensorMixin):
         newLabels = newLabels[:position] + self.labels_of_indices(moveFrom) + newLabels[position:]
         newData = xp.moveaxis(self.data, moveFrom, moveTo)
         return Tensor(newData, newLabels)
-
+    """
     @inplacable_tensorMixin_method
     def move_all_indices(self, moveFrom):
         moveFrom = self.normarg_indices_front(moveFrom)
@@ -344,7 +345,7 @@ class Tensor(TensorMixin):
         return Tensor(newData, newLabels)
 
 
-
+    """
     #methods for fuse/split
     #if new.. is no specified, assume like following:
     #["a","b","c","d"] <=split / fuse=> ["a",("b","c"),"d"]
@@ -428,7 +429,7 @@ class Tensor(TensorMixin):
 
         memo.update({"fusedDim":fusedDim, "fusedLabel":fusedLabel, "splittedShape":splittedShape, "splittedLabels":splittedLabels})
         return memo #if out-of-place not returned. if you want, prepare a dict as memo in argument
-
+    """
 
 
     #methods for trace, contract
@@ -566,13 +567,13 @@ class DiagonalTensor(TensorMixin):
         labels = [labels[i] for i in moveFrom]
 
         return DiagonalTensor(data, labels)
-
+    """
     def move_all_indices(self, moveFrom):
         try:
             return self.move_all_indices_assuming_can_keep_diagonality(moveFrom)
         except CantKeepDiagonalityError:
             return self.to_tensor().move_all_indices(moveFrom)
-
+    """
     def move_half_all_indices_to_top(self, halfMoveFrom):
         halfMoveFrom = self.normarg_indices_front(halfMoveFrom)
         if len(halfMoveFrom) != self.halfndim:
@@ -580,7 +581,7 @@ class DiagonalTensor(TensorMixin):
         moveFrom = halfMoveFrom + [(x+self.halfndim)%self.ndim for x in halfMoveFrom]
         if not eq_list(moveFrom, list(range(self.ndim))):
             raise CantKeepDiagonalityError()
-        return self.move_all_indices(moveFrom)
+        return self.move_all_indices_assuming_can_keep_diagonality(moveFrom)
 
 
 
