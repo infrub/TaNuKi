@@ -739,13 +739,15 @@ def contract(A, B, aIndicesContract, bIndicesContract):
 
 
 #converting functions
+def tensor_to_ndarray(T, indices):
+    T = T.move_all_indices(indices)
+    return T.data
+
 def tensor_to_matrix(T, rows, cols=None):
     rows, cols = T.normarg_complement_indices(rows, cols)
-
     T = T.move_all_indices(rows+cols)
     total_row_dim = soujou(T.shape[:len(rows)])
     total_col_dim = soujou(T.shape[len(rows):])
-
     return xp.reshape(t.data, (total_row_dim, total_col_dim))
 
 def tensor_to_vector(T, indices):
@@ -757,6 +759,9 @@ def tensor_to_scalar(T):
 
 
 
+def ndarray_to_tensor(ndarray, labels):
+    return Tensor(ndarray, labels)
+
 def matrix_to_tensor(matrix, shape, labels):
     return Tensor(xp.reshape(matrix, shape), labels)
 
@@ -765,6 +770,24 @@ def vector_to_tensor(vector, shape, labels):
 
 def scalar_to_tensor(scalar):
     return Tensor(scalar, [])
+
+
+
+def diagonalTensor_to_diagonalElementsNdarray(DT, indices):
+    DT = DT.move_all_indices_assuming_can_keep_diagonality(indices)
+    return DT.data
+
+def diagonalTensor_to_diagonalElementsVector(DT, indices):
+    DT = DT.move_all_indices_assuming_can_keep_diagonality(indices)
+    return xp.flatten(DT.data)
+
+
+
+def diagonalElementsNdarray_to_diagonalTensor(ndarray, labels):
+    return DiagonalTensor(ndarray, labels)
+
+def diagonalElementsVector_to_diagonalTensor(vector, halfshape, labels):
+    return diagonalElementsNdarray_to_diagonalTensor(vector.reshape(halfshape), labels)
 
 
 
@@ -783,12 +806,28 @@ def diagonalTensor_to_scalar(DT):
 
 
 
+def tensor_to_diagonalTensor(T, indices):
+    T = T.move_all_indices(indices)
+    halfshape = T.shape[:T.ndim//2]
+    halfsize = soujou(halfshape)
+    t = T.data
+    t = t.reshape((halfsize, halfsize))
+    dt = xp.diagonal(t)
+    dt = dt.reshape(halfshape)
+    return DiagonalTensor(dt, T.labels)
+
+def matrix_to_diagonalTensor(matrix, halfshape, labels):
+    dt = xp.diagonal(matrix)
+    dt = dt.reshape(halfshape)
+    return DiagonalTensor(dt, labels)
+
+def vector_to_diagonalTensor(vector, halfshape, labels):
+    halfsize = soujou(halfshape)
+    matrix = vector.reshape((halfsize, halfsize))
+    dt = xp.diagonal(matrix)
+    dt = dt.reshape(halfshape)
+    return DiagonalTensor(dt, labels)
+
 def scalar_to_diagonalTensor(scalar):
     return DiagonalTensor(scalar, [])
 
-def diagonalElements_to_diagonalTensor(diagonalElements, labels):
-    return DiagonalTensor(diagonalElements, labels)
-
-def diagonalTensor_to_diagonalElements(DT, labels):
-    DT = DT.move_all_indices(labels)
-    return DT.data
