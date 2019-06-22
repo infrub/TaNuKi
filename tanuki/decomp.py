@@ -3,7 +3,7 @@ from tanuki.utils import *
 from tanuki.tensor_core import *
 
 #decomposition functions
-def normalize_argument_svd_labels(svd_labels):
+def normarg_svd_labels(svd_labels):
     if svd_labels is None:
         svd_labels = [unique_label()]
     if not isinstance(svd_labels, list):
@@ -17,17 +17,15 @@ def normalize_argument_svd_labels(svd_labels):
     return svd_labels
 
 
-def tensor_svd(A, row_labels, column_labels=None, svd_labels=None):
+def tensor_svd(A, rows, cols=None, svd_labels=None):
     #I believe gesvd and gesdd return s which is positive, descending #TODO check
     #A == U*S*V
-    row_labels, column_labels = normalize_and_complement_argument_labels(A.labels, row_labels, column_labels)
+    rows, cols = A.normarg_complement_indices(rows, cols)
+    svd_labels = normarg_svd_labels(svd_labels)
+    row_labels, col_labels = A.labels_of_indices(rows), A.labels_of_indices(cols)
+    row_dims, col_dims = A.dims(rows), A.dims(cols)
 
-    svd_labels = normalize_argument_svd_labels(svd_labels)
-
-    row_dims = A.dims_front(row_labels)
-    column_dims = A.dims_back(column_labels)
-
-    a = A.to_matrix(row_labels, column_labels)
+    a = A.to_matrix(rows, cols)
 
     try:
         u, s_diag, v = xp.linalg.svd(a, full_matrices=False)
@@ -41,17 +39,17 @@ def tensor_svd(A, row_labels, column_labels=None, svd_labels=None):
     mid_dim = s_diag.shape[0]
 
     U = matrix_to_tensor(u, row_dims+(mid_dim,), row_labels+[svd_labels[0]])
-    S = diagonalMatrix_to_diagonalTensor(s_diag, [svd_labels[1],svd_labels[2]])
-    V = matrix_to_tensor(v, (mid_dim,)+column_dims, [svd_labels[3]]+column_labels)
+    S = diagonalElementsVector_to_diagonalTensor(s_diag, [svd_labels[1],svd_labels[2]])
+    V = matrix_to_tensor(v, (mid_dim,)+col_dims, [svd_labels[3]]+col_labels)
 
     return U, S, V
 
 
-def truncated_svd(A, row_labels, column_labels=None, chi=None, absolute_threshold=None, relative_threshold=None, svd_labels=None):
-    svd_labels = normalize_argument_svd_labels(svd_labels)
-    U, S, V = tensor_svd(A, row_labels, column_labels, svd_labels=svd_labels)
-    s_diag = S.data
+def truncated_svd(A, rows, cols=None, chi=None, absolute_threshold=None, relative_threshold=None, svd_labels=None):
+    svd_labels = normarg_svd_labels(svd_labels)
 
+    U, S, V = tensor_svd(A, rows, cols, svd_labels=svd_labels)
+    s_diag = S.data
     trunc_s_diag = s_diag
 
     if chi:
@@ -67,16 +65,14 @@ def truncated_svd(A, row_labels, column_labels=None, chi=None, absolute_threshol
     chi = len(trunc_s_diag)
 
     S.data = trunc_s_diag
-    U.move_indices_to_top(svd_labels[0])
-    U.data = U.data[0:chi]
-    U.move_indices_to_bottom(svd_labels[0])
-    V.data = V.data[0:chi]
+    U = U.truncate_index(svd_labels[0], chi)
+    V = V.truncate_index(svd_labels[3], chi)
 
     return U, S, V
 
 
 
-def normalize_argument_qr_labels(qr_labels):
+def normarg_qr_labels(qr_labels):
     if qr_labels is None:
         qr_labels = [unique_label()]
     if not isinstance(qr_labels, list):
@@ -88,27 +84,26 @@ def normalize_argument_qr_labels(qr_labels):
     return qr_labels
 
 
-def tensor_qr(A, row_labels, column_labels=None, qr_labels=None, mode="economic"):
+def tensor_qr(A, rows, cols=None, qr_labels=None, mode="economic"):
     #A == Q*R
-    row_labels, column_labels = normalize_and_complement_argument_labels(A.labels, row_labels, column_labels)
-    qr_labels = normalize_argument_qr_labels(qr_labels)
+    rows, cols = A.normarg_complement_indices(rows, cols)
+    qr_labels = normarg_qr_labels(qr_labels)
+    row_labels, col_labels = A.labels_of_indices(rows), A.labels_of_indices(cols)
+    row_dims, col_dims = A.dims(rows), A.dims(cols)
 
-    row_dims = A.dims_front(row_labels)
-    column_dims = A.dims_back(column_labels)
-
-    a = A.to_matrix(row_labels, column_labels)
+    a = A.to_matrix(rows, cols)
 
     q, r = xp.linalg.qr(a, mode=mode)
 
     mid_dim = r.shape[0]
 
     Q = matrix_to_tensor(q, row_dims+(mid_dim,), row_labels+[qr_labels[0]])
-    R = matrix_to_tensor(r, (mid_dim,)+column_dims, [qr_labels[1]]+column_labels)
+    R = matrix_to_tensor(r, (mid_dim,)+col_dims, [qr_labels[1]]+col_labels)
 
     return Q, R
 
 
-def normalize_argument_lq_labels(lq_labels):
+def normarg_lq_labels(lq_labels):
     if lq_labels is None:
         lq_labels = [unique_label()]
     if not isinstance(lq_labels, list):
@@ -120,50 +115,54 @@ def normalize_argument_lq_labels(lq_labels):
     return lq_labels
 
 
-def tensor_lq(A, row_labels, column_labels=None, lq_labels=None, mode="economic"):
+def tensor_lq(A, rows, cols=None, lq_labels=None, mode="economic"):
     #A == L*Q
-    row_labels, column_labels = normalize_and_complement_argument_labels(A.labels, row_labels, column_labels)
-    lq_labels = normalize_argument_lq_labels(lq_labels)
+    rows, cols = A.normarg_complement_indices(rows, cols)
+    lq_labels = normarg_lq_labels(lq_labels)
 
-    Q, L = tensor_qr(A, column_labels, row_labels, qr_labels=[lq_labels[1],lq_labels[0]], mode=mode)
+    Q, L = tensor_qr(A, cols, rows, qr_labels=[lq_labels[1],lq_labels[0]], mode=mode)
 
     return L, Q
 
 
 
-def normalize_argument_eigh_labels(eigh_labels):
+def normarg_eigh_labels(eigh_labels):
     if eigh_labels is None:
         eigh_labels = [unique_label()]
     if not isinstance(eigh_labels, list):
         eigh_labels = [eigh_labels]
-    if len(eigh_labels)==1:
+    if len(eigh_labels)==1:ƒ
         eigh_labels = [eigh_labels[0], eigh_labels[0]]
-    if len(eigh_labels)!=2:
-        raise ValueError(f"eigh_labels must be a None or str or 1,2 length list. eigh_labels=={eigh_labels}")
+    if len(eigh_labels)==2:
+        eigh_labels = [eigh_labels[0],eigh_labels[0],eigh_labels[1],eigh_labels[1]]
+    if len(eigh_labels)!=4:
+        raise ValueError(f"eigh_labels must be a None or str or 1,2,4 length list. eigh_labels=={eigh_labels}")
     return eigh_labels
 
+
 # A == V*W*Vh
-def tensor_eigh(A, row_labels, column_labels=None, eigh_labels=None):
-    row_labels, column_labels = normalize_and_complement_argument_labels(A.labels, row_labels, column_labels)
-    eigh_labels = normalize_argument_eigh_labels(eigh_labels)
-    row_shape = A.dims_front(row_labels)
-    column_shape = A.dims_back(column_labels)
-    dim = soujou(row_shape)
-    a = A.to_matrix(row_labels, column_labels)
+def tensor_eigh(A, rows, cols=None, eigh_labels=None):
+    rows, cols = A.normarg_complement_indices(rows, cols)
+    eigh_labels = normarg_eigh_labels(eigh_labels)
+    row_labels, col_labels = A.labels_of_indices(rows), A.labels_of_indices(cols)
+    row_dims, col_dims = A.dims(rows), A.dims(cols)
+    dim = soujou(row_dims)
+    a = A.to_matrix(rows, cols)
     w,v = xp.linalg.eigh(a)
-    V = matrix_to_tensor(v, row_shape+(dim,), row_labels+[eigh_labels[0]])
-    W = diagonalMatrix_to_diagonalTensor(w, eigh_labels)
-    Vh = matrix_to_tensor(xp.transpose(xp.conj(v)), (dim,)+column_shape, [eigh_labels[1]]+column_labels)
+    V = matrix_to_tensor(v, row_dims+(dim,), row_labels+[eigh_labels[0]])
+    W = diagonalElementsVector_to_diagonalTensor(w, [eigh_labels[1],eigh_labels[2]])
+    Vh = matrix_to_tensor(xp.transpose(xp.conj(v)), (dim,)+col_dims, [eigh_labels[3]]+col_labels)
     return V,W,Vh
 
+
 # A*V == w*V
-def tensor_eigsh(A, row_labels, column_labels=None):
-    row_labels, column_labels = normalize_and_complement_argument_labels(A.labels, row_labels, column_labels)
-    row_shape = A.dims_front(row_labels)
-    column_shape = A.dims_back(column_labels)
-    a = A.to_matrix(row_labels, column_labels)
+def tensor_eigsh(A, rows, cols=None):
+    rows, cols = normalize_and_complement_argument_labels(A.labels, rows, cols)
+    row_labels, col_labels = A.labels_of_indices(rows), A.labels_of_indices(cols)
+    row_dims, col_dims = A.dims(rows), A.dims(cols)
+    a = A.to_matrix(rows, cols)
     w,v = xp.sparse.linalg.eigsh(a, k=1)
     w = w[0]
     v = v[:,0]
-    V = vector_to_tensor(v, column_shape, column_labels)
+    V = vector_to_tensor(v, col_dims, col_labels)
     return w,V
