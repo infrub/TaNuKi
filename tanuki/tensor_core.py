@@ -53,6 +53,8 @@ class CollateralBool:
         return f"CollateralBool({self.trueOrFalse}, {self.expression})"
     def __str__(self):
         return f"{self.trueOrFalse}({self.expression})"
+    def __getattr__(self, arg):
+        return self.expression[arg]
 
 
 
@@ -906,4 +908,34 @@ def matrix_is_prop_identity(matrix, rtol=1e-5, atol=1e-8):
     if not xp.allclose(d, factor*ones, rtol=rtol, atol=atol):
         return CollateralBool(False, {"reason":"NOT_PROP_IDENTITY"})
     return CollateralBool(True, {"factor":factor})
+
+def matrix_is_left_semi_unitary(M, rtol=1e-5, atol=1e-8):
+    N = xp.dot(M.conj().transpose(), M)
+    return matrix_is_identity(N, rtol=rtol, atol=atol)
+
+def matrix_is_right_semi_unitary(M, rtol=1e-5, atol=1e-8):
+    N = xp.dot(M, M.conj().transpose())
+    return matrix_is_identity(N, rtol=rtol, atol=atol)
+
+def matrix_is_unitary(M, rtol=1e-5, atol=1e-8):
+    is_left_semi_unitary = matrix_is_left_semi_unitary(M, rtol=rtol, atol=atol)
+    is_right_semi_unitary = matrix_is_right_semi_unitary(M, rtol=rtol, atol=atol)
+    expression = {"left":is_left_semi_unitary.expression, "right":is_right_semi_unitary.expression}
+    return CollateralBool(is_left_semi_unitary and is_right_semi_unitary, expression)
+
+def matrix_is_prop_left_semi_unitary(M, rtol=1e-5, atol=1e-8):
+    N = xp.dot(M.conj().transpose(), M)
+    return matrix_is_prop_identity(N, rtol=rtol, atol=atol)
+
+def matrix_is_prop_right_semi_unitary(M, rtol=1e-5, atol=1e-8):
+    N = xp.dot(M, M.conj().transpose())
+    return matrix_is_prop_identity(N, rtol=rtol, atol=atol)
+
+def matrix_is_prop_unitary(M, rtol=1e-5, atol=1e-8):
+    is_prop_left_semi_unitary = matrix_is_prop_left_semi_unitary(M, rtol=rtol, atol=atol)
+    is_prop_right_semi_unitary = matrix_is_prop_right_semi_unitary(M, rtol=rtol, atol=atol)
+    expression = {"left":is_prop_left_semi_unitary.expression, "right":is_prop_right_semi_unitary.expression}
+    return CollateralBool(is_prop_left_semi_unitary and is_prop_right_semi_unitary, expression)
+
+
 
