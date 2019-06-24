@@ -65,6 +65,14 @@ def more_popped_list(xs, xis):
 
 #label covering methods
 #label :== string | tuple[label]
+def is_type_label(label):
+    if isinstance(label, tuple):
+        return all((is_type_label(x) for x in label))
+    return isinstance(label, str)
+
+def is_type_labels(labels):
+    return all((is_type_label(x) for x in labels))
+
 def normarg_labels(labels):
     if isinstance(labels, list):
         return labels

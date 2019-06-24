@@ -44,6 +44,9 @@ class LabelsLengthError(Exception):
 class LabelsTypeError(TypeError):
     pass
 
+class ShapeError(ValueError):
+    pass
+
 class InputLengthError(Exception):
     pass
 
@@ -77,7 +80,7 @@ def tensor_to_matrix(T, rows, cols=None):
     T = T.move_all_indices(rows+cols)
     total_row_dim = soujou(T.shape[:len(rows)])
     total_col_dim = soujou(T.shape[len(rows):])
-    return xp.reshape(t.data, (total_row_dim, total_col_dim))
+    return xp.reshape(T.data, (total_row_dim, total_col_dim))
 
 def tensor_to_vector(T, indices):
     T = T.move_all_indices(indices)
@@ -122,7 +125,7 @@ def diagonalElementsVector_to_diagonalTensor(vector, halfshape, labels):
 
 def diagonalTensor_to_tensor(DT):
     shape = DT.shape
-    return Tensor(xp.diagflat(diagonalTensor.data).reshape(shape), diagonalTensor.labels)
+    return Tensor(xp.diagflat(DT.data).reshape(shape), DT.labels)
 
 def diagonalTensor_to_matrix(DT, rows, cols=None):
     return tensor_to_matrix(diagonalTensor_to_tensor(DT), rows, cols)
@@ -245,6 +248,8 @@ class TensorMixin:
     def set_labels(self, labels):
         if len(labels) != self.ndim:
             raise LabelsLengthError(f"{labels}, {self.shape}")
+        if not is_type_labels(labels):
+            raise LabelsTypeError(f"{labels}")
         self._labels = list(labels)
     labels = property(get_labels, set_labels)
 
@@ -369,7 +374,7 @@ class TensorMixin:
     @outofplacable_tensorMixin_method
     def aster_labels(self, oldIndices=None):
         if oldIndices is None: oldIndices=self.labels
-        oldIndices = self.normarg_indices_front(oldIndices)
+        oldIndices = self.normarg_indices(oldIndices)
         oldLabels = self.labels_of_indices(oldIndices)
         newLabels = aster_labels(oldLabels)
         self.replace_labels(oldIndices, newLabels)
@@ -377,7 +382,7 @@ class TensorMixin:
     @outofplacable_tensorMixin_method
     def unaster_labels(self, oldIndices=None):
         if oldIndices is None: oldIndices=self.labels
-        oldIndices = self.normarg_indices_front(oldIndices)
+        oldIndices = self.normarg_indices(oldIndices)
         oldLabels = self.labels_of_indices(oldIndices)
         newLabels = unaster_labels(oldLabels)
         self.replace_labels(oldIndices, newLabels)
@@ -400,6 +405,18 @@ class TensorMixin:
         return self.__class__(-self.data, labels=self.labels)
 
     @inplacable_tensorMixin_method
+    def real(self):
+        return self.__class__(xp.real(self.data), self.labels)
+
+    @inplacable_tensorMixin_method
+    def imag(self):
+        return self.__class__(xp.imag(self.data), self.labels)
+
+    @inplacable_tensorMixin_method
+    def abs(self):
+        return self.__class__(xp.fabs(self.data), self.labels)
+
+    @inplacable_tensorMixin_method
     def conjugate(self):
         return self.__class__(self.data.conj(), labels=self.labels)
 
@@ -408,9 +425,10 @@ class TensorMixin:
     @inplacable_tensorMixin_method
     def adjoint(self, rows, cols=None, style="transpose"):
         rows, cols = self.normarg_complement_indices(rows, cols)
-        row_labels, col_labels = self.labels_of_indices(rows), self.indices_of_labels(cols)
+        row_labels, col_labels = self.labels_of_indices(rows), self.labels_of_indices(cols)
         if style=="transpose":
-            assert len(rows) == len(cols), f"adjoint arg must be len(rows)==len(cols). but rows=={rows}, cols=={cols}"
+            if len(rows) != len(cols):
+                raise InputLengthError(f"rows=={rows}, cols=={cols}")
             out = self.conjugate()
             out.replace_labels(rows+cols, col_labels+row_labels)
         elif style=="aster":
@@ -506,19 +524,61 @@ class TensorMixin:
             if isinstance(other, DiagonalTensor):
                 other = other.to_tensor()
             if not skipLabelSort:
-                other = other.move_all_indices(self.labels)
+                try:
+                    other = other.move_all_indices(self.labels)
+                except:
+                    return False
+            if self.shape != other.shape:
+                return False
             return xp.allclose(self.data, other.data, rtol=rtol, atol=atol)
         return NotImplemented
 
 
 
     #methods for contract
-    def __getitem__(self, *indices):
+    def __getitem__(self, indices):
         if len(indices)==1 and isinstance(indices[0],list): #if called like as A[["a"]]
             indices = indices[0]
         else:
             indices = list(indices)
         return ToContract(self, indices)
+
+
+
+    #confirming methods
+    def is_diagonal(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_diagonal(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_identity(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_identity(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_prop_identity(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_prop_identity(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_left_semi_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_left_semi_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_right_semi_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_right_semi_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_semi_unitary(T, inds, rtol=1e-5, atol=1e-8):
+        return matrix_is_left_semi_unitary(T.to_matrix(inds, None), rtol=rtol, atol=atol)
+
+    def is_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_prop_left_semi_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_prop_left_semi_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_prop_right_semi_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_prop_right_semi_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_prop_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        return matrix_is_prop_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_hermite(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+        Th = T.adjoint(rows, cols, style="transpose")
+        return T.__eq__(Th, rtol=rtol, atol=atol)
 
 
 
@@ -793,22 +853,47 @@ class Tensor(TensorMixin):
         return Tensor(newData, newLabels)
 
     @inplacable_tensorMixin_method
-    def contract_internal_common(self):
-        temp = self
-        commons = floor_half_list(temp.labels)
-        for common in commons:
-            temp = temp.contract_internal(common, common)
+    def contract_internal_indices(self, indices1, indices2):
+        indices1 = self.normarg_indices_front(indices1)
+        indices2 = self.normarg_indices_back(indices2)
+
+        temp = self.copy(shallow=True)
+        while len(indices1)!=0:
+            index1 = indices1.pop()
+            index2 = indices2.pop()
+            index1, index2 = min(index1,index2), max(index1,index2)
+
+            def dokoitta(x):
+                if 0<=x<index1: return x
+                elif index1<x<index2: return x-1
+                elif index2<x<temp.ndim: return x-2
+                else: raise IndexError()
+
+            indices1 = [dokoitta(x) for x in indices1]
+            indices2 = [dokoitta(x) for x in indices2]
+            temp = temp.contract_internal_index(index1, index2)
+
         return temp
 
     @inplacable_tensorMixin_method
+    def contract_internal_common(self):
+        temp = self
+        commons = floor_half_list(temp.labels)
+        temp = temp.contract_internal_indices(commons, commons)
+        return temp
+
+    
+    @inplacable_tensorMixin_method
     def contract_internal(self, index1=None, index2=None):
         if index1 is None:
-            return self.contract_common_internal()
+            return self.contract_internal_common()
+        elif type(index1) == list:
+            return self.contract_internal_indices(index1, index2)
         else:
-            return self.contract_internal(index1, index2)
+            return self.contract_internal_index(index1, index2)
 
     trace = contract_internal
-    tr = trace
+    tr = contract_internal
 
 
 
@@ -819,38 +904,6 @@ class Tensor(TensorMixin):
     to_vector = tensor_to_vector
     to_scalar = tensor_to_scalar
 
-
-
-    #confirming methods
-    def is_diagonal(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_diagonal(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
-
-    def is_identity(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_identity(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
-
-    def is_prop_identity(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_prop_identity(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
-
-    def is_left_semi_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_left_semi_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
-
-    def is_right_semi_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_right_semi_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
-
-    def is_semi_unitary(T, inds, rtol=1e-5, atol=1e-8):
-        return matrix_is_left_semi_unitary(T.to_matrix(inds, None), rtol=rtol, atol=atol)
-
-    def is_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
-
-    def is_prop_left_semi_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_prop_left_semi_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
-
-    def is_prop_right_semi_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_prop_right_semi_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
-
-    def is_prop_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_prop_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
 
 
 
@@ -865,6 +918,8 @@ class DiagonalTensor(TensorMixin):
                 base_label = unique_label()
             self.assign_labels(base_label)
         else:
+            if isinstance(labels, list) and len(labels)==self.halfndim:
+                labels = labels + labels
             self.labels = labels
 
     def copy(self, shallow=False):
@@ -906,15 +961,15 @@ class DiagonalTensor(TensorMixin):
         return self.data.size
     
     @property
-    def halfshape(self):
+    def shape(self):
         return self.halfshape + self.halfshape
     
     @property
-    def halfndim(self):
+    def ndim(self):
         return self.halfndim * 2
 
     @property
-    def halfsize(self):
+    def size(self):
         return self.halfsize * self.halfsize
 
     @property
@@ -992,12 +1047,11 @@ class DiagonalTensor(TensorMixin):
         if index1+self.halfndim == index2:
             newData = xp.sum(self.data, axis=index1)
             newLabels = self.labels[:index1]+self.labels[index1+1:index2]+self.labels[index2+1:]
-            return Tensor(newData, newLabels)
+            return DiagonalTensor(newData, newLabels)
 
-        coindex1, coindex2 = (index1+self.halfndim)%self.ndim, (index1+self.halfndim)%self.ndim
+        coindex1, coindex2 = (index1+self.halfndim)%self.ndim, (index2+self.halfndim)%self.ndim
         halfindex1, halfindex2 = index1%self.halfndim, index2%self.halfndim
         halfindex1, halfindex2 = min(halfindex1, halfindex2), max(halfindex1, halfindex2)
-
         newData = xp.diagonal(self.data, axis1=halfindex1, axis2=halfindex2)
 
         newLabels = self.labels[0:halfindex1]+self.labels[halfindex1+1:halfindex2]+self.labels[halfindex2+1:self.halfndim] \
@@ -1005,23 +1059,18 @@ class DiagonalTensor(TensorMixin):
             + self.labels[self.halfndim:self.halfndim+halfindex1]+self.labels[self.halfndim+halfindex1+1:self.halfndim+halfindex2]+self.labels[self.halfndim+halfindex2+1:self.ndim] \
             + self.labels[coindex2:coindex2+1]
 
-        return Tensor(newData, newLabels)
+        return DiagonalTensor(newData, newLabels)
 
     @inplacable_tensorMixin_method
     def contract_internal_indices(self, indices1, indices2):
         indices1 = self.normarg_indices_front(indices1)
-        indices2 = self.normarg_indices_front(indices2)
+        indices2 = self.normarg_indices_back(indices2)
 
         temp = self.copy(shallow=True)
         while len(indices1)!=0:
             index1 = indices1.pop()
             index2 = indices2.pop()
             index1, index2 = min(index1,index2), max(index1,index2)
-            coindex1, coindex2 = (index1+self.halfndim)%self.ndim, (index1+self.halfndim)%self.ndim
-            halfindex1, halfindex2 = index1%self.halfndim, index2%self.halfndim
-            halfindex1, halfindex2 = min(halfindex1, halfindex2), max(halfindex1, halfindex2)
-
-            temp = temp.contract_internal_index(index1, index2)
 
             if index1+self.halfndim == index2:
                 def dokoitta(x):
@@ -1030,6 +1079,9 @@ class DiagonalTensor(TensorMixin):
                     elif index2<x<self.ndim: return x-2
                     else: raise IndexError()
             else:
+                coindex1, coindex2 = (index1+temp.halfndim)%temp.ndim, (index2+temp.halfndim)%temp.ndim
+                halfindex1, halfindex2 = index1%temp.halfndim, index2%temp.halfndim
+                halfindex1, halfindex2 = min(halfindex1, halfindex2), max(halfindex1, halfindex2)
                 def dokoitta(x):
                     if 0<=x<halfindex1: return x
                     elif halfindex1<x<halfindex2: return x-1
@@ -1043,17 +1095,17 @@ class DiagonalTensor(TensorMixin):
 
             indices1 = [dokoitta(x) for x in indices1]
             indices2 = [dokoitta(x) for x in indices2]
-
+            temp = temp.contract_internal_index(index1, index2)
         return temp
 
     @inplacable_tensorMixin_method
     def contract_internal_common(self):
         temp = self
         commons = floor_half_list(temp.labels)
-        for common in commons:
-            temp = temp.contract_internal(common, common)
+        temp = temp.contract_internal_indices(commons, commons)
         return temp
 
+    @inplacable_tensorMixin_method
     def contract_internal(self, index1=None, index2=None):
         if index1 is None:
             return self.contract_internal_common()
@@ -1109,8 +1161,9 @@ def contract_indices(A, B, aIndicesContract, bIndicesContract):
     aLabelsContract = A.labels_of_indices(aIndicesContract)
     bLabelsContract = B.labels_of_indices(bIndicesContract)
     aDimsContract = A.dims(aIndicesContract)
-    bDimsContract = A.dims(bIndicesContract)
-    assert aDimsContract == bDimsContract, f"{A}, {B}, {aLabelsContract}, {bLabelsContract}"
+    bDimsContract = B.dims(bIndicesContract)
+    if aDimsContract != bDimsContract:
+        raise ShapeError(f"{A}, {B}, {aIndicesContract}, {bIndicesContract}, {aDimsContract}, {bDimsContract}")
 
     if type(A)==Tensor and type(B)==Tensor:
         cData = xp.tensordot(A.data, B.data, (aIndicesContract, bIndicesContract))
@@ -1127,15 +1180,17 @@ def contract_indices(A, B, aIndicesContract, bIndicesContract):
         except (InputLengthError, CantKeepDiagonalityError):
             C = direct_product(A, B)
             cIndicesContract1 = [x if x<A.halfndim else x+B.halfndim for x in aIndicesContract]
-            cIndicesContract2 = [x+A.halfndim if x<B.halfndim else x+A.ndim for x in aIndicesContract]
+            cIndicesContract2 = [x+A.halfndim if x<B.halfndim else x+A.ndim for x in bIndicesContract]
             return C.contract_internal_indices(cIndicesContract1, cIndicesContract2)
 
     elif type(A)==Tensor and type(B)==DiagonalTensor:
         try:
-            B = B.move_half_all_indices_to_top(bIndicesContract)
             A = A.move_indices_to_bottom(aIndicesContract)
-            aIndicesNotContract = diff_list(list(range(A.ndim)), aIndicesContract)
-            bIndicesNotContract = diff_list(list(range(B.ndim)), bIndicesContract)
+            aIndicesContract = list(range(A.ndim-len(aIndicesContract), A.ndim))
+            aIndicesNotContract = list(range(A.ndim-len(aIndicesContract)))
+            B = B.move_half_all_indices_to_top(bIndicesContract)
+            bIndicesContract = list(range(len(bIndicesContract)))
+            bIndicesNotContract = list(range(len(bIndicesContract), B.ndim))
             aLabelsNotContract = A.labels_of_indices(aIndicesNotContract)
             bLabelsNotContract = B.labels_of_indices(bIndicesNotContract)
             aDimsNotContract = A.dims(aIndicesNotContract)
