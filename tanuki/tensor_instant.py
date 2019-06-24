@@ -56,4 +56,4 @@ def dummy_tensor():
     return tnc.Tensor(1.0)
 
 def dummy_diagonalTensor():
-    return tnc.DiagonalTensor([1.0], [(),()])
+    return tnc.DiagonalTensor(1.0)

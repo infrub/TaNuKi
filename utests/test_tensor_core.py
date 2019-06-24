@@ -173,6 +173,8 @@ class TestDiagonalTensor(unittest.TestCase):
         self.assertEqual(a.labels, ["a","b","a","b"])
         a = random_diagonalTensor((3,2),["a","b","a","d"])
         self.assertEqual(a.labels, ["a","b","a","d"])
+        b = dummy_diagonalTensor()
+        self.assertEqual(a*b,a)
 
     def test_move(self):
         a = random_diagonalTensor((2,3,4),["a","b","c","d","e","f"])
