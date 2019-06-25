@@ -112,10 +112,10 @@ class Fin1DSimTPS:
     # /-[1]-      /-
     # |  |    ==  |
     # \-[1]-      \-
-    def left_canonize_site(self, site, chi=None, relative_threshold=1e-14):
+    def left_canonize_site(self, site, chi=None, rtol=None, atol=None):
         if site==len(self)-1:
             return
-        U, S, V = tnd.truncated_svd(self[site], self.get_left_labels_site(site)+self.get_phys_labels_site(site), chi=chi, relative_threshold=relative_threshold)
+        U, S, V = tnd.truncated_svd(self[site], self.get_left_labels_site(site)+self.get_phys_labels_site(site), chi=chi, rtol=rtol, atol=atol)
         self[site] = U
         self[site+1] = S*V*self[site+1]
 
@@ -123,10 +123,10 @@ class Fin1DSimTPS:
     # -[4]-\      -\
     #   |  |  ==   |
     # -[4]-/      -/
-    def right_canonize_site(self, site, chi=None, relative_threshold=1e-14):
+    def right_canonize_site(self, site, chi=None, rtol=None, atol=None):
         if site==0:
             return
-        U, S, V = tnd.truncated_svd(self[site], self.get_left_labels_site(site), chi=chi, relative_threshold=relative_threshold)
+        U, S, V = tnd.truncated_svd(self[site], self.get_left_labels_site(site), chi=chi, rtol=rtol, atol=atol)
         self[site] = V
         self[site-1] = self[site-1]*U*S
 
@@ -134,20 +134,20 @@ class Fin1DSimTPS:
     # /-[0]-      /-[1]-      /-
     # |  |    ==  |  |    ==  |
     # \-[0]-      \-[1]-      \-
-    def left_canonize_upto(self, interval=None, chi=None, relative_threshold=1e-14):
+    def left_canonize_upto(self, interval=None, chi=None, rtol=None, atol=None):
         if interval is None: interval = len(self)
         assert 0<=interval<=len(self)
         for site in range(interval):
-            self.left_canonize_site(site, chi=chi, relative_threshold=relative_threshold)
+            self.left_canonize_site(site, chi=chi, rtol=rtol, atol=atol)
 
     # (interval=4):
     # -[4]-\      -[5]-\      -\
     #   |  |  ==    |  |  ==   |
     # -[4]-/      -[5]-/      -/
-    def right_canonize_upto(self, interval=0, chi=None, relative_threshold=1e-14):
+    def right_canonize_upto(self, interval=0, chi=None, rtol=None, atol=None):
         assert 0<=interval<=len(self)
         for site in range(len(self)-1, interval-1, -1):
-            self.right_canonize_site(site, chi=chi, relative_threshold=relative_threshold)
+            self.right_canonize_site(site, chi=chi, rtol=rtol, atol=atol)
 
     def fuse_all_int_virt_indices(self):
         for site in range(len(self)-1):
@@ -269,7 +269,7 @@ class Fin1DSimBTPS:
         return soujou(self.tensors[site].dims(self.get_right_labels_site(site)))
 
 
-    def left_canonize_right_end(self, chi=None, relative_threshold=1e-14, end_dealing="normalize"):
+    def left_canonize_right_end(self, chi=None, rtol=None, atol=None, end_dealing="normalize"):
         site = len(self)-1
 
         if end_dealing=="no":
@@ -311,7 +311,7 @@ class Fin1DSimBTPS:
         #     \-(len-1)-[len-1]-(len)-           (len)-[ext_ut]-
         # this method senses in all case.
         elif end_dealing=="expel_ut":
-            U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_left_labels_bond(site)+self.get_phys_labels_site(site), chi=chi, relative_threshold=relative_threshold)
+            U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_left_labels_bond(site)+self.get_phys_labels_site(site), chi=chi, rtol=rtol, atol=atol)
             self.tensors[site] = U/self.bdts[site]
             self.bdts[site+1] = S
             return V
@@ -323,20 +323,20 @@ class Fin1DSimBTPS:
     # /-(1)-[1]-      /-
     # |      |    ==  |
     # \-(1)-[1]-      \-
-    def left_canonize_not_end_site(self, site, chi=None, relative_threshold=1e-14):
-        U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_left_labels_bond(site)+self.get_phys_labels_site(site), chi=chi, relative_threshold=relative_threshold)
+    def left_canonize_not_end_site(self, site, chi=None, rtol=None, atol=None):
+        U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_left_labels_bond(site)+self.get_phys_labels_site(site), chi=chi, rtol=rtol, atol=atol)
         self.tensors[site] = U/self.bdts[site]
         self.bdts[site+1] = S
         self.tensors[site+1] = V*self.tensors[site+1]
 
-    def left_canonize_site(self, site, chi=None, relative_threshold=1e-14, end_dealing="normalize"):
+    def left_canonize_site(self, site, chi=None, rtol=None, atol=None, end_dealing="normalize"):
         if site==len(self)-1:
-            self.left_canonize_right_end(chi=chi, relative_threshold=relative_threshold, end_dealing=end_dealing)
+            self.left_canonize_right_end(chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
         else:
-            self.left_canonize_not_end_site(site, chi=chi, relative_threshold=relative_threshold)
+            self.left_canonize_not_end_site(site, chi=chi, rtol=rtol, atol=atol)
 
 
-    def right_canonize_left_end(self, chi=None, relative_threshold=1e-14, end_dealing="normalize"):
+    def right_canonize_left_end(self, chi=None, rtol=None, atol=None, end_dealing="normalize"):
         site = 0
         if end_dealing=="no":
             return
@@ -350,7 +350,7 @@ class Fin1DSimBTPS:
         elif end_dealing=="expel_bdt":
             return "e-n yappa dounimo DiagonalTensor motto jigen hoshii yo~" #TODO
         elif end_dealing=="expel_ut":
-            U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_left_labels_bond(site), chi=chi, relative_threshold=relative_threshold)
+            U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_left_labels_bond(site), chi=chi, rtol=rtol, atol=atol)
             self.bdts[site] = S
             self.tensors[site] = V/self.bdts[site+1]
             return U
@@ -361,11 +361,11 @@ class Fin1DSimBTPS:
     # -[4]-(5)-\      -\
     #   |      |  ==   |
     # -[4]-(5)-/      -/
-    def right_canonize_site(self, site, chi=None, relative_threshold=1e-14, end_dealing="normalize"):
+    def right_canonize_site(self, site, chi=None, rtol=None, atol=None, end_dealing="normalize"):
         if site==0:
-            self.right_canonize_left_end(chi=chi, relative_threshold=relative_threshold, end_dealing=end_dealing)
+            self.right_canonize_left_end(chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
             return
-        U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_left_labels_bond(site), chi=chi, relative_threshold=relative_threshold)
+        U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_left_labels_bond(site), chi=chi, rtol=rtol, atol=atol)
         self.tensors[site-1] = self.tensors[site-1]*U
         self.bdts[site] = S
         self.tensors[site] = V/self.bdts[site+1]
@@ -374,24 +374,24 @@ class Fin1DSimBTPS:
     # /-(0)-[0]-      /-(1)-[1]-      /-
     # |      |    ==  |      |    ==  |
     # \-(0)-[0]-      \-(1)-[1]-      \-
-    def left_canonize_upto(self, interval=None, chi=None, relative_threshold=1e-14, end_dealing="normalize"):
+    def left_canonize_upto(self, interval=None, chi=None, rtol=None, atol=None, end_dealing="normalize"):
         if interval is None: interval = len(self)
         assert 0<=interval<=len(self)
         for site in range(interval):
-            self.left_canonize_site(site, chi=chi, relative_threshold=relative_threshold, end_dealing=end_dealing)
+            self.left_canonize_site(site, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
 
     # (interval=4):
     # -[4]-(5)-\      -[5]-(6)-\      -\
     #   |      |  ==    |      |  ==   |
     # -[4]-(5)-/      -[5]-(6)-/      -/
-    def right_canonize_upto(self, interval=0, chi=None, relative_threshold=1e-14, end_dealing="normalize"):
+    def right_canonize_upto(self, interval=0, chi=None, rtol=None, atol=None, end_dealing="normalize"):
         assert 0<=interval<=len(self)
         for site in range(len(self)-1, interval-1, -1):
-            self.right_canonize_site(site, chi=chi, relative_threshold=relative_threshold, end_dealing=end_dealing)
+            self.right_canonize_site(site, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
 
-    def both_canonize(self, chi=None, relative_threshold=1e-14, end_dealing="normalize"):
-        self.left_canonize_upto(chi=chi, relative_threshold=relative_threshold, end_dealing=end_dealing)
-        self.right_canonize_upto(chi=chi, relative_threshold=relative_threshold, end_dealing=end_dealing)
+    def both_canonize(self, chi=None, rtol=None, atol=None, end_dealing="normalize"):
+        self.left_canonize_upto(chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+        self.right_canonize_upto(chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
 
 
     def is_left_canonical_site(self, site):
@@ -574,7 +574,7 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
         return w_R, V_R
 
     # ref: https://arxiv.org/abs/0711.3960
-    def canonize_end(self, chi=None, relative_threshold=1e-14, normalize=True):
+    def canonize_end(self, chi=None, rtol=None, atol=None, normalize=True):
         dl_label = unique_label()
         dr_label = unique_label()
         w_L, V_L = self.get_left_eigen()
@@ -586,7 +586,7 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
         Xh.unaster_labels(aster_labels(self.get_left_labels_site(0)))
         l0 = self.bdts[0]
         G = d_L.sqrt() * Yh * l0 * X * d_R.sqrt()
-        U, S, V = tnd.truncated_svd(G, dl_label, dr_label, chi=chi, relative_threshold=relative_threshold)
+        U, S, V = tnd.truncated_svd(G, dl_label, dr_label, chi=chi, rtol=rtol, atol=atol)
         M = Y * d_L.inv().sqrt() * U
         N = V * d_R.inv().sqrt() * Xh
         # l0 == M*S*N
@@ -599,12 +599,12 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
 
     left_canonize_site = Fin1DSimBTPS.left_canonize_not_end_site
 
-    def canonize(self, chi=None, relative_threshold=1e-14):
-        self.canonize_end(chi=chi, relative_threshold=relative_threshold)
+    def canonize(self, chi=None, rtol=None, atol=None):
+        self.canonize_end(chi=chi, rtol=rtol, atol=atol)
         for i in range(len(self)-1):
-            self.left_canonize_site(i, chi=chi, relative_threshold=relative_threshold)
+            self.left_canonize_site(i, chi=chi, rtol=rtol, atol=atol)
         for i in range(len(self)-1,0,-1):
-            self.right_canonize_site(i, chi=chi, relative_threshold=relative_threshold)
+            self.right_canonize_site(i, chi=chi, rtol=rtol, atol=atol)
 
     def is_canonical(self):
         for i in range(len(self)):

@@ -1,6 +1,6 @@
 from tanuki.tnxp import xp
 from tanuki.utils import *
-from tanuki.tensor_core import *
+from tanuki import tensor_core as tnc
 
 #decomposition functions
 def normarg_svd_labels(svd_labels):
@@ -9,7 +9,7 @@ def normarg_svd_labels(svd_labels):
     if not isinstance(svd_labels, list):
         svd_labels = [svd_labels]
     if len(svd_labels)==1:
-        svd_labels = [svd_labels[0]+"_us", svd_labels[0]+"_sv"]
+        svd_labels = [svd_labels[0], svd_labels[0]]
     if len(svd_labels)==2:
         svd_labels = [svd_labels[0],svd_labels[0],svd_labels[1],svd_labels[1]]
     if len(svd_labels)!=4:
@@ -38,14 +38,14 @@ def tensor_svd(A, rows, cols=None, svd_labels=None):
 
     mid_dim = s_diag.shape[0]
 
-    U = matrix_to_tensor(u, row_dims+(mid_dim,), row_labels+[svd_labels[0]])
-    S = diagonalElementsVector_to_diagonalTensor(s_diag, [svd_labels[1],svd_labels[2]])
-    V = matrix_to_tensor(v, (mid_dim,)+col_dims, [svd_labels[3]]+col_labels)
+    U = tnc.matrix_to_tensor(u, row_dims+(mid_dim,), row_labels+[svd_labels[0]])
+    S = tnc.diagonalElementsVector_to_diagonalTensor(s_diag, (mid_dim,), [svd_labels[1],svd_labels[2]])
+    V = tnc.matrix_to_tensor(v, (mid_dim,)+col_dims, [svd_labels[3]]+col_labels)
 
     return U, S, V
 
 
-def truncated_svd(A, rows, cols=None, chi=None, absolute_threshold=None, relative_threshold=None, svd_labels=None):
+def truncated_svd(A, rows, cols=None, chi=None, rtol=None, atol=None, svd_labels=None):
     svd_labels = normarg_svd_labels(svd_labels)
 
     U, S, V = tensor_svd(A, rows, cols, svd_labels=svd_labels)
@@ -55,12 +55,10 @@ def truncated_svd(A, rows, cols=None, chi=None, absolute_threshold=None, relativ
     if chi:
         trunc_s_diag = trunc_s_diag[:chi]
 
-    if absolute_threshold:
-        trunc_s_diag = trunc_s_diag[trunc_s_diag > absolute_threshold]
-
-    if relative_threshold:
-        threshold = relative_threshold * s_diag[0]
-        trunc_s_diag = trunc_s_diag[trunc_s_diag > threshold]
+    if rtol is None: rtol = 0
+    if atol is None: atol = 0
+    threshold = atol + rtol * s_diag[0]
+    trunc_s_diag = trunc_s_diag[trunc_s_diag > threshold]
 
     chi = len(trunc_s_diag)
 
@@ -78,7 +76,7 @@ def normarg_qr_labels(qr_labels):
     if not isinstance(qr_labels, list):
         qr_labels = [qr_labels]
     if len(qr_labels)==1:
-        qr_labels = [qr_labels[0]+"_qr", qr_labels[0]+"_qr"]
+        qr_labels = [qr_labels[0], qr_labels[0]]
     if len(qr_labels)!=2:
         raise ValueError(f"qr_labels must be a None or str or 1,2 length list. qr_labels=={qr_labels}")
     return qr_labels
@@ -97,8 +95,8 @@ def tensor_qr(A, rows, cols=None, qr_labels=None, mode="economic"):
 
     mid_dim = r.shape[0]
 
-    Q = matrix_to_tensor(q, row_dims+(mid_dim,), row_labels+[qr_labels[0]])
-    R = matrix_to_tensor(r, (mid_dim,)+col_dims, [qr_labels[1]]+col_labels)
+    Q = tnc.matrix_to_tensor(q, row_dims+(mid_dim,), row_labels+[qr_labels[0]])
+    R = tnc.matrix_to_tensor(r, (mid_dim,)+col_dims, [qr_labels[1]]+col_labels)
 
     return Q, R
 
@@ -149,9 +147,9 @@ def tensor_eigh(A, rows, cols=None, eigh_labels=None):
     dim = soujou(row_dims)
     a = A.to_matrix(rows, cols)
     w,v = xp.linalg.eigh(a)
-    V = matrix_to_tensor(v, row_dims+(dim,), row_labels+[eigh_labels[0]])
-    W = diagonalElementsVector_to_diagonalTensor(w, [eigh_labels[1],eigh_labels[2]])
-    Vh = matrix_to_tensor(xp.transpose(xp.conj(v)), (dim,)+col_dims, [eigh_labels[3]]+col_labels)
+    V = tnc.matrix_to_tensor(v, row_dims+(dim,), row_labels+[eigh_labels[0]])
+    W = tnc.diagonalElementsVector_to_diagonalTensor(w, (dim,), [eigh_labels[1],eigh_labels[2]])
+    Vh = tnc.matrix_to_tensor(xp.transpose(xp.conj(v)), (dim,)+col_dims, [eigh_labels[3]]+col_labels)
     return V,W,Vh
 
 
@@ -164,5 +162,5 @@ def tensor_eigsh(A, rows, cols=None):
     w,v = xp.sparse.linalg.eigsh(a, k=1)
     w = w[0]
     v = v[:,0]
-    V = vector_to_tensor(v, col_dims, col_labels)
+    V = tnc.vector_to_tensor(v, col_dims, col_labels)
     return w,V

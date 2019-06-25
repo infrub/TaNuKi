@@ -226,6 +226,12 @@ def matrix_is_prop_unitary(M, rtol=1e-5, atol=1e-8):
     expression = {"left":is_prop_left_semi_unitary.expression, "right":is_prop_right_semi_unitary.expression}
     return CollateralBool(is_prop_unitary, expression)
 
+def matrix_is_triu(M, rtol=1e-5, atol=1e-8):
+    return CollateralBool(xp.allclose(M, xp.triu(M), rtol=rtol, atol=atol), {})
+
+def matrix_is_tril(M, rtol=1e-5, atol=1e-8):
+    return CollateralBool(xp.allclose(M, xp.tril(M), rtol=rtol, atol=atol), {})
+
 
 
 
@@ -576,6 +582,12 @@ class TensorMixin:
     def is_prop_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
         return matrix_is_prop_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
 
+    def is_triu(T, rows, cols=None, rtol=1e-5, atol=1e-8): # row_index <= col_index
+        return matrix_is_triu(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_tril(T, rows, cols=None, rtol=1e-5, atol=1e-8): # row_index >= col_index
+        return matrix_is_tril(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
     def is_hermite(T, rows, cols=None, rtol=1e-5, atol=1e-8):
         Th = T.adjoint(rows, cols, style="transpose")
         return T.__eq__(Th, rtol=rtol, atol=atol)
@@ -604,7 +616,7 @@ class Tensor(TensorMixin):
     def __str__(self):
         if self.size > 100:
             dataStr = \
-            "["*self.ndim + " ... " + "]"*self.ndim
+            "["*self.ndim + str(self.data.item(0)) + " ... " + "]"*self.ndim
         else:
             dataStr = str(self.data)
         dataStr = textwrap.indent(dataStr, "    ")
@@ -666,14 +678,14 @@ class Tensor(TensorMixin):
         return Tensor(newData, newLabels)
 
     @inplacable_tensorMixin_method
-    def remove_dummy_indices(self, indices):
-        indices = self.normarg_indices(indices)
+    def remove_dummy_indices(self, indices=None):
+        if indices is not None: indices = self.normarg_indices(indices)
         oldShape = self.shape
         oldLabels = self.labels
         newShape = ()
         newLabels = []
         for i, x in enumerate(oldLabels):
-            if oldShape[i]==1 and i in indices:
+            if oldShape[i]==1 and (indices is None or i in indices):
                 pass
             else:
                 newShape = newShape + (oldShape[i],)
@@ -931,7 +943,7 @@ class DiagonalTensor(TensorMixin):
     def __str__(self):
         if self.halfsize > 100:
             dataStr = \
-            "["*self.halfndim + " ... " + "]"*self.halfndim
+            "["*self.halfndim + str(self.data.item(0)) + " ... " + "]"*self.halfndim
         else:
             dataStr = str(self.data)
         dataStr = textwrap.indent(dataStr, "    ")

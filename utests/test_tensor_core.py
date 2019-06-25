@@ -163,6 +163,15 @@ class TestTensor(unittest.TestCase):
         c = b.truncate_index("c", 5)
         self.assertEqual(a,c)
 
+    def test_confirm(self):
+        a = Tensor([[1,2,3],[4,5,6]],["a","b"])
+        self.assertFalse(a.is_triu(["a"]))
+        self.assertFalse(a.is_tril(["b"]))
+        a.data[1,0] = 0
+        self.assertTrue(a.is_triu(["a"]))
+        self.assertTrue(a.is_tril(["b"]))
+
+
 
 
 class TestDiagonalTensor(unittest.TestCase):
@@ -269,6 +278,10 @@ class TestContract(unittest.TestCase):
         self.assertEqual(type(c), DiagonalTensor)
         d = a.to_tensor()["b"]*b.to_tensor()["c"]
         self.assertEqual(c,d)
+
+
+
+
 
 
 
