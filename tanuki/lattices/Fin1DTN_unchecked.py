@@ -180,92 +180,18 @@ class Fin1DSimTPS:
 
 
 
-# bdts[0] -- tensors[0] -- bdts[1] -- tensors[1] -- ... -- tensors[len-1] -- bdts[len]
-class Fin1DSimBTPS:
-    def __init__(self, tensors, bdts, phys_labelss=None):
-        self.tensors = tensors
-        self.bdts = bdts
-        if phys_labelss is None:
-            self.phys_labelss = [self.get_guessed_phys_labels_site(site) for site in range(len(self))]
-        else:
-            self.phys_labelss = phys_labelss
 
 
 
-    def __repr__(self):
-        return f"Fin1DSimTPS(tensors={self.tensors}, bdts={self.bdts}, phys_labelss={self.phys_labelss})"
-
-    def __str__(self):
-        if len(self) > 20:
-            dataStr = " ... "
-        else:
-            dataStr = ""
-            for i in range(len(self)):
-                bdt = self.bdts[i]
-                dataStr += str(bdt)
-                dataStr += "\n"
-                tensor = self.tensors[i]
-                dataStr += str(tensor)
-                dataStr += ",\n"
-            bdt = self.bdts[len(self)]
-            dataStr += str(bdt)
-            dataStr += "\n"
-        dataStr = textwrap.indent(dataStr, "    ")
-
-        dataStr = "[\n" + dataStr + "],\n"
-        dataStr += f"phys_labelss={self.phys_labelss},\n"
-        dataStr = textwrap.indent(dataStr, "    ")
-
-        re = \
-        f"Fin1DSimBTPS(\n" + \
-        dataStr + \
-        f")"
-
-        return re
 
 
-    def __len__(self):
-        return self.tensors.__len__()
 
 
-    def get_left_labels_site(self, site):
-        if site == len(self):
-            return diff_list(self.bdts[site].labels, self.get_right_labels_site(site-1))
-        return tnc.intersection_list(self.bdts[site].labels, self.tensors[site].labels)
-
-    def get_right_labels_site(self, site):
-        if site == -1:
-            return diff_list(self.bdts[site+1].labels, self.get_left_labels_site(site+1))
-        return tnc.intersection_list(self.tensors[site].labels, self.bdts[site+1].labels)
-
-    def get_phys_labels_site(self, site):
-        return self.phys_labelss[site]
-
-    def get_guessed_phys_labels_site(self, site):
-        return diff_list(self.tensors[site].labels, self.get_left_labels_site(site)+self.get_right_labels_site(site))
-
-    def get_left_labels_bond(self, bondsite):
-        if bondsite == 0:
-            return diff_list(self.bdts[bondsite].labels, self.get_left_labels_site(bondsite))
-        return self.get_right_labels_site(bondsite-1)
-
-    def get_right_labels_bond(self, bondsite):
-        if bondsite == len(self):
-            return diff_list(self.bdts[bondsite].labels, self.get_right_labels_site(bondsite-1))
-        return self.get_left_labels_site(bondsite)
 
 
-    def get_left_shape_site(self, site):
-        return self.tensors[site].dims(self.get_left_labels_site(site))
 
-    def get_right_shape_site(self, site):
-        return self.tensors[site].dims(self.get_right_labels_site(site))
 
-    def get_left_dim_site(self, site):
-        return soujou(self.tensors[site].dims(self.get_left_labels_site(site)))
 
-    def get_right_dim_site(self, site):
-        return soujou(self.tensors[site].dims(self.get_right_labels_site(site)))
 
 
     def left_canonize_right_end(self, chi=None, rtol=None, atol=None, end_dealing="normalize"):
@@ -318,21 +244,6 @@ class Fin1DSimBTPS:
         else:
             return
 
-    # (site=1):
-    # /-(1)-[1]-      /-
-    # |      |    ==  |
-    # \-(1)-[1]-      \-
-    def left_canonize_not_end_site(self, site, chi=None, rtol=None, atol=None):
-        U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_left_labels_bond(site)+self.get_phys_labels_site(site), chi=chi, rtol=rtol, atol=atol)
-        self.tensors[site] = U/self.bdts[site]
-        self.bdts[site+1] = S
-        self.tensors[site+1] = V*self.tensors[site+1]
-
-    def left_canonize_site(self, site, chi=None, rtol=None, atol=None, end_dealing="normalize"):
-        if site==len(self)-1:
-            self.left_canonize_right_end(chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
-        else:
-            self.left_canonize_not_end_site(site, chi=chi, rtol=rtol, atol=atol)
 
 
     def right_canonize_left_end(self, chi=None, rtol=None, atol=None, end_dealing="normalize"):
@@ -356,89 +267,14 @@ class Fin1DSimBTPS:
         else:
             return
 
-    # (site=4):
-    # -[4]-(5)-\      -\
-    #   |      |  ==   |
-    # -[4]-(5)-/      -/
-    def right_canonize_site(self, site, chi=None, rtol=None, atol=None, end_dealing="normalize"):
-        if site==0:
-            self.right_canonize_left_end(chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
-            return
-        U, S, V = tnd.truncated_svd(self.bdts[site]*self.tensors[site]*self.bdts[site+1], self.get_left_labels_bond(site), chi=chi, rtol=rtol, atol=atol)
-        self.tensors[site-1] = self.tensors[site-1]*U
-        self.bdts[site] = S
-        self.tensors[site] = V/self.bdts[site+1]
-
-    # (interval=2):
-    # /-(0)-[0]-      /-(1)-[1]-      /-
-    # |      |    ==  |      |    ==  |
-    # \-(0)-[0]-      \-(1)-[1]-      \-
-    def left_canonize_upto(self, interval=None, chi=None, rtol=None, atol=None, end_dealing="normalize"):
-        if interval is None: interval = len(self)
-        assert 0<=interval<=len(self)
-        for site in range(interval):
-            self.left_canonize_site(site, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
-
-    # (interval=4):
-    # -[4]-(5)-\      -[5]-(6)-\      -\
-    #   |      |  ==    |      |  ==   |
-    # -[4]-(5)-/      -[5]-(6)-/      -/
-    def right_canonize_upto(self, interval=0, chi=None, rtol=None, atol=None, end_dealing="normalize"):
-        assert 0<=interval<=len(self)
-        for site in range(len(self)-1, interval-1, -1):
-            self.right_canonize_site(site, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
-
-    def both_canonize(self, chi=None, rtol=None, atol=None, end_dealing="normalize"):
-        self.left_canonize_upto(chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
-        self.right_canonize_upto(chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
 
 
-    def is_left_canonical_site(self, site):
-        S = self.bdts[site]
-        V = self.tensors[site]
-        SV = S*V
-        re = SV.is_prop_left_semi_unitary(self.get_right_labels_site(site-1)+self.get_phys_labels_site(site))
-        #print(site,re)
-        return re
-
-    def is_right_canonical_site(self, site):
-        U = self.tensors[site]
-        S = self.bdts[site+1]
-        US = U*S
-        re = US.is_prop_right_semi_unitary(self.get_phys_labels_site(site)+self.get_left_labels_site(site+1))
-        #print(site,re)
-        return re
-
-    def is_left_canonical_upto(self, interval=None):
-        if interval is None: interval = len(self)
-        assert 0<=interval<=len(self)
-        for site in range(interval):
-            if not self.is_left_canonical_site(site):
-                return False
-        return True
-
-    def is_right_canonical_upto(self, interval=0):
-        assert 0<=interval<=len(self)
-        for site in range(len(self)-1, interval-1, -1):
-            if not self.is_right_canonical_site(site):
-                return False
-        return True
-
-    def is_both_canonical(self, end_dealing="no"):
-        if end_dealing=="no":
-            return self.is_left_canonical_upto(len(self)-1) and self.is_right_canonical_upto(1)
-        return self.is_left_canonical_upto() and self.is_right_canonical_upto()
 
 
-    def to_tensor(self):
-        re = copyModule.deepcopy(self.bdts[0])
-        for i in range(len(self)):
-            x = self.tensors[i]
-            re *= x
-            x = self.bdts[i+1]
-            re *= x
-        re.remove_dummy_indices()
-        return re
+
+
+
+
 
 
 

@@ -125,6 +125,7 @@ def unprime_labels(labels):
     return [unprime_label(label) for label in labels]
 
 
+
 class CyclicList(list):
     def __init__(self, *args, **kwargs):
         list.__init__(self, *args, **kwargs)
@@ -132,3 +133,18 @@ class CyclicList(list):
         return list.__getitem__(self, i%len(self))
     def __setitem__(self, i, v):
         return list.__setitem__(self, i%len(self), v)
+
+
+
+class CollateralBool:
+    def __init__(self, trueOrFalse, expression):
+        self.trueOrFalse = bool(trueOrFalse)
+        self.expression = expression
+    def __bool__(self):
+        return self.trueOrFalse
+    def __repr__(self):
+        return f"CollateralBool({self.trueOrFalse}, {self.expression})"
+    def __str__(self):
+        return f"{self.trueOrFalse}({self.expression})"
+    def __getattr__(self, arg):
+        return self.expression[arg]

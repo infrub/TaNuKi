@@ -1,5 +1,6 @@
 from tanuki.tnxp import xp as xp
 from tanuki.utils import *
+from tanuki.errors import *
 import copy as copyModule
 import warnings
 import textwrap
@@ -36,35 +37,6 @@ def inplacable_tensorMixin_method(f):
 
 
 
-
-
-class LabelsLengthError(Exception):
-    pass
-
-class LabelsTypeError(TypeError):
-    pass
-
-class ShapeError(ValueError):
-    pass
-
-class InputLengthError(Exception):
-    pass
-
-class CantKeepDiagonalityError(Exception):
-    pass
-
-class CollateralBool:
-    def __init__(self, trueOrFalse, expression):
-        self.trueOrFalse = trueOrFalse
-        self.expression = expression
-    def __bool__(self):
-        return self.trueOrFalse
-    def __repr__(self):
-        return f"CollateralBool({self.trueOrFalse}, {self.expression})"
-    def __str__(self):
-        return f"{self.trueOrFalse}({self.expression})"
-    def __getattr__(self, arg):
-        return self.expression[arg]
 
 
 
@@ -434,7 +406,7 @@ class TensorMixin:
         row_labels, col_labels = self.labels_of_indices(rows), self.labels_of_indices(cols)
         if style=="transpose":
             if len(rows) != len(cols):
-                raise InputLengthError(f"rows=={rows}, cols=={cols}")
+                raise IndicesLengthError(f"rows=={rows}, cols=={cols}")
             out = self.conjugate()
             out.replace_labels(rows+cols, col_labels+row_labels)
         elif style=="aster":
@@ -761,7 +733,7 @@ class Tensor(TensorMixin):
     def move_all_indices(self, moveFrom):
         moveFrom = self.normarg_indices_front(moveFrom)
         if len(moveFrom) != self.ndim:
-            raise InputLengthError()
+            raise IndicesLengthError()
         moveTo = list(range(self.ndim))
         newLabels = self.labels_of_indices(moveFrom)
         newData = xp.moveaxis(self.data, moveFrom, moveTo)
@@ -1010,7 +982,7 @@ class DiagonalTensor(TensorMixin):
     def move_all_indices_assuming_can_keep_diagonality(self, moveFrom):
         moveFrom = self.normarg_indices_front(moveFrom)
         if len(moveFrom)!=self.ndim:
-            raise InputLengthError()
+            raise IndicesLengthError()
 
         data = self.data
         labels = copyModule.copy(self.labels)
@@ -1041,7 +1013,7 @@ class DiagonalTensor(TensorMixin):
     def move_half_all_indices_to_top(self, halfMoveFrom):
         halfMoveFrom = self.normarg_indices_front(halfMoveFrom)
         if len(halfMoveFrom) != self.halfndim:
-            raise InputLengthError()
+            raise IndicesLengthError()
         moveFrom = halfMoveFrom + [(x+self.halfndim)%self.ndim for x in halfMoveFrom]
         if not eq_list(moveFrom, list(range(self.ndim))):
             raise CantKeepDiagonalityError()
@@ -1192,7 +1164,7 @@ def contract_indices(A, B, aIndicesContract, bIndicesContract):
             cData = A.data * B.data
             cLabels = A.labels[A.halfndim:] + B.labels[B.halfndim:]
             return DiagonalTensor(cData, cLabels)
-        except (InputLengthError, CantKeepDiagonalityError):
+        except (IndicesLengthError, CantKeepDiagonalityError):
             C = direct_product(A, B)
             cIndicesContract1 = [x if x<A.halfndim else x+B.halfndim for x in aIndicesContract]
             cIndicesContract2 = [x+A.halfndim if x<B.halfndim else x+A.ndim for x in bIndicesContract]
@@ -1216,7 +1188,7 @@ def contract_indices(A, B, aIndicesContract, bIndicesContract):
             c = c.reshape(aDimsNotContract+bDimsNotContract)
             cLabels = aLabelsNotContract+bLabelsNotContract
             return Tensor(c, cLabels)
-        except (InputLengthError, CantKeepDiagonalityError):
+        except (IndicesLengthError, CantKeepDiagonalityError):
             return contract(A, diagonalTensor_to_tensor(B), aIndicesContract, bIndicesContract)
 
     elif type(A)==DiagonalTensor and type(B)==Tensor:
