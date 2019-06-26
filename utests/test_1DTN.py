@@ -12,16 +12,12 @@ class TestFin1DSimTPS(unittest.TestCase):
         B = random_tensor((3,2,3),["v0","p1","v1"])
         C = random_tensor((3,2),["v1","p2"])
         S = Fin1DSimTPS([A,B,C])
-        print(S)
         s = S.to_tensor()
-        print(s)
 
         T = S.to_BTPS()
-        print(T)
         T.both_canonize(end_dealing="no")
-        print(T)
         t = T.to_tensor()
-        print(t)
+
         self.assertEqual(s,t)
 
         print(T)

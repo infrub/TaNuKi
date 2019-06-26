@@ -187,7 +187,7 @@ def matrix_is_identity(M, rtol=1e-5, atol=1e-8):
     return CollateralBool(True, {})
 
 def matrix_is_prop_identity(M, rtol=1e-5, atol=1e-8):
-    hoge = is_diagonal_matrix(M, rtol=rtol, atol=atol)
+    hoge = matrix_is_diagonal(M, rtol=rtol, atol=atol)
     if not hoge: return hoge
     d = xp.diagonal(M)
     factor = xp.average(d)
@@ -578,6 +578,9 @@ class TensorMixin:
 
     def is_prop_right_semi_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
         return matrix_is_prop_right_semi_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+
+    def is_prop_semi_unitary(T, inds, rtol=1e-5, atol=1e-8):
+        return matrix_is_prop_left_semi_unitary(T.to_matrix(inds, None), rtol=rtol, atol=atol)
 
     def is_prop_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
         return matrix_is_prop_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
