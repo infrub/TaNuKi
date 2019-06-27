@@ -365,6 +365,7 @@ class TensorMixin:
         newLabels = unaster_labels(oldLabels)
         self.replace_labels(oldIndices, newLabels)
 
+    @outofplacable_tensorMixin_method
     def assign_labels(self, base_label):
         self.labels = [base_label+"_"+str(i) for i in range(self.ndim)]
 
@@ -748,7 +749,7 @@ class Tensor(TensorMixin):
     #methods for fuse/split
     #if new.. is no specified, assume like following:
     #["a","b","c","d"] <=split / fuse=> ["a",("b","c"),"d"]
-    @outofplacable_tensorMixin_method
+    @inplacable_tensorMixin_method
     def fuse_indices(self, splittedLabels=None, fusedLabel=None, input_memo=None, output_memo=None):
         if input_memo is None:
             input_memo = {}
@@ -786,7 +787,7 @@ class Tensor(TensorMixin):
 
         return Tensor(newData, newLabels)
 
-    @outofplacable_tensorMixin_method
+    @inplacable_tensorMixin_method
     def split_index(self, fusedLabel=None, splittedShape=None, splittedLabels=None, input_memo=None, output_memo=None):
         if input_memo is None:
             input_memo = {}
