@@ -59,21 +59,12 @@ class Fin1DSimBTPS:
         return self.tensors.__len__()
 
 
+    # getting label methods (to be not inherited)
     def get_left_labels_site(self, site):
-        #if site == len(self):
-        #    return diff_list(self.bdts[site].labels, self.get_right_labels_site(site-1))
         return tnc.intersection_list(self.bdts[site].labels, self.tensors[site].labels)
 
     def get_right_labels_site(self, site):
-        #if site == -1:
-        #    return diff_list(self.bdts[site+1].labels, self.get_left_labels_site(site+1))
         return tnc.intersection_list(self.tensors[site].labels, self.bdts[site+1].labels)
-
-    def get_phys_labels_site(self, site):
-        return self.phys_labelss[site]
-
-    def get_guessed_phys_labels_site(self, site):
-        return diff_list(self.tensors[site].labels, self.get_left_labels_site(site)+self.get_right_labels_site(site))
 
     def get_left_labels_bond(self, bondsite):
         if bondsite == 0:
@@ -85,12 +76,54 @@ class Fin1DSimBTPS:
             return diff_list(self.bdts[bondsite].labels, self.get_right_labels_site(bondsite-1))
         return self.get_left_labels_site(bondsite)
 
+    # getting label methods (to be inherited)
+    def get_phys_labels_site(self, site):
+        return self.phys_labelss[site]
+
+    def get_guessed_phys_labels_site(self, site):
+        return diff_list(self.tensors[site].labels, self.get_left_labels_site(site)+self.get_right_labels_site(site))
 
     def get_left_shape_site(self, site):
         return self.tensors[site].dims(self.get_left_labels_site(site))
 
     def get_right_shape_site(self, site):
         return self.tensors[site].dims(self.get_right_labels_site(site))
+
+    def get_ket_site(self, site):
+        return self.tensors[site].copy(shallow=True)
+
+    def get_bra_site(self, site):
+        return self.tensors[site].adjoint(self.get_left_labels_site(site), self.get_right_labels_site(site), style="aster")
+
+    def get_ket_bond(self, bondsite):
+        return self.bdts[bondsite].copy(shallow=True)
+
+    def get_bra_bond(self, bondsite):
+        return self.bdts[bondsite].adjoint(self.get_left_labels_bond(bondsite), self.get_right_labels_bond(bondsite), style="aster")
+
+    def get_ket_left_labels_site(self, site):
+        return self.get_left_labels_site(site)
+
+    def get_ket_right_labels_site(self, site):
+        return self.get_right_labels_site(site)
+
+    def get_bra_left_labels_site(self, site):
+        return aster_labels(self.get_left_labels_site(site))
+
+    def get_bra_right_labels_site(self, site):
+        return aster_labels(self.get_right_labels_site(site))
+
+    def get_ket_left_labels_bond(self, bondsite):
+        return self.get_left_labels_bond(bondsite)
+
+    def get_ket_right_labels_bond(self, bondsite):
+        return self.get_right_labels_bond(bondsite)
+
+    def get_bra_left_labels_bond(self, bondsite):
+        return aster_labels(self.get_left_labels_bond(bondsite))
+
+    def get_bra_right_labels_bond(self, bondsite):
+        return aster_labels(self.get_right_labels_bond(bondsite))
 
 
 
@@ -318,15 +351,15 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
     def get_left_transfer_eigen(self):
         inket_memo, inbra_memo, outket_memo, outbra_memo = {}, {}, {}, {}
 
-        TF_L = self.bdts[0].fuse_indices(self.get_left_labels_bond(0), fusedLabel=unique_label(), output_memo=inket_memo)
-        TF_L *= self.bdts[0].adjoint(self.get_left_labels_bond(0),self.get_right_labels_bond(0), style="aster").fuse_indices(aster_labels(self.get_left_labels_bond(0)), fusedLabel=unique_label(), output_memo=inbra_memo)
+        TF_L = self.get_ket_bond(0).fuse_indices(self.get_ket_left_labels_bond(0), fusedLabel=unique_label(), output_memo=inket_memo)
+        TF_L *= self.get_bra_bond(0).fuse_indices(self.get_bra_left_labels_bond(0), fusedLabel=unique_label(), output_memo=inbra_memo)
         for i in range(len(self)-1):
-            TF_L *= self.tensors[i]
-            TF_L *= self.tensors[i].adjoint(self.get_left_labels_site(i),self.get_right_labels_site(i), style="aster")
-            TF_L *= self.bdts[i+1]
-            TF_L *= self.bdts[i+1].adjoint(self.get_left_labels_bond(i+1),self.get_right_labels_bond(i+1), style="aster")
-        TF_L *= self.tensors[len(self)-1].fuse_indices(self.get_right_labels_site(len(self)-1), fusedLabel=unique_label(), output_memo=outket_memo)
-        TF_L *= self.tensors[len(self)-1].adjoint(self.get_left_labels_site(len(self)-1),self.get_right_labels_site(len(self)-1), style="aster").fuse_indices(aster_labels(self.get_right_labels_site(len(self)-1)), fusedLabel=unique_label(), output_memo=outbra_memo)
+            TF_L *= self.get_ket_site(i)
+            TF_L *= self.get_bra_site(i)
+            TF_L *= self.get_ket_bond(i+1)
+            TF_L *= self.get_bra_bond(i+1)
+        TF_L *= self.get_ket_site(-1).fuse_indices(self.get_ket_right_labels_site(-1), fusedLabel=unique_label(), output_memo=outket_memo)
+        TF_L *= self.get_bra_site(-1).fuse_indices(self.get_bra_right_labels_site(-1), fusedLabel=unique_label(), output_memo=outbra_memo)
 
         w_L, V_L = tnd.tensor_eigsh(TF_L, [outket_memo["fusedLabel"], outbra_memo["fusedLabel"]], [inket_memo["fusedLabel"], inbra_memo["fusedLabel"]])
 
@@ -343,15 +376,15 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
     def get_right_transfer_eigen(self):
         inket_memo, inbra_memo, outket_memo, outbra_memo = {}, {}, {}, {}
 
-        TF_R = self.bdts[0].fuse_indices(self.get_right_labels_bond(0), fusedLabel=unique_label(), output_memo=inket_memo)
-        TF_R *= self.bdts[0].adjoint(self.get_left_labels_bond(0),self.get_right_labels_bond(0), style="aster").fuse_indices(aster_labels(self.get_right_labels_bond(0)), fusedLabel=unique_label(), output_memo=inbra_memo)
+        TF_R = self.get_ket_bond(0).fuse_indices(self.get_ket_right_labels_bond(0), fusedLabel=unique_label(), output_memo=inket_memo)
+        TF_R *= self.get_bra_bond(0).fuse_indices(self.get_bra_right_labels_bond(0), fusedLabel=unique_label(), output_memo=inbra_memo)
         for i in range(len(self)-1, 0, -1):
-            TF_R *= self.tensors[i]
-            TF_R *= self.tensors[i].adjoint(self.get_left_labels_site(i),self.get_right_labels_site(i), style="aster")
-            TF_R *= self.bdts[i]
-            TF_R *= self.bdts[i].adjoint(self.get_left_labels_bond(i),self.get_right_labels_bond(i), style="aster")
-        TF_R *= self.tensors[0].fuse_indices(self.get_left_labels_site(0), fusedLabel=unique_label(), output_memo=outket_memo)
-        TF_R *= self.tensors[0].adjoint(self.get_left_labels_site(0),self.get_right_labels_site(0), style="aster").fuse_indices(aster_labels(self.get_left_labels_site(0)), fusedLabel=unique_label(), output_memo=outbra_memo)
+            TF_R *= self.get_ket_site(i)
+            TF_R *= self.get_bra_site(i)
+            TF_R *= self.get_ket_bond(i)
+            TF_R *= self.get_bra_bond(i)
+        TF_R *= self.get_ket_site(0).fuse_indices(self.get_ket_left_labels_site(0), fusedLabel=unique_label(), output_memo=outket_memo)
+        TF_R *= self.get_bra_site(0).fuse_indices(self.get_bra_left_labels_site(0), fusedLabel=unique_label(), output_memo=outbra_memo)
 
         w_R, V_R = tnd.tensor_eigsh(TF_R, [outket_memo["fusedLabel"], outbra_memo["fusedLabel"]], [inket_memo["fusedLabel"], inbra_memo["fusedLabel"]])
 
