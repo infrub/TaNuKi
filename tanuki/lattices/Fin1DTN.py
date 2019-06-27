@@ -16,8 +16,6 @@ class Fin1DSimBTPS:
         self.bdts = bdts
         if len(self.bdts)+1==len(self.tensors):
             self.bdts = [dummy_diagonalTensor()] + self.bdts + [dummy_diagonalTensor()]
-        if len(self.bdts)-1!=len(self.tensors):
-            raise SitesLengthError
         if phys_labelss is None:
             self.phys_labelss = [self.get_guessed_phys_labels_site(site) for site in range(len(self))]
         else:
@@ -96,6 +94,8 @@ class Fin1DSimBTPS:
 
 
 
+    # canonizing methods
+
     # (site=1):
     # /-(1)-[1]-      /-
     # |      |    ==  |
@@ -126,8 +126,6 @@ class Fin1DSimBTPS:
             self.left_canonize_right_end(chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
         else:
             self.left_canonize_not_end_site(site, chi=chi, rtol=rtol, atol=atol)
-
-
 
     # (site=4):
     # -[4]-(5)-\      -\
@@ -237,6 +235,7 @@ class Fin1DSimBTPS:
 
 
 
+    # converting methods
     def to_tensor(self):
         re = copyModule.deepcopy(self.bdts[0])
         for i in range(len(self)):
@@ -247,16 +246,160 @@ class Fin1DSimBTPS:
 
 
 
-def random_fin1DSimBTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_dimss=None, chi=3, dtype=complex):
+
+# )-- bdts[0] -- tensors[0] -- bdts[1] -- tensors[1] -- ... -- bdts[-1] -- tensors[-1] --(
+class Inf1DSimBTPS(Fin1DSimBTPS):
+    def __init__(self, tensors, bdts, phys_labelss=None):
+        if type(tensors) != CyclicList:
+            tensors = CyclicList(tensors)
+        if type(bdts) != CyclicList:
+            bdts = CyclicList(bdts)
+        Fin1DSimBTPS.__init__(self, tensors, bdts, phys_labelss=phys_labelss)
+        self.phys_labelss = CyclicList(self.phys_labelss)
+
+    def __repr__(self):
+        return f"Inf1DSimTPS(tensors={self.tensors}, bdts={self.bdts}, phys_labelss={self.phys_labelss})"
+
+    def __str__(self):
+        if len(self) > 20:
+            dataStr = " ... "
+        else:
+            dataStr = ""
+            for i in range(len(self)):
+                bdt = self.bdts[i]
+                dataStr += str(bdt)
+                dataStr += "\n"
+                tensor = self.tensors[i]
+                dataStr += str(tensor)
+                dataStr += ",\n"
+        dataStr = textwrap.indent(dataStr, "    ")
+
+        dataStr = "[\n" + dataStr + "],\n"
+        dataStr += f"phys_labelss={self.phys_labelss},\n"
+        dataStr = textwrap.indent(dataStr, "    ")
+
+        re = \
+        f"Inf1DSimBTPS(\n" + \
+        dataStr + \
+        f")"
+
+        return re
+
+
+    def __len__(self):
+        return self.tensors.__len__()
+
+
+    def get_left_labels_site(self, site):
+        return tnc.intersection_list(self.bdts[site].labels, self.tensors[site].labels)
+
+    def get_right_labels_site(self, site):
+        return tnc.intersection_list(self.tensors[site].labels, self.bdts[site+1].labels)
+
+    def get_left_labels_bond(self, bondsite):
+        return self.get_right_labels_site(bondsite-1)
+
+    def get_right_labels_bond(self, bondsite):
+        return self.get_left_labels_site(bondsite)
+
+    def to_tensor(self):
+        re = 1
+        for i in range(len(self)):
+            re *= self.bdts[i]
+            re *= self.tensors[i]
+        return re
+
+
+
+    # get L s.t.
+    # /-(0)-[0]-...-(len-1)-[len-1]-          /-
+    # L      |                 |      ==  c * L
+    # \-(0)-[0]-...-(len-1)-[len-1]-          \-
+    def get_left_transfer_eigen(self):
+        label_base = "TFL_" + unique_label()
+        inbra = label_base + "_inbra"
+        inket = label_base + "_inket"
+        outbra = label_base + "_outbra"
+        outket = label_base + "_outket"
+        shape = self.get_right_shape_site(len(self)-1)
+        dim = soujou(shape)
+        rawl = self.get_right_labels_site(len(self)-1)
+
+        TF_L = tni.identity_tensor(dim, shape, labels=[inket]+rawl)
+        TF_L *= tni.identity_tensor(dim, shape, labels=[inbra]+aster_labels(rawl))
+        for i in range(len(self)):
+            TF_L *= self.bdts[i]
+            TF_L *= self.bdts[i].adjoint(self.get_left_labels_bond(i),self.get_right_labels_bond(i), style="aster")
+            TF_L *= self.tensors[i]
+            TF_L *= self.tensors[i].adjoint(self.get_left_labels_site(i),self.get_right_labels_site(i), style="aster")
+        TF_L *= tni.identity_tensor(dim, shape, labels=[outket]+rawl)
+        TF_L *= tni.identity_tensor(dim, shape, labels=[outbra]+aster_labels(rawl))
+
+        w_L, V_L = tnd.tensor_eigsh(TF_L, [outket,outbra], [inket,inbra])
+        V_L.hermite(inket, inbra, assume_definite_and_if_negative_then_make_positive=True, inplace=True)
+        V_L.split_index(inket, shape, rawl)
+        V_L.split_index(inbra, shape, aster_labels(rawl))
+
+        return w_L, V_L
+
+    # get R s.t.
+    # -[0]-...-(len-1)-[len-1]-(0)-\          -\
+    #   |                 |        R  ==  c *  R
+    # -[0]-...-(len-1)-[len-1]-(0)-/          -/
+    def get_right_transfer_eigen(self): #TOCHUU
+        label_base = "TFR" #unique_label()
+        inbra = label_base + "_inbra"
+        inket = label_base + "_inket"
+        outbra = label_base + "_outbra"
+        outket = label_base + "_outket"
+        dim = self.get_left_dim_site(0)
+        shape = self.get_left_shape_site(0)
+        rawl = self.get_left_labels_site(0)
+
+        TF_R = tni.identity_tensor(dim, shape, labels=[inket]+rawl)
+        TF_R *= tni.identity_tensor(dim, shape, labels=[inbra]+aster_labels(rawl))
+        for i in range(len(self)-1, -1, -1):
+            TF_R *= self.bdts[i+1]
+            TF_R *= self.bdts[i+1].adjoint(self.get_left_labels_bond(i+1),self.get_right_labels_bond(i+1), style="aster")
+            TF_R *= self.tensors[i]
+            TF_R *= self.tensors[i].adjoint(self.get_left_labels_site(i),self.get_right_labels_site(i), style="aster")
+        TF_R *= tni.identity_tensor(dim, shape, labels=[outket]+rawl)
+        TF_R *= tni.identity_tensor(dim, shape, labels=[outbra]+aster_labels(rawl))
+
+        w_R, V_R = tnd.tensor_eigsh(TF_R, [outket,outbra], [inket,inbra])
+        V_R.hermite(inbra, inket, assume_definite_and_if_negative_then_make_positive=True, inplace=True)
+        V_R.split_index(inket, shape, rawl)
+        V_R.split_index(inbra, shape, aster_labels(rawl))
+        
+        return w_R, V_R
+
+
+
+
+
+
+
+
+
+
+
+def random_fin1DSimBTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_dimss=None, phys_dim=2, chi=3, dtype=complex):
     length = len(phys_labelss)
     if phys_dimss is None:
-        phys_dimss = [(2,)*len(phys_labels) for phys_labels in phys_labelss]
-    if virt_labelss is None:
-        virt_labelss = [[]] + [[unique_label()] for _ in range(length-1)] + [[]]
-    elif len(virt_labelss) == length-1:
+        phys_dimss = [(phys_dim,)*len(phys_labels) for phys_labels in phys_labelss]
+
+    if virt_labelss is not None and len(virt_labelss) == length-1:
         virt_labelss = [[]] + virt_labelss + [[]]
-    if virt_dimss is None:
+    if virt_dimss is not None and len(virt_dimss) == length-1:
+        virt_dimss = [()] + virt_dimss + [()]
+
+    if virt_labelss is None and virt_dimss is None:
+        virt_labelss = [[]] + [[unique_label()] for _ in range(length-1)] + [[]]
         virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
+    elif virt_dimss is None:
+        virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
+    elif virt_labelss is None:
+        virt_labelss = [[unique_label() for _ in virt_dimss[i]] for i in virt_dimss]
 
     bdts = []
     for bondsite in range(length+1):
@@ -273,4 +416,30 @@ def random_fin1DSimBTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_d
 
 
 
+
+def random_inf1DSimBTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_dimss=None, phys_dim=2, chi=3, dtype=complex):
+    length = len(phys_labelss)
+    if phys_dimss is None:
+        phys_dimss = [(phys_dim,)*len(phys_labels) for phys_labels in phys_labelss]
+
+    if virt_labelss is None and virt_dimss is None:
+        virt_labelss = [[unique_label()] for _ in range(length)]
+        virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
+    elif virt_dimss is None:
+        virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
+    elif virt_labelss is None:
+        virt_labelss = [[unique_label() for _ in virt_dimss[i]] for i in virt_dimss]
+
+    bdts = []
+    for bondsite in range(length):
+        if len(virt_dimss[bondsite])==0:
+            bdts.append( tni.dummy_diagonalTensor() )
+        else:
+            bdts.append( tni.random_diagonalTensor(virt_dimss[bondsite], virt_labelss[bondsite], dtype=dtype) )
+
+    tensors = []
+    for site in range(length):
+        tensors.append( tni.random_tensor( virt_dimss[site]+phys_dimss[site]+virt_dimss[(site+1)%length], virt_labelss[site]+phys_labelss[site]+virt_labelss[(site+1)%length] , dtype=dtype) )
+
+    return Inf1DSimBTPS(tensors, bdts, phys_labelss)
 
