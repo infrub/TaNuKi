@@ -79,7 +79,7 @@ class TestInf1DSimBTPS(unittest.TestCase):
         self.assertTrue(eq_list(A.get_guessed_phys_labels_site(1), ["p10","p11"]))
         w_L, V_L = A.get_left_transfer_eigen()
         w_R, V_R = A.get_right_transfer_eigen()
-        self.assertEqual(w_L, w_R)
+        self.assertAlmostEqual(w_L, w_R, 12)
 
 
 

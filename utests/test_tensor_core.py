@@ -199,7 +199,7 @@ class TestDiagonalTensor(unittest.TestCase):
         self.assertAlmostEqual(a.norm(), c.norm())
         d = a.move_half_all_indices_to_top(["e","c","a"])
         self.assertEqual(d,b)
-        with self.assertRaises(InputLengthError):
+        with self.assertRaises(IndicesLengthError):
             e = a.move_half_all_indices_to_top(["e","c"])
         with self.assertRaises(CantKeepDiagonalityError):
             e = a.move_half_all_indices_to_top(["e","c","b"])

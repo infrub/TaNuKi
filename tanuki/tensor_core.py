@@ -402,14 +402,18 @@ class TensorMixin:
 
     @inplacable_tensorMixin_method
     def adjoint(self, rows, cols=None, style="transpose"):
-        rows, cols = self.normarg_complement_indices(rows, cols)
-        row_labels, col_labels = self.labels_of_indices(rows), self.labels_of_indices(cols)
         if style=="transpose":
+            rows, cols = self.normarg_complement_indices(rows, cols)
+            row_labels, col_labels = self.labels_of_indices(rows), self.labels_of_indices(cols)
             if len(rows) != len(cols):
                 raise IndicesLengthError(f"rows=={rows}, cols=={cols}")
             out = self.conjugate()
             out.replace_labels(rows+cols, col_labels+row_labels)
         elif style=="aster":
+            if cols is None:
+                cols = []
+            rows = self.normarg_indices_front(rows)
+            cols = self.normarg_indices_back(cols)
             out = self.conjugate()
             out.aster_labels(rows+cols)
         return out
@@ -718,7 +722,7 @@ class Tensor(TensorMixin):
         newLabels = self.labels_of_indices(notMoveFrom) + self.labels_of_indices(moveFrom)
         newData = xp.moveaxis(self.data, moveFrom, moveTo)
         return Tensor(newData, newLabels)
-    """
+    
     @inplacable_tensorMixin_method
     def move_indices_to_position(self, moveFrom, position):
         moveFrom = self.normarg_indices(moveFrom)
@@ -728,7 +732,7 @@ class Tensor(TensorMixin):
         newLabels = newLabels[:position] + self.labels_of_indices(moveFrom) + newLabels[position:]
         newData = xp.moveaxis(self.data, moveFrom, moveTo)
         return Tensor(newData, newLabels)
-    """
+    
     @inplacable_tensorMixin_method
     def move_all_indices(self, moveFrom):
         moveFrom = self.normarg_indices_front(moveFrom)
@@ -740,31 +744,33 @@ class Tensor(TensorMixin):
         return Tensor(newData, newLabels)
 
 
-    """
+    
     #methods for fuse/split
     #if new.. is no specified, assume like following:
     #["a","b","c","d"] <=split / fuse=> ["a",("b","c"),"d"]
     @outofplacable_tensorMixin_method
-    def fuse_indices(self, splittedLabels=None, fusedLabel=None, memo=None):
-        if memo is None:
-            memo = {}
+    def fuse_indices(self, splittedLabels=None, fusedLabel=None, input_memo=None, output_memo=None):
+        if input_memo is None:
+            input_memo = {}
+        if output_memo is None:
+            output_memo = {}
 
         if splittedLabels is None:
-            if "splittedLabels" in memo:
-                splittedLabels = memo["splittedLabels"]
+            if "splittedLabels" in input_memo:
+                splittedLabels = input_memo["splittedLabels"]
             else:
                 raise ValueError
         splittedIndices = self.normarg_indices(splittedLabels)
         splittedLabels = self.labels_of_indices(splittedIndices)
 
         if fusedLabel is None:
-            if "fusedLabel" in memo:
-                fusedLabel = memo["fusedLabel"]
+            if "fusedLabel" in input_memo:
+                fusedLabel = input_memo["fusedLabel"]
             else:
                 fusedLabel = tuple(splittedLabels)
 
         position = min(splittedIndices)
-        self.move_indices_to_position(splittedIndices, position)
+        self = self.move_indices_to_position(splittedIndices, position)
         del splittedIndices
 
         oldShape = self.shape
@@ -774,36 +780,37 @@ class Tensor(TensorMixin):
 
         oldLabels = self.labels
         newLabels = oldLabels[:position] + [fusedLabel] + oldLabels[position+len(splittedLabels):]
+        newData = xp.reshape(self.data, newShape)
 
-        self.data = xp.reshape(self.data, newShape)
-        self.labels = newLabels
+        output_memo.update({"splittedShape":splittedShape, "splittedLabels":splittedLabels, "fusedDim":fusedDim, "fusedLabel":fusedLabel})
 
-        memo.update({"splittedShape":splittedShape, "splittedLabels":splittedLabels, "fusedDim":fusedDim, "fusedLabel":fusedLabel})
-        return memo #if out-of-place not returned. if you want, prepare a dict as memo in argument
+        return Tensor(newData, newLabels)
 
     @outofplacable_tensorMixin_method
-    def split_index(self, fusedLabel=None, splittedShape=None, splittedLabels=None, memo=None):
-        if memo is None:
-            memo = {}
+    def split_index(self, fusedLabel=None, splittedShape=None, splittedLabels=None, input_memo=None, output_memo=None):
+        if input_memo is None:
+            input_memo = {}
+        if output_memo is None:
+            output_memo = {}
 
         if fusedLabel is None:
-            if "fusedLabel" in memo:
-                fusedLabel = memo["fusedLabel"]
+            if "fusedLabel" in input_memo:
+                fusedLabel = input_memo["fusedLabel"]
             else:
                 raise ValueError
         fusedIndex = self.normarg_index(fusedLabel)
         fusedLabel = self.label_of_index(fusedIndex)
 
         if splittedShape is None:
-            if "splittedShape" in memo:
-                splittedShape = memo["splittedShape"]
+            if "splittedShape" in input_memo:
+                splittedShape = input_memo["splittedShape"]
             else:
                 raise ValueError
         splittedShape = tuple(splittedShape)
 
         if splittedLabels is None:
-            if "splittedLabels" in memo:
-                splittedLabels = memo["splittedLabels"]
+            if "splittedLabels" in input_memo:
+                splittedLabels = input_memo["splittedLabels"]
             else:
                 splittedLabels = list(fusedLabel)
         splittedLabels = normarg_labels(splittedLabels)
@@ -818,13 +825,12 @@ class Tensor(TensorMixin):
 
         newShape = self.shape[:position] + splittedShape + self.shape[position+1:]
         newLabels = self.labels[:position] + splittedLabels + self.labels[position+1:]
+        newData = xp.reshape(self.data, newShape)
 
-        self.data = xp.reshape(self.data, newShape)
-        self.labels = newLabels
+        output_memo.update({"fusedDim":fusedDim, "fusedLabel":fusedLabel, "splittedShape":splittedShape, "splittedLabels":splittedLabels})
 
-        memo.update({"fusedDim":fusedDim, "fusedLabel":fusedLabel, "splittedShape":splittedShape, "splittedLabels":splittedLabels})
-        return memo #if out-of-place not returned. if you want, prepare a dict as memo in argument
-    """
+        return Tensor(newData, newLabels)
+    
 
 
     #methods for trace, contract

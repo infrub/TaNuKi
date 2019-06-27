@@ -337,8 +337,8 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
 
         w_L, V_L = tnd.tensor_eigsh(TF_L, [outket,outbra], [inket,inbra])
         V_L.hermite(inket, inbra, assume_definite_and_if_negative_then_make_positive=True, inplace=True)
-        V_L.split_index(inket, shape, rawl)
-        V_L.split_index(inbra, shape, aster_labels(rawl))
+        V_L.split_index(inket, shape, rawl, inplace=True)
+        V_L.split_index(inbra, shape, aster_labels(rawl), inplace=True)
 
         return w_L, V_L
 
@@ -352,8 +352,8 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
         inket = label_base + "_inket"
         outbra = label_base + "_outbra"
         outket = label_base + "_outket"
-        dim = self.get_left_dim_site(0)
         shape = self.get_left_shape_site(0)
+        dim = soujou(shape)
         rawl = self.get_left_labels_site(0)
 
         TF_R = tni.identity_tensor(dim, shape, labels=[inket]+rawl)
@@ -368,8 +368,8 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
 
         w_R, V_R = tnd.tensor_eigsh(TF_R, [outket,outbra], [inket,inbra])
         V_R.hermite(inbra, inket, assume_definite_and_if_negative_then_make_positive=True, inplace=True)
-        V_R.split_index(inket, shape, rawl)
-        V_R.split_index(inbra, shape, aster_labels(rawl))
+        V_R.split_index(inket, shape, rawl, inplace=True)
+        V_R.split_index(inbra, shape, aster_labels(rawl), inplace=True)
         
         return w_R, V_R
 
