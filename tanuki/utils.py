@@ -146,5 +146,5 @@ class CollateralBool:
         return f"CollateralBool({self.trueOrFalse}, {self.expression})"
     def __str__(self):
         return f"{self.trueOrFalse}({self.expression})"
-    def __getattr__(self, arg):
+    def __getitem__(self, arg):
         return self.expression[arg]

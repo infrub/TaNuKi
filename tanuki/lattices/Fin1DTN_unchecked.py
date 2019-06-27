@@ -188,7 +188,7 @@ class Fin1DSimTPS:
 
 
 
-
+class Fin1DSimBTPS:
 
 
 
@@ -276,49 +276,3 @@ class Fin1DSimTPS:
 
 
 
-
-
-
-
-
-    # ref: https://arxiv.org/abs/0711.3960
-    def canonize_end(self, chi=None, rtol=None, atol=None, normalize=True):
-        dl_label = unique_label()
-        dr_label = unique_label()
-        w_L, V_L = self.get_left_transfer_eigen()
-        w_R, V_R = self.get_right_transfer_eigen()
-        assert abs(w_L-w_R) < 1e-10*abs(w_L)
-        Yh, d_L, Y = tnd.tensor_eigh(V_L, self.get_right_labels_site(len(self)-1), aster_labels(self.get_right_labels_site(len(self)-1)), eigh_labels=dl_label)
-        Y.unaster_labels(aster_labels(self.get_right_labels_site(len(self)-1)))
-        X, d_R, Xh = tnd.tensor_eigh(V_R, self.get_left_labels_site(0), aster_labels(self.get_left_labels_site(0)), eigh_labels=dr_label)
-        Xh.unaster_labels(aster_labels(self.get_left_labels_site(0)))
-        l0 = self.bdts[0]
-        G = d_L.sqrt() * Yh * l0 * X * d_R.sqrt()
-        U, S, V = tnd.truncated_svd(G, dl_label, dr_label, chi=chi, rtol=rtol, atol=atol)
-        M = Y * d_L.inv().sqrt() * U
-        N = V * d_R.inv().sqrt() * Xh
-        # l0 == M*S*N
-        if normalize:
-            self.bdts[0] = S / sqrt(w_L)
-        else:
-            self.bdts[0] = S
-        self.tensors[0] = N * self.tensors[0]
-        self.tensors[len(self)-1] = self.tensors[len(self)-1] * M
-
-    left_canonize_site = Fin1DSimBTPS.left_canonize_not_end_site
-
-    def canonize(self, chi=None, rtol=None, atol=None):
-        self.canonize_end(chi=chi, rtol=rtol, atol=atol)
-        for i in range(len(self)-1):
-            self.left_canonize_site(i, chi=chi, rtol=rtol, atol=atol)
-        for i in range(len(self)-1,0,-1):
-            self.right_canonize_site(i, chi=chi, rtol=rtol, atol=atol)
-
-    def is_canonical(self):
-        for i in range(len(self)):
-            if not self.is_left_canonical_site(i):
-                return False
-        for i in range(len(self)-1,-1,-1):
-            if not self.is_right_canonical_site(i):
-                return False
-        return True

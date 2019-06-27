@@ -223,6 +223,8 @@ class Fin1DSimBTPS:
         self.left_canonize(chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
         self.right_canonize(chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
 
+    canonize = both_canonize
+
 
 
     def is_left_canonical_site(self, site):
@@ -261,11 +263,12 @@ class Fin1DSimBTPS:
             ok = re and ok
         return CollateralBool(ok, res)
 
-    def is_both_canonical(self, end_dealing="no"):
+    def is_both_canonical(self):
         left = self.is_left_canonical()
         right = self.is_right_canonical()
         return CollateralBool(left.trueOrFalse and right.trueOrFalse, {"left":left.expression, "right":right.expression})
 
+    is_canonical = is_both_canonical
 
 
     # converting methods
@@ -396,6 +399,41 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
 
 
 
+    # ref: https://arxiv.org/abs/0711.3960
+    def canonize_end(self, chi=None, rtol=None, atol=None, transfer_normalize=True):
+        dl_label = unique_label()
+        dr_label = unique_label()
+        w_L, V_L = self.get_left_transfer_eigen()
+        w_R, V_R = self.get_right_transfer_eigen()
+        assert abs(w_L-w_R) < 1e-10*abs(w_L)
+        Yh, d_L, Y = tnd.tensor_eigh(V_L, self.get_ket_left_labels_bond(0), self.get_bra_left_labels_bond(0), eigh_labels=dl_label)
+        Y.unaster_labels(self.get_bra_left_labels_bond(0), inplace=True)
+        X, d_R, Xh = tnd.tensor_eigh(V_R, self.get_ket_right_labels_bond(0), self.get_bra_right_labels_bond(0), eigh_labels=dr_label)
+        Xh.unaster_labels(self.get_bra_right_labels_bond(0))
+        l0 = self.bdts[0]
+        G = d_L.sqrt() * Yh * l0 * X * d_R.sqrt()
+        U, S, V = tnd.truncated_svd(G, dl_label, dr_label, chi=chi, rtol=rtol, atol=atol)
+        M = Y * d_L.inv().sqrt() * U
+        N = V * d_R.inv().sqrt() * Xh
+        # l0 == M*S*N
+        if transfer_normalize:
+            self.bdts[0] = S / sqrt(w_L)
+        else:
+            self.bdts[0] = S
+        self.tensors[0] = N * self.tensors[0]
+        self.tensors[len(self)-1] = self.tensors[len(self)-1] * M
+
+    left_canonize_site = Fin1DSimBTPS.left_canonize_not_end_site
+    right_canonize_site = Fin1DSimBTPS.right_canonize_not_end_site
+
+    def canonize(self, chi=None, rtol=None, atol=None, transfer_normalize=True):
+        self.canonize_end(chi=chi, rtol=rtol, atol=atol, transfer_normalize=transfer_normalize)
+        for i in range(len(self)-1):
+            self.left_canonize_site(i, chi=chi, rtol=rtol, atol=atol)
+        for i in range(len(self)-1,0,-1):
+            self.right_canonize_site(i, chi=chi, rtol=rtol, atol=atol)
+
+
 
 
 
@@ -434,7 +472,6 @@ def random_fin1DSimBTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_d
         tensors.append( tni.random_tensor( virt_dimss[site]+phys_dimss[site]+virt_dimss[site+1], virt_labelss[site]+phys_labelss[site]+virt_labelss[site+1] , dtype=dtype) )
 
     return Fin1DSimBTPS(tensors, bdts, phys_labelss)
-
 
 
 
