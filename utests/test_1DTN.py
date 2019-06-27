@@ -75,11 +75,11 @@ class TestInf1DSimBTPS(unittest.TestCase):
         self.assertTrue(eq_list(a.labels, ["p0","p1","p2"]))
 
     def test_transfer_eigen(self):
-        A = random_inf1DSimBTPS([["p0"], ["p10","p11"], ["p2"]], virt_labelss=[["v0"],["v10,v11"],["v2"]], chi=4)
+        A = random_inf1DSimBTPS([["p0"], ["p10","p11"], ["p2"]], virt_labelss=[["v0"],["v10","v11"],["v2"]], chi=4)
         self.assertTrue(eq_list(A.get_guessed_phys_labels_site(1), ["p10","p11"]))
         w_L, V_L = A.get_left_transfer_eigen()
         w_R, V_R = A.get_right_transfer_eigen()
-        self.assertAlmostEqual(w_L, w_R, 12)
+        self.assertAlmostEqual(w_L, w_R, 10)
 
 
 

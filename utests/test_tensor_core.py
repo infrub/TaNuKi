@@ -234,6 +234,18 @@ class TestDiagonalTensor(unittest.TestCase):
         self.assertEqual(c,d)
         self.assertEqual(c,e)
 
+    def test_getattr(self):
+        a = random_diagonalTensor((2,3,4),["a","b","c"])
+        memo = {}
+        b = a.fuse_indices(["a","b","a"],"E", output_memo=memo)
+        self.assertEqual(type(b), Tensor)
+        c = b.split_index(input_memo=memo)
+        self.assertEqual(type(c), Tensor)
+        d = c.to_diagonalTensor(["a","b","c","a","b","c"])
+        self.assertEqual(type(d), DiagonalTensor)
+        self.assertEqual(a,d)
+
+
 
 
 class TestContract(unittest.TestCase):

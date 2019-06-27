@@ -316,29 +316,23 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
     # L      |                 |      ==  c * L
     # \-(0)-[0]-...-(len-1)-[len-1]-          \-
     def get_left_transfer_eigen(self):
-        label_base = "TFL_" + unique_label()
-        inbra = label_base + "_inbra"
-        inket = label_base + "_inket"
-        outbra = label_base + "_outbra"
-        outket = label_base + "_outket"
-        shape = self.get_right_shape_site(len(self)-1)
-        dim = soujou(shape)
-        rawl = self.get_right_labels_site(len(self)-1)
+        inket_memo, inbra_memo, outket_memo, outbra_memo = {}, {}, {}, {}
 
-        TF_L = tni.identity_tensor(dim, shape, labels=[inket]+rawl)
-        TF_L *= tni.identity_tensor(dim, shape, labels=[inbra]+aster_labels(rawl))
-        for i in range(len(self)):
-            TF_L *= self.bdts[i]
-            TF_L *= self.bdts[i].adjoint(self.get_left_labels_bond(i),self.get_right_labels_bond(i), style="aster")
+        TF_L = self.bdts[0].fuse_indices(self.get_left_labels_bond(0), fusedLabel=unique_label(), output_memo=inket_memo)
+        TF_L *= self.bdts[0].adjoint(self.get_left_labels_bond(0),self.get_right_labels_bond(0), style="aster").fuse_indices(aster_labels(self.get_left_labels_bond(0)), fusedLabel=unique_label(), output_memo=inbra_memo)
+        for i in range(len(self)-1):
             TF_L *= self.tensors[i]
             TF_L *= self.tensors[i].adjoint(self.get_left_labels_site(i),self.get_right_labels_site(i), style="aster")
-        TF_L *= tni.identity_tensor(dim, shape, labels=[outket]+rawl)
-        TF_L *= tni.identity_tensor(dim, shape, labels=[outbra]+aster_labels(rawl))
+            TF_L *= self.bdts[i+1]
+            TF_L *= self.bdts[i+1].adjoint(self.get_left_labels_bond(i+1),self.get_right_labels_bond(i+1), style="aster")
+        TF_L *= self.tensors[len(self)-1].fuse_indices(self.get_right_labels_site(len(self)-1), fusedLabel=unique_label(), output_memo=outket_memo)
+        TF_L *= self.tensors[len(self)-1].adjoint(self.get_left_labels_site(len(self)-1),self.get_right_labels_site(len(self)-1), style="aster").fuse_indices(aster_labels(self.get_right_labels_site(len(self)-1)), fusedLabel=unique_label(), output_memo=outbra_memo)
 
-        w_L, V_L = tnd.tensor_eigsh(TF_L, [outket,outbra], [inket,inbra])
-        V_L.hermite(inket, inbra, assume_definite_and_if_negative_then_make_positive=True, inplace=True)
-        V_L.split_index(inket, shape, rawl, inplace=True)
-        V_L.split_index(inbra, shape, aster_labels(rawl), inplace=True)
+        w_L, V_L = tnd.tensor_eigsh(TF_L, [outket_memo["fusedLabel"], outbra_memo["fusedLabel"]], [inket_memo["fusedLabel"], inbra_memo["fusedLabel"]])
+
+        V_L.hermite(inket_memo["fusedLabel"], inbra_memo["fusedLabel"], assume_definite_and_if_negative_then_make_positive=True, inplace=True)
+        V_L.split_index(input_memo=inket_memo, inplace=True)
+        V_L.split_index(input_memo=inbra_memo, inplace=True)
 
         return w_L, V_L
 
@@ -346,30 +340,24 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
     # -[0]-...-(len-1)-[len-1]-(0)-\          -\
     #   |                 |        R  ==  c *  R
     # -[0]-...-(len-1)-[len-1]-(0)-/          -/
-    def get_right_transfer_eigen(self): #TOCHUU
-        label_base = "TFR" #unique_label()
-        inbra = label_base + "_inbra"
-        inket = label_base + "_inket"
-        outbra = label_base + "_outbra"
-        outket = label_base + "_outket"
-        shape = self.get_left_shape_site(0)
-        dim = soujou(shape)
-        rawl = self.get_left_labels_site(0)
+    def get_right_transfer_eigen(self):
+        inket_memo, inbra_memo, outket_memo, outbra_memo = {}, {}, {}, {}
 
-        TF_R = tni.identity_tensor(dim, shape, labels=[inket]+rawl)
-        TF_R *= tni.identity_tensor(dim, shape, labels=[inbra]+aster_labels(rawl))
-        for i in range(len(self)-1, -1, -1):
-            TF_R *= self.bdts[i+1]
-            TF_R *= self.bdts[i+1].adjoint(self.get_left_labels_bond(i+1),self.get_right_labels_bond(i+1), style="aster")
+        TF_R = self.bdts[0].fuse_indices(self.get_right_labels_bond(0), fusedLabel=unique_label(), output_memo=inket_memo)
+        TF_R *= self.bdts[0].adjoint(self.get_left_labels_bond(0),self.get_right_labels_bond(0), style="aster").fuse_indices(aster_labels(self.get_right_labels_bond(0)), fusedLabel=unique_label(), output_memo=inbra_memo)
+        for i in range(len(self)-1, 0, -1):
             TF_R *= self.tensors[i]
             TF_R *= self.tensors[i].adjoint(self.get_left_labels_site(i),self.get_right_labels_site(i), style="aster")
-        TF_R *= tni.identity_tensor(dim, shape, labels=[outket]+rawl)
-        TF_R *= tni.identity_tensor(dim, shape, labels=[outbra]+aster_labels(rawl))
+            TF_R *= self.bdts[i]
+            TF_R *= self.bdts[i].adjoint(self.get_left_labels_bond(i),self.get_right_labels_bond(i), style="aster")
+        TF_R *= self.tensors[0].fuse_indices(self.get_left_labels_site(0), fusedLabel=unique_label(), output_memo=outket_memo)
+        TF_R *= self.tensors[0].adjoint(self.get_left_labels_site(0),self.get_right_labels_site(0), style="aster").fuse_indices(aster_labels(self.get_left_labels_site(0)), fusedLabel=unique_label(), output_memo=outbra_memo)
 
-        w_R, V_R = tnd.tensor_eigsh(TF_R, [outket,outbra], [inket,inbra])
-        V_R.hermite(inbra, inket, assume_definite_and_if_negative_then_make_positive=True, inplace=True)
-        V_R.split_index(inket, shape, rawl, inplace=True)
-        V_R.split_index(inbra, shape, aster_labels(rawl), inplace=True)
+        w_R, V_R = tnd.tensor_eigsh(TF_R, [outket_memo["fusedLabel"], outbra_memo["fusedLabel"]], [inket_memo["fusedLabel"], inbra_memo["fusedLabel"]])
+
+        V_R.hermite(inbra_memo["fusedLabel"], inket_memo["fusedLabel"], assume_definite_and_if_negative_then_make_positive=True, inplace=True)
+        V_R.split_index(input_memo=inket_memo, inplace=True)
+        V_R.split_index(input_memo=inbra_memo, inplace=True)
         
         return w_R, V_R
 

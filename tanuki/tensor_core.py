@@ -705,7 +705,7 @@ class Tensor(TensorMixin):
             newData = xp.rollaxis(self.data, indexMoveFrom, position+1)
             newLabels = self.labels[:indexMoveFrom] + self.labels[indexMoveFrom+1:position+1] + self.labels[indexMoveFrom:indexMoveFrom+1] + self.labels[position+1:]
         return Tensor(newData, newLabels)
-
+    """
     @inplacable_tensorMixin_method
     def move_indices_to_top(self, moveFrom):
         moveFrom = self.normarg_indices_front(moveFrom)
@@ -714,7 +714,7 @@ class Tensor(TensorMixin):
         newLabels = self.labels_of_indices(moveFrom) + self.labels_of_indices(notMoveFrom)
         newData = xp.moveaxis(self.data, moveFrom, moveTo)
         return Tensor(newData, newLabels)
-    """
+    
     @inplacable_tensorMixin_method
     def move_indices_to_bottom(self, moveFrom):
         moveFrom = self.normarg_indices_back(moveFrom)
@@ -1120,6 +1120,9 @@ class DiagonalTensor(TensorMixin):
     to_matrix = diagonalTensor_to_matrix
     to_vector = diagonalTensor_to_vector
     to_scalar = diagonalTensor_to_scalar
+
+    def __getattr__(self, name):
+        return getattr(self.to_tensor(), name)
 
 
 
