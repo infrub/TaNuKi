@@ -28,68 +28,50 @@ def inbits_iterator(z):
 
 
 class NetconBrute:
-    def __init__(self, tensors):
-        self.tensors = tensors
-        self.length = len(tensors)
-        self.troMemo = None
+    def __init__(self, prime_tensors):
+        self.prime_tensors = prime_tensors
+        self.length = len(prime_tensors)
+        self.root_child = None
         self.contractor = None
 
-    def generate_troMemo(self):
-        if self.troMemo is not None:
-            return self.troMemo
+    def generate_root_child(self):
+        if self.root_child is not None:
+            return self.root_child
 
         unoMemo = {}
         binoMemo = {}
         for i in range(self.length):
             manB = 1 << i
-            unoMemo[manB] = {"cost":0, "duct":self.tensors[i], "fatherB":None, "motherB":None, "expr":"args["+str(i)+"]"}
+            unoMemo[manB] = self.prime_tensors[i]
         def uno(manB):
             if manB in unoMemo:
                 return unoMemo[manB]
-            minre = {"cost":float("inf"), "duct":None, "fatherB":None, "motherB":None}
+            minChild = None
             for fatherB in inbits_iterator(manB):
                 motherB = manB - fatherB
-                re = bino(fatherB, motherB)
-                if re["cost"] < minre["cost"]:
-                    minre = {"cost":re["cost"], "duct":re["duct"], "fatherB":fatherB, "motherB":motherB}
-            unoMemo[manB] = minre
-            return minre
+                child = bino(fatherB, motherB)
+                if minChild is None or child.cost < minChild.cost:
+                    minChild = child
+            unoMemo[manB] = minChild
+            return minChild
         def bino(fatherB, motherB):
-            if (fatherB, motherB) in binoMemo:
-                return binoMemo[(fatherB, motherB)]
             father = uno(fatherB)
             mother = uno(motherB)
-            childDuct, birthCost, _ = tensorFrame_contract_common_and_cost(father["duct"], mother["duct"])
-            re = {"cost":father["cost"]+mother["cost"]+birthCost, "duct":childDuct}
-            binoMemo[(fatherB, motherB)] = re
-            return re
+            child = tensorFrame_contract_common_and_cost(father, mother)
+            binoMemo[(fatherB, motherB)] = child
+            return child
 
-        uno((1 << self.length)-1)
-
-        troMemo = {}
-        def tro(manB):
-            if manB in troMemo:
-                return troMemo[manB]
-            re = uno(manB)
-            if "expr" in re:
-                pass
-            else:
-                expr = "(" + tro(re["fatherB"])["expr"] + "*" + tro(re["motherB"])["expr"] + ")"
-                re.update({"expr":expr})
-            troMemo[manB] = re
-            return re
-
-        tro((1 << self.length)-1)
-
-        self.troMemo = troMemo
-        return troMemo
+        #uno((1 << self.length)-1)
+        #for k,v in unoMemo.items():
+        #    print(k,v)
+        return uno((1 << self.length)-1)
 
 
     def generate_contractor(self):
         if self.contractor is not None:
             return self.contractor
-        troMemo = self.generate_troMemo()
-        f = eval("lambda *args: "+troMemo[(1 << self.length)-1]["expr"])
+        root_child = self.generate_root_child()
+        f = eval("lambda *args: "+root_child.ifn)
         self.contractor = f
         return f
 
