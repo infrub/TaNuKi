@@ -31,12 +31,12 @@ class NetconBrute:
     def __init__(self, prime_tensors):
         self.prime_tensors = prime_tensors
         self.length = len(prime_tensors)
-        self.root_child = None
+        self.eternity = None
         self.contractor = None
 
-    def generate_root_child(self):
-        if self.root_child is not None:
-            return self.root_child
+    def generate_eternity(self):
+        if self.eternity is not None:
+            return self.eternity
 
         unoMemo = {}
         for i in range(self.length):
@@ -57,14 +57,15 @@ class NetconBrute:
         #uno((1 << self.length)-1)
         #for k,v in unoMemo.items():
         #    print(k,v)
-        return uno((1 << self.length)-1)
+        self.eternity = uno((1 << self.length)-1)
+        return self.eternity
 
 
     def generate_contractor(self):
         if self.contractor is not None:
             return self.contractor
-        root_child = self.generate_root_child()
-        f = eval("lambda *args: "+root_child.ifn)
+        eternity = self.generate_eternity()
+        f = eval("lambda *args: "+eternity.ifn)
         self.contractor = f
         return f
 
