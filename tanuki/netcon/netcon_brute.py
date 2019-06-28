@@ -39,7 +39,6 @@ class NetconBrute:
             return self.root_child
 
         unoMemo = {}
-        binoMemo = {}
         for i in range(self.length):
             manB = 1 << i
             unoMemo[manB] = self.prime_tensors[i]
@@ -49,17 +48,11 @@ class NetconBrute:
             minChild = None
             for fatherB in inbits_iterator(manB):
                 motherB = manB - fatherB
-                child = bino(fatherB, motherB)
+                child = tensorFrame_contract_common_and_cost(uno(fatherB), uno(motherB))
                 if minChild is None or child.cost < minChild.cost:
                     minChild = child
             unoMemo[manB] = minChild
             return minChild
-        def bino(fatherB, motherB):
-            father = uno(fatherB)
-            mother = uno(motherB)
-            child = tensorFrame_contract_common_and_cost(father, mother)
-            binoMemo[(fatherB, motherB)] = child
-            return child
 
         #uno((1 << self.length)-1)
         #for k,v in unoMemo.items():
