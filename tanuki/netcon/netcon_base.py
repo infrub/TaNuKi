@@ -7,10 +7,11 @@ import textwrap
 
 
 class TensorFrame(tnc.TensorLabelingMixin):
-    def __init__(self, shape, labels):
+    def __init__(self, shape, labels, rpn):
         self.shape = shape
         self.ndim = len(shape)
         self.labels = labels
+        self.rpn = rpn
 
     def __repr__(self):
         return f"TensorFrame(shape={self.shape}, labels={self.labels})"
@@ -40,15 +41,20 @@ def tensorFrame_contract_common_and_cost(A, B):
     aDimsContract, aDimsNotContract = A.dims(aIndicesContract), A.dims(aIndicesNotContract)
     bDimsContract, bDimsNotContract = B.dims(bIndicesContract), B.dims(bIndicesNotContract)
     assert aDimsContract == bDimsContract
-    cLabels = aLabelsNotContract + bLabelsNotContract
     cDims = aDimsNotContract + bDimsNotContract
+    cLabels = aLabelsNotContract + bLabelsNotContract
+    cRpn = A.rpn + B.rpn + ["*"]
     elim = soujou(aDimsContract)
     cost = soujou(cDims)*elim
-    return TensorFrame(cDims, cLabels), cost, elim
+    return TensorFrame(cDims, cLabels, cRpn), cost, elim
 
 
-def tensor_to_tensorFrame(T):
-    return TensorFrame(T.shape, T.labels)
+def tensors_to_tensorFrames(Ts):
+    TFs = []
+    for i,T in enumerate(Ts):
+        TF = TensorFrame(T.shape, T.labels, [i])
+        TFs.append(TF)
+    return TFs
 
 
 
@@ -59,7 +65,7 @@ def netcon(Ts, algorithm="brute"):
     else:
         raise UndecidedError
 
-    TFs = list(map(tensor_to_tensorFrame, Ts))
+    TFs = tensors_to_tensorFrames(Ts)
     c = NetconClass(TFs)
     return c.generate()
 
