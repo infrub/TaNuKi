@@ -125,6 +125,11 @@ class Fin1DSimBTPS:
     def get_bra_right_labels_bond(self, bondsite):
         return aster_labels(self.get_right_labels_bond(bondsite))
 
+    def adjoint(self):
+        tensors = [self.get_bra_site(site) for site in range(len(self))]
+        bdts = [self.get_bra_bond(bondsite) for bondsite in range(len(self)+1)]
+        return Fin1DSimBTPS(tensors, bdts, self.phys_labelss)
+
 
 
     # canonizing methods

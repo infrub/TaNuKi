@@ -209,18 +209,7 @@ def matrix_is_tril(M, rtol=1e-5, atol=1e-8):
 
 
 #classes
-class TensorMixin:
-    def __copy__(self):
-        return self.copy(shallow=True)
-
-    def __deepcopy__(self, memo=None):
-        if memo is None:
-            memo = {}
-        return self.copy(shallow=False)
-
-
-
-    #methods for labels
+class TensorLabelingMixin:
     def get_labels(self):
         return self._labels
     def set_labels(self, labels):
@@ -331,13 +320,23 @@ class TensorMixin:
 
     normarg_indices = normarg_indices_front
 
-    def normarg_complement_indices(self, rows, cols=None):
+    def normarg_complement_indices_front(self, rows, cols=None):
         rows = self.normarg_indices_front(rows)
         if cols is None:
             cols = diff_list(list(range(self.ndim)), rows)
         else:
             cols = self.normarg_indices_back(cols)
         return rows, cols
+
+    def normarg_complement_indices_back(self, rows, cols=None):
+        rows = self.normarg_indices_back(rows)
+        if cols is None:
+            cols = diff_list(list(range(self.ndim)), rows)
+        else:
+            cols = self.normarg_indices_front(cols)
+        return rows, cols
+
+    normarg_complement_indices = normarg_complement_indices_front
 
 
 
@@ -368,6 +367,19 @@ class TensorMixin:
     @outofplacable_tensorMixin_method
     def assign_labels(self, base_label):
         self.labels = [base_label+"_"+str(i) for i in range(self.ndim)]
+
+
+
+
+
+class TensorMixin(TensorLabelingMixin):
+    def __copy__(self):
+        return self.copy(shallow=True)
+
+    def __deepcopy__(self, memo=None):
+        if memo is None:
+            memo = {}
+        return self.copy(shallow=False)
 
 
 
