@@ -30,6 +30,7 @@ def inbits_iterator(z):
 class NetconBrute:
     def __init__(self, tensors):
         self.tensors = tensors
+        self.length = len(tensors)
         self.troMemo = None
         self.contractor = None
 
@@ -39,7 +40,7 @@ class NetconBrute:
 
         unoMemo = {}
         binoMemo = {}
-        for i in range(len(self.tensors)):
+        for i in range(self.length):
             manB = 1 << i
             unoMemo[manB] = {"cost":0, "duct":self.tensors[i], "fatherB":None, "motherB":None, "expr":"args["+str(i)+"]"}
         def uno(manB):
@@ -48,7 +49,6 @@ class NetconBrute:
             minre = {"cost":float("inf"), "duct":None, "fatherB":None, "motherB":None}
             for fatherB in inbits_iterator(manB):
                 motherB = manB - fatherB
-                #f fatherB==0 or motherB==0: continue
                 re = bino(fatherB, motherB)
                 if re["cost"] < minre["cost"]:
                     minre = {"cost":re["cost"], "duct":re["duct"], "fatherB":fatherB, "motherB":motherB}
@@ -64,7 +64,7 @@ class NetconBrute:
             binoMemo[(fatherB, motherB)] = re
             return re
 
-        uno((1 << len(self.tensors))-1)
+        uno((1 << self.length)-1)
 
         troMemo = {}
         def tro(manB):
@@ -79,7 +79,7 @@ class NetconBrute:
             troMemo[manB] = re
             return re
 
-        tro((1 << len(self.tensors))-1)
+        tro((1 << self.length)-1)
 
         self.troMemo = troMemo
         return troMemo
@@ -89,7 +89,7 @@ class NetconBrute:
         if self.contractor is not None:
             return self.contractor
         troMemo = self.generate_troMemo()
-        f = eval("lambda *args: "+troMemo[(1 << len(self.tensors))-1]["expr"])
+        f = eval("lambda *args: "+troMemo[(1 << self.length)-1]["expr"])
         self.contractor = f
         return f
 
