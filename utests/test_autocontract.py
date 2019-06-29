@@ -43,6 +43,29 @@ class TestAutoContract(unittest.TestCase):
         self.assertEqual(eternity.shape, ())
         self.assertEqual(eternity.labels, [])
         self.assertEqual(eternity.cost, 115300100)
+
+    def test_useful(self):
+        A = random_tensor((5,5),["i","j"])
+        B = random_tensor((5,7,8),["j","k","l"])
+        C = random_tensor((7,8,9),["k","l","m"])
+        actor = AutoContractor([A,B,C])
+        ABC = actor.exec()
+        self.assertEqual(ABC, A*(B*C))
+        sitigosan = actor.exec([7,5,3])
+        self.assertEqual(sitigosan, 105)
+        D = random_tensor((9,5), ["m","i"])
+        actor.exec([A,B,C,D], same_frame=False)
+        self.assertEqual(actor.eternity.cost, 2770)
+        
+        actor = AutoContractor()
+        for _ in range(3):
+            A = random_tensor((5,5),["i","j"])
+            B = random_tensor((5,7,8),["j","k","l"])
+            C = random_tensor((7,8,9),["k","l","m"])
+            ABC = actor.exec([A,B,C])
+            self.assertEqual(ABC, A*B*C)
+        print(actor)
+
     
 
 

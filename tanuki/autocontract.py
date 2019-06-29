@@ -87,16 +87,49 @@ def tensors_to_tensorFrames(Ts):
 
 
 class AutoContractor:
-    def __init__(self, primeTs):
-        self.primeTs = primeTs
-        self.primeTFs = tensors_to_tensorFrames(primeTs)
-        self.length = len(primeTs)
-        self.eternity = None
+    def __init__(self, primeTs=None):
+        if primeTs is None:
+            self.primeTs = None
+            self.primeTFs = None
+            self.length = None
+            self.eternity = None
+        else:
+            self.primeTs = primeTs
+            self.primeTFs = tensors_to_tensorFrames(primeTs)
+            self.length = len(primeTs)
+            self.eternity = None
 
+
+    def __repr__(self):
+        return "AutoContractor(" + repr(self.primeTs) + ")"
+
+    def __str__(self):
+        if self.primeTFs is None:
+            dataStr = "undefined\n"
+        else:
+            dataStr = ""
+            for tf in self.primeTFs:
+                dataStr += str(tf) + ",\n"
+            dataStr = textwrap.indent(dataStr, "    ")
+            dataStr = "[\n" + dataStr + "]\n"
+        if self.eternity is None:
+            dataStr += "rpn: undefined\n"
+            dataStr += "cost: undefined\n"
+        else:
+            dataStr += f"rpn: {self.eternity.rpn}\n"
+            dataStr += f"cost: {self.eternity.cost}\n"
+        dataStr = textwrap.indent(dataStr, "    ")
+        dataStr = "AutoContractor(\n" + dataStr + ")"
+        return dataStr
+
+    @property
+    def rpn(self): return self.eternity.rpn
+    @property
+    def cost(self): return self.eternity.cost
 
     def set_primeTs(self, primeTs, same_frame=True):
         self.primeTs = primeTs
-        if not same_frame:
+        if self.primeTFs is None or not same_frame:
             self.primeTFs = tensors_to_tensorFrames(primeTs)
             self.length = len(primeTs)
             self.eternity = None
@@ -191,7 +224,9 @@ class AutoContractor:
         return self.eternity
 
 
-    def exec(self):
+    def exec(self, primeTs=None, same_frame=True):
+        if primeTs is not None:
+            self.set_primeTs(primeTs, same_frame=same_frame)
         rpn = self.get_eternity().rpn
         stack = []
         for c in rpn:
