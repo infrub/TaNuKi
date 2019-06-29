@@ -11,20 +11,23 @@ class TensorFrame(tnc.TensorLabelingMixin):
         self.shape = shape
         self.ndim = len(shape)
         self.labels = labels
-        if len(args)==1:
+        if len(args)==0:
+            pass
+        elif len(args)==1:
             prime_id = args[0]
             self.bits = (1<<prime_id)
             self.rpn = [prime_id]
             self.ifn = f"args[{prime_id}]"
-            self.cost = 0
+            self.cost = 0.0
         else:
             self.bits = args[0]
             self.rpn = args[1]
             self.ifn = args[2]
             if len(args)==4:
-                self.cost = args[3]
+                self.cost = float(args[3])
             else:
-                self.cost = 0
+                self.cost = 0.0
+        self.is_new = True
 
     def __repr__(self):
         return f"TensorFrame(shape={self.shape}, labels={self.labels}, rpn={self.rpn}, ifn={self.ifn}, cost={self.cost})"
@@ -38,17 +41,24 @@ class TensorFrame(tnc.TensorLabelingMixin):
         f"    ifn={self.ifn},\n" + \
         f"    cost={self.cost},\n" + \
         f")"
-
         return re
+
     def __mul__(self, other):
         return tensorFrame_contract_common(self, other)
 
+    def is_overlap(self, other):
+        return (self.bits & other.bits)>0
+
+    def is_disjoint(self, other):
+        return len(intersection_list(self.labels, other.labels))==0
 
 
 
 
 
-def tensorFrame_contract_common_and_cost(A, B):
+
+
+def tensorFrame_contract_common(A, B):
     commonLabels = intersection_list(A.labels, B.labels)
     aIndicesContract, aIndicesNotContract = A.normarg_complement_indices_back(commonLabels)
     bIndicesContract, bIndicesNotContract = B.normarg_complement_indices_front(commonLabels)

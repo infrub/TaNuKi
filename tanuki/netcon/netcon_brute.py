@@ -29,7 +29,7 @@ def inbits_iterator(z):
 
 class NetconBrute:
     def __init__(self, prime_tensors):
-        self.prime_tensors = prime_tensors
+        self.prime_tensors = tensors_to_tensorFrames(prime_tensors)
         self.length = len(prime_tensors)
         self.eternity = None
         self.contractor = None
@@ -48,7 +48,7 @@ class NetconBrute:
             minChild = None
             for fatherB in inbits_iterator(manB):
                 motherB = manB - fatherB
-                child = tensorFrame_contract_common_and_cost(uno(fatherB), uno(motherB))
+                child = tensorFrame_contract_common(uno(fatherB), uno(motherB))
                 if minChild is None or child.cost < minChild.cost:
                     minChild = child
             unoMemo[manB] = minChild
