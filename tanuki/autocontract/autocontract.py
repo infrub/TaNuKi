@@ -100,10 +100,17 @@ class AutoContractor:
             self.eternity = None
     
     def _generate_eternity_brute(self):
+        def inbits_iterator(z):
+            y = (-z)&z
+            while y!=z:
+                yield y
+                y = (y-z)&z
+            return
+
         unoMemo = {}
         for i in range(self.length):
             manB = 1 << i
-            unoMemo[manB] = self.primeTs[i]
+            unoMemo[manB] = self.primeTFs[i]
 
         def uno(manB):
             if manB in unoMemo:
@@ -163,7 +170,7 @@ class AutoContractor:
 
         return tensordict_of_size[-1][(1<<n)-1]
 
-    def _generate_eternity(self, algorithm="Brute"):
+    def _generate_eternity(self, algorithm="Jermyn"):
         if algorithm=="Jermyn":
             return self._generate_eternity_jermyn()
         elif algorithm=="Brute":
