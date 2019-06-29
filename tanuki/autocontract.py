@@ -75,13 +75,14 @@ def tensorFrame_contract_common(A, B):
     cCost = A.cost + B.cost + soujou(cDims)*elim
     return TensorFrame(cDims, cLabels, cBits, cRpn, cIfn, cCost)
 
-
 def tensors_to_tensorFrames(Ts):
     TFs = []
     for i,T in enumerate(Ts):
         TF = TensorFrame(T.shape, T.labels, i)
         TFs.append(TF)
     return TFs
+
+
 
 
 
@@ -92,6 +93,7 @@ class AutoContractor:
         self.length = len(primeTs)
         self.eternity = None
 
+
     def set_primeTs(self, primeTs, same_frame=True):
         self.primeTs = primeTs
         if not same_frame:
@@ -99,6 +101,7 @@ class AutoContractor:
             self.length = len(primeTs)
             self.eternity = None
     
+
     def _generate_eternity_brute(self):
         def inbits_iterator(z):
             y = (-z)&z
@@ -126,6 +129,8 @@ class AutoContractor:
 
         return uno((1 << self.length)-1)
 
+
+    # ref: https://github.com/smorita/Tensordot
     def _generate_eternity_jermyn(self):
         tensordict_of_size = [{} for size in range(len(self.primeTFs)+1)]
         tensordict_of_size[1] = {t.bits: t for t in self.primeTFs}
@@ -170,6 +175,7 @@ class AutoContractor:
 
         return tensordict_of_size[-1][(1<<n)-1]
 
+
     def _generate_eternity(self, algorithm="Jermyn"):
         if algorithm=="Jermyn":
             return self._generate_eternity_jermyn()
@@ -178,10 +184,12 @@ class AutoContractor:
         else:
             raise ValueError
 
+
     def get_eternity(self):
         if self.eternity is None:
             self.eternity = self._generate_eternity()
         return self.eternity
+
 
     def exec(self):
         rpn = self.get_eternity().rpn
