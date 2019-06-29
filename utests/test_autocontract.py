@@ -2,14 +2,29 @@ import unittest
 import sys
 sys.path.append('../')
 from tanuki import *
-from tanuki.netcon import *
+from tanuki.autocontract import *
 import numpy as np
 from math import sqrt
 import time
 
 
 
-class TestNetcon(unittest.TestCase):
+class TestAutoContract(unittest.TestCase):
+    def test_input1(self):
+        A = random_tensor((5,5),["i","j"])
+        B = random_tensor((5,7,8),["j","k","l"])
+        C = random_tensor((7,8,9),["k","l","m"])
+        actor = AutoContractor([A,B,C])
+        res = actor.get_eternity()
+        print(res)
+        
+        self.assertEqual(res.cost, 2745)
+        ABC = actor.exec()
+        self.assertEqual(ABC, A*(B*C))
+
+
+
+    """
     def test_netcon(self):
         A = lattices.random_fin1DSimBTPS([["p0"],["p1"]])#,["p2"],["p3"]])
         a = A.to_tensor()
@@ -20,7 +35,8 @@ class TestNetcon(unittest.TestCase):
         l = contract_all_common(C)
         self.assertEqual(k,l)
         #print(k,l)
-    
+    """
+"""
 class TestBrute(unittest.TestCase):
     def test_brute(self):
         A = TensorFrame((5,5),["i","j"], 0)
@@ -65,7 +81,7 @@ class TestJermyn(unittest.TestCase):
         print(res)
 
         self.assertEqual(res.cost, 115300100)
-
+"""
 
 if __name__=="__main__":
     unittest.main()
