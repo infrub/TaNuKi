@@ -15,13 +15,13 @@ class TestAutoContract(unittest.TestCase):
         B = random_tensor((5,7,8),["j","k","l"])
         C = random_tensor((7,8,9),["k","l","m"])
         actor = AutoContractor([A,B,C])
-        eternity = actor.get_eternity()
-        print(eternity)
-        
-        self.assertEqual(eternity.cost, 2745)
         ABC = actor.exec()
         self.assertEqual(ABC, A*(B*C))
-    
+
+        eternity = actor.get_eternity()
+        print(eternity)
+        self.assertEqual(eternity.cost, 2745)
+
     def test_input3(self):
         rho = TensorFrame((10,10,10,10),["i","j","k","l"])
         o1 = TensorFrame((10,10,10),["i","f1","f2"])
@@ -40,6 +40,8 @@ class TestAutoContract(unittest.TestCase):
         eternity = actor.get_eternity()
         print(eternity)
 
+        self.assertEqual(eternity.shape, ())
+        self.assertEqual(eternity.labels, [])
         self.assertEqual(eternity.cost, 115300100)
     
 
