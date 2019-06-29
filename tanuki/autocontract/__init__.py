@@ -1,1 +1,0 @@
-from tanuki.autocontract.autocontract import *
