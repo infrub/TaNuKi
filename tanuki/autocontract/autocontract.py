@@ -103,7 +103,7 @@ class AutoContractor:
         unoMemo = {}
         for i in range(self.length):
             manB = 1 << i
-            unoMemo[manB] = self.prime_tensors[i]
+            unoMemo[manB] = self.primeTs[i]
 
         def uno(manB):
             if manB in unoMemo:
@@ -163,7 +163,7 @@ class AutoContractor:
 
         return tensordict_of_size[-1][(1<<n)-1]
 
-    def _generate_eternity(self, algorithm="Jermyn"):
+    def _generate_eternity(self, algorithm="Brute"):
         if algorithm=="Jermyn":
             return self._generate_eternity_jermyn()
         elif algorithm=="Brute":
