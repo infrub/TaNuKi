@@ -405,6 +405,15 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
 
 
     # ref: https://arxiv.org/abs/0711.3960
+    #
+    # [e=0]
+    # /-(0)-[0]-...-(len-1)-[len-1]-          /-
+    # |      |                 |      ==  c * |
+    # \-(0)-[0]-...-(len-1)-[len-1]-          \-
+    #
+    # -[0]-...-(len-1)-[len-1]-(0)-\          -\
+    #   |                 |        |  ==  c *  |
+    # -[0]-...-(len-1)-[len-1]-(0)-/          -/
     def canonize_end(self, e=0, chi=None, rtol=None, atol=None, transfer_normalize=True):
         dl_label = unique_label()
         dr_label = unique_label()
