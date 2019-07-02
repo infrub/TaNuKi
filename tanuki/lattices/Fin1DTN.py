@@ -352,22 +352,22 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
 
 
 
-    # get L s.t.
+    # [e=0] get L s.t.
     # /-(0)-[0]-...-(len-1)-[len-1]-          /-
     # L      |                 |      ==  c * L
     # \-(0)-[0]-...-(len-1)-[len-1]-          \-
-    def get_left_transfer_eigen(self):
+    def get_left_transfer_eigen(self, e=0):
         inket_memo, inbra_memo, outket_memo, outbra_memo = {}, {}, {}, {}
 
-        TF_L = self.get_ket_bond(0).fuse_indices(self.get_ket_left_labels_bond(0), fusedLabel=unique_label(), output_memo=inket_memo)
-        TF_L *= self.get_bra_bond(0).fuse_indices(self.get_bra_left_labels_bond(0), fusedLabel=unique_label(), output_memo=inbra_memo)
-        for i in range(len(self)-1):
+        TF_L = self.get_ket_bond(e).fuse_indices(self.get_ket_left_labels_bond(e), fusedLabel=unique_label(), output_memo=inket_memo)
+        TF_L *= self.get_bra_bond(e).fuse_indices(self.get_bra_left_labels_bond(e), fusedLabel=unique_label(), output_memo=inbra_memo)
+        for i in range(e, e+len(self)-1):
             TF_L *= self.get_ket_site(i)
             TF_L *= self.get_bra_site(i)
             TF_L *= self.get_ket_bond(i+1)
             TF_L *= self.get_bra_bond(i+1)
-        TF_L *= self.get_ket_site(-1).fuse_indices(self.get_ket_right_labels_site(-1), fusedLabel=unique_label(), output_memo=outket_memo)
-        TF_L *= self.get_bra_site(-1).fuse_indices(self.get_bra_right_labels_site(-1), fusedLabel=unique_label(), output_memo=outbra_memo)
+        TF_L *= self.get_ket_site(e-1).fuse_indices(self.get_ket_right_labels_site(e-1), fusedLabel=unique_label(), output_memo=outket_memo)
+        TF_L *= self.get_bra_site(e-1).fuse_indices(self.get_bra_right_labels_site(e-1), fusedLabel=unique_label(), output_memo=outbra_memo)
 
         w_L, V_L = tnd.tensor_eigsh(TF_L, [outket_memo["fusedLabel"], outbra_memo["fusedLabel"]], [inket_memo["fusedLabel"], inbra_memo["fusedLabel"]])
 
@@ -377,22 +377,22 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
 
         return w_L, V_L
 
-    # get R s.t.
+    # [e=0] get R s.t.
     # -[0]-...-(len-1)-[len-1]-(0)-\          -\
     #   |                 |        R  ==  c *  R
     # -[0]-...-(len-1)-[len-1]-(0)-/          -/
-    def get_right_transfer_eigen(self):
+    def get_right_transfer_eigen(self, e=0):
         inket_memo, inbra_memo, outket_memo, outbra_memo = {}, {}, {}, {}
 
-        TF_R = self.get_ket_bond(0).fuse_indices(self.get_ket_right_labels_bond(0), fusedLabel=unique_label(), output_memo=inket_memo)
-        TF_R *= self.get_bra_bond(0).fuse_indices(self.get_bra_right_labels_bond(0), fusedLabel=unique_label(), output_memo=inbra_memo)
-        for i in range(len(self)-1, 0, -1):
+        TF_R = self.get_ket_bond(e).fuse_indices(self.get_ket_right_labels_bond(e), fusedLabel=unique_label(), output_memo=inket_memo)
+        TF_R *= self.get_bra_bond(e).fuse_indices(self.get_bra_right_labels_bond(e), fusedLabel=unique_label(), output_memo=inbra_memo)
+        for i in range(e+len(self)-1, e, -1):
             TF_R *= self.get_ket_site(i)
             TF_R *= self.get_bra_site(i)
             TF_R *= self.get_ket_bond(i)
             TF_R *= self.get_bra_bond(i)
-        TF_R *= self.get_ket_site(0).fuse_indices(self.get_ket_left_labels_site(0), fusedLabel=unique_label(), output_memo=outket_memo)
-        TF_R *= self.get_bra_site(0).fuse_indices(self.get_bra_left_labels_site(0), fusedLabel=unique_label(), output_memo=outbra_memo)
+        TF_R *= self.get_ket_site(e).fuse_indices(self.get_ket_left_labels_site(e), fusedLabel=unique_label(), output_memo=outket_memo)
+        TF_R *= self.get_bra_site(e).fuse_indices(self.get_bra_left_labels_site(e), fusedLabel=unique_label(), output_memo=outbra_memo)
 
         w_R, V_R = tnd.tensor_eigsh(TF_R, [outket_memo["fusedLabel"], outbra_memo["fusedLabel"]], [inket_memo["fusedLabel"], inbra_memo["fusedLabel"]])
 
@@ -405,28 +405,28 @@ class Inf1DSimBTPS(Fin1DSimBTPS):
 
 
     # ref: https://arxiv.org/abs/0711.3960
-    def canonize_end(self, chi=None, rtol=None, atol=None, transfer_normalize=True):
+    def canonize_end(self, e=0, chi=None, rtol=None, atol=None, transfer_normalize=True):
         dl_label = unique_label()
         dr_label = unique_label()
-        w_L, V_L = self.get_left_transfer_eigen()
-        w_R, V_R = self.get_right_transfer_eigen()
+        w_L, V_L = self.get_left_transfer_eigen(e=e)
+        w_R, V_R = self.get_right_transfer_eigen(e=e)
         assert abs(w_L-w_R) < 1e-10*abs(w_L)
-        Yh, d_L, Y = tnd.tensor_eigh(V_L, self.get_ket_left_labels_bond(0), self.get_bra_left_labels_bond(0), eigh_labels=dl_label)
-        Y.unaster_labels(self.get_bra_left_labels_bond(0), inplace=True)
-        X, d_R, Xh = tnd.tensor_eigh(V_R, self.get_ket_right_labels_bond(0), self.get_bra_right_labels_bond(0), eigh_labels=dr_label)
-        Xh.unaster_labels(self.get_bra_right_labels_bond(0))
-        l0 = self.bdts[0]
+        Yh, d_L, Y = tnd.tensor_eigh(V_L, self.get_ket_left_labels_bond(e), self.get_bra_left_labels_bond(e), eigh_labels=dl_label)
+        Y.unaster_labels(self.get_bra_left_labels_bond(e), inplace=True)
+        X, d_R, Xh = tnd.tensor_eigh(V_R, self.get_ket_right_labels_bond(e), self.get_bra_right_labels_bond(e), eigh_labels=dr_label)
+        Xh.unaster_labels(self.get_bra_right_labels_bond(e))
+        l0 = self.bdts[e]
         G = d_L.sqrt() * Yh * l0 * X * d_R.sqrt()
         U, S, V = tnd.truncated_svd(G, dl_label, dr_label, chi=chi, rtol=rtol, atol=atol)
         M = Y * d_L.inv().sqrt() * U
         N = V * d_R.inv().sqrt() * Xh
         # l0 == M*S*N
         if transfer_normalize:
-            self.bdts[0] = S / sqrt(w_L)
+            self.bdts[e] = S / sqrt(w_L)
         else:
-            self.bdts[0] = S
-        self.tensors[0] = N * self.tensors[0]
-        self.tensors[len(self)-1] = self.tensors[len(self)-1] * M
+            self.bdts[e] = S
+        self.tensors[e] = N * self.tensors[e]
+        self.tensors[e-1] = self.tensors[e-1] * M
 
     left_canonize_site = Fin1DSimBTPS.left_canonize_not_end_site
     right_canonize_site = Fin1DSimBTPS.right_canonize_not_end_site
