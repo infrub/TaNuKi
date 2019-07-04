@@ -2,7 +2,7 @@ import unittest
 import sys
 sys.path.append('../')
 from tanuki import *
-from tanuki.lattices import *
+from tanuki.onedim import *
 import numpy as np
 from math import sqrt
 import copy
@@ -230,8 +230,8 @@ class TestMPO(unittest.TestCase):
         self.assertAlmostEqual((bh*a).to_scalar(), 1.0, 3)
         self.assertAlmostEqual((ah*b).to_scalar(), 1.0, 3)
         self.assertAlmostEqual((bh*b).to_scalar(), 1.0, 2)
-        self.assertLess(diff1, 1e-4)
-        self.assertLess(diff2, 1e-4)
+        self.assertLess(diff1, 2e-4)
+        self.assertLess(diff2, 2e-4)
         self.assertAlmostEqual(diff1, diff2)
 
 

@@ -1,1 +1,0 @@
-from tanuki.lattices.Fin1DTN import *

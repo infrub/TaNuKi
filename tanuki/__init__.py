@@ -5,4 +5,4 @@ from tanuki.tensor_instant import *
 from tanuki.decomp import *
 from tanuki.autocontract import *
 import tanuki.matrices as matrices
-import tanuki.lattices as lattices
+import tanuki.onedim as onedim
