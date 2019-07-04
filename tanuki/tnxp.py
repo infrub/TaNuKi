@@ -29,7 +29,6 @@ class Xp():
         self.linalg = scipy.linalg
         self.sparse.linalg = scipy.sparse.linalg
         self.random = numpy.random
-        scipy.set_printoptions(threshold=3)
 
     def use_cupy(self):
         self.isCupy = True
