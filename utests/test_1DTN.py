@@ -5,7 +5,7 @@ from tanuki import *
 from tanuki.lattices import *
 import numpy as np
 from math import sqrt
-
+import copy
 
 class TestFin1DSimBTPS(unittest.TestCase):
     def test_instant(self):
@@ -137,6 +137,102 @@ class TestInf1DSimBTPS(unittest.TestCase):
         self.assertAlmostEqual(w_R, 1)
         self.assertEqual(a2*sqrt(w_L1), a1)
 
+
+
+
+class TestMPO(unittest.TestCase):
+    def test_01(self):
+        A = zeros_tensor((2,2,4), ["in0", "out0", "w"])
+        B = zeros_tensor((2,2,4), ["in1", "out1", "w"])
+        A.data[0,0,0], B.data[0,0,0] = 1.0, 1.0
+        A.data[0,1,1], B.data[1,0,1] = 1.0, 1.0
+        A.data[1,0,2], B.data[0,1,2] = 1.0, 1.0
+        A.data[1,1,3], B.data[1,1,3] = 1.0, 1.0
+        mpo = Fin1DSimTPO([A,B], physin_labelss=[["in0"],["in1"]], physout_labelss=[["out0"],["out1"]], is_unitary=True)
+        self.assertTrue(mpo.to_tensor().is_unitary(["out0", "out1"]))
+        bmpo = mpo.to_BTPO()
+        self.assertEqual(mpo.to_tensor(), bmpo.to_tensor())
+
+        mps = random_fin1DSimBTPS([["p0"], ["p1"], ["p2"]])
+        mps.canonize()
+        mps0 = copyModule.deepcopy(mps)
+        self.assertAlmostEqual(mps.to_tensor().norm(), 1)
+        self.assertTrue(mps.is_canonical())
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, bmpo)
+        self.assertTrue(mps.is_canonical())
+        self.assertFalse(mps.to_tensor().__eq__(mps0.to_tensor(), skipLabelSort=True))
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, bmpo)
+        self.assertTrue(mps.is_canonical())
+        self.assertTrue(mps.to_tensor().__eq__(mps0.to_tensor(), skipLabelSort=True))
+
+    def test_02(self):
+        G, _, _ = tensor_svd(random_tensor((27, 27), ["a", "b"], dtype=complex), ["a"])
+        G.labels = ["a","b"]
+        G = G.split_index("a", (3,3,3), ["out0", "out1", "out2"])
+        G = G.split_index("b", (3,3,3), ["in0", "in1", "in2"])
+        self.assertTrue(G.is_unitary(["out0","out1","out2"]))
+        a0, s1, G = tensor_svd(G, ["out0", "in0"])
+        a1, s2, a2 = tensor_svd(G, ["out1", "in1"])
+        mpo = Fin1DSimBTPO([a0,a1,a2],[s1,s2],physin_labelss=[["in0"],["in1"],["in2"]],physout_labelss=[["out0"],["out1"],["out2"]], is_unitary=True)
+
+        mps0 = random_fin1DSimBTPS([["p0"], ["p1"], ["p2"], ["p3"], ["p4"], ["p5"]], chi=5, phys_dim=3)
+        mps = copyModule.deepcopy(mps0)
+        self.assertFalse(mps.is_canonical())
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 0, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 1, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 2, keep_phys_labels=True)
+        self.assertFalse(mps.is_canonical())
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 3, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 2, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 1, keep_phys_labels=True)
+        self.assertTrue(mps.is_canonical())
+
+    def test_03(self):
+        G, _, _ = tensor_svd(random_tensor((27, 27), ["a", "b"], dtype=complex), ["a"])
+        G.labels = ["a","b"]
+        G = G.split_index("a", (3,3,3), ["out0", "out1", "out2"])
+        G = G.split_index("b", (3,3,3), ["in0", "in1", "in2"])
+        self.assertTrue(G.is_unitary(["out0","out1","out2"]))
+        a0, s1, G = tensor_svd(G, ["out0", "in0"])
+        a1, s2, a2 = tensor_svd(G, ["out1", "in1"])
+        mpo = Fin1DSimBTPO([a0,a1,a2],[s1,s2],physin_labelss=[["in0"],["in1"],["in2"]],physout_labelss=[["out0"],["out1"],["out2"]], is_unitary=True)
+        mps0 = random_fin1DSimBTPS([["p0"], ["p1"], ["p2"], ["p3"], ["p4"], ["p5"]], chi=5, phys_dim=3)
+
+        mps = copyModule.deepcopy(mps0)
+        mps.canonize()
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 0, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 1, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 2, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 3, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 2, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 1, keep_phys_labels=True)
+        self.assertTrue(mps.is_canonical())
+        mps1 = mps
+
+        mps = copyModule.deepcopy(mps0)
+        mps.canonize()
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 0, chi=26, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 1, chi=26, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 2, chi=26, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 3, chi=26, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 2, chi=26, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 1, chi=26, keep_phys_labels=True)
+        mps2 = mps
+
+        a = mps1.to_tensor()
+        ah = mps1.adjoint().to_tensor()
+        b = mps2.to_tensor()
+        bh = mps2.adjoint().to_tensor()
+
+        diff1 = (a - b).norm()**2
+        diff2 = ((ah*a) - (ah*b) - (bh*a) + (bh*b)).real().to_scalar()
+        self.assertAlmostEqual((ah*a).to_scalar(), 1.0)
+        self.assertAlmostEqual((bh*a).to_scalar(), 1.0, 3)
+        self.assertAlmostEqual((ah*b).to_scalar(), 1.0, 3)
+        self.assertAlmostEqual((bh*b).to_scalar(), 1.0, 2)
+        self.assertLess(diff1, 1e-4)
+        self.assertLess(diff2, 1e-4)
+        self.assertAlmostEqual(diff1, diff2)
 
 
 

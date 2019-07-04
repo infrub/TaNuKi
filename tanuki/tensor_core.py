@@ -177,11 +177,7 @@ def matrix_is_right_semi_unitary(M, rtol=1e-5, atol=1e-8):
     return matrix_is_identity(N, rtol=rtol, atol=atol)
 
 def matrix_is_unitary(M, rtol=1e-5, atol=1e-8):
-    is_left_semi_unitary = matrix_is_left_semi_unitary(M, rtol=rtol, atol=atol)
-    is_right_semi_unitary = matrix_is_right_semi_unitary(M, rtol=rtol, atol=atol)
-    is_unitary = bool(is_left_semi_unitary) and bool(is_right_semi_unitary)
-    expression = {"left":is_left_semi_unitary.expression, "right":is_right_semi_unitary.expression}
-    return CollateralBool(is_unitary, expression)
+    return matrix_is_left_semi_unitary(M, rtol=rtol, atol=atol) & matrix_is_right_semi_unitary(M, rtol=rtol, atol=atol)
 
 def matrix_is_prop_left_semi_unitary(M, rtol=1e-5, atol=1e-8):
     N = xp.dot(M.conj().transpose(), M)
@@ -192,11 +188,7 @@ def matrix_is_prop_right_semi_unitary(M, rtol=1e-5, atol=1e-8):
     return matrix_is_prop_identity(N, rtol=rtol, atol=atol)
 
 def matrix_is_prop_unitary(M, rtol=1e-5, atol=1e-8):
-    is_prop_left_semi_unitary = matrix_is_prop_left_semi_unitary(M, rtol=rtol, atol=atol)
-    is_prop_right_semi_unitary = matrix_is_prop_right_semi_unitary(M, rtol=rtol, atol=atol)
-    is_prop_unitary = bool(is_prop_left_semi_unitary) and bool(is_prop_right_semi_unitary)
-    expression = {"left":is_prop_left_semi_unitary.expression, "right":is_prop_right_semi_unitary.expression}
-    return CollateralBool(is_prop_unitary, expression)
+    return matrix_is_prop_left_semi_unitary(M, rtol=rtol, atol=atol) & matrix_is_prop_right_semi_unitary(M, rtol=rtol, atol=atol)
 
 def matrix_is_triu(M, rtol=1e-5, atol=1e-8):
     return CollateralBool(xp.allclose(M, xp.triu(M), rtol=rtol, atol=atol), {})
@@ -368,6 +360,10 @@ class TensorLabelingMixin:
     def assign_labels(self, base_label):
         self.labels = [base_label+"_"+str(i) for i in range(self.ndim)]
 
+    def enunique_labels(self, oldIndices):
+        newLabels = [unique_label() for _ in oldIndices]
+        self.replace_labels(oldIndices, newLabels)
+        return newLabels
 
 
 
@@ -992,6 +988,19 @@ class DiagonalTensor(TensorMixin):
     @inplacable_tensorMixin_method
     def sqrt(self):
         return DiagonalTensor(xp.sqrt(self.data), labels=self.labels)
+
+
+
+    #methods for truncate, pad, dummy
+    @inplacable_tensorMixin_method
+    def truncate_index(self, index, fromto1, fromto2=None):
+        index = self.normarg_index(index)
+        if fromto2 is None:
+            fromto2 = fromto1
+            fromto1 = 0
+        data = self.data
+        data = xp.split(data, [fromto1, fromto2], axis=index)[1]
+        return DiagonalTensor(data, self.labels)
 
 
 

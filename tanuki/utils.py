@@ -1,6 +1,6 @@
 from collections import Counter
 import random
-
+import copy as copyModule
 
 def soujou(xs):
     re = 1
@@ -129,6 +129,10 @@ def unprime_labels(labels):
 class CyclicList(list):
     def __init__(self, *args, **kwargs):
         list.__init__(self, *args, **kwargs)
+    def __repr__(self):
+        return "CyclicList("+list.__repr__(self)+")"
+    def __str__(self):
+        return "CyclicList("+list.__repr__(self)+")"
     def __getitem__(self, i):
         return list.__getitem__(self, i%len(self))
     def __setitem__(self, i, v):
@@ -148,7 +152,7 @@ class CollateralBool:
     def __or__(x,y):
         return CollateralBool(x.trueOrFalse or y.trueOrFalse, {"left":x.expression, "right":y.expression})
     def __repr__(self):
-        return f"CollateralBool({self.trueOrFalse}, {self.expression})"
+        return f"{self.trueOrFalse}({self.expression})" #f"CollateralBool({self.trueOrFalse}, {self.expression})"
     def __str__(self):
         return f"{self.trueOrFalse}({self.expression})"
     def __getitem__(self, arg):

@@ -6,6 +6,7 @@ from tanuki.utils import *
 from tanuki.errors import *
 import textwrap
 from math import sqrt
+import logging
 
 
 
@@ -60,6 +61,10 @@ class _1DSimBTPSMixin:
     def get_guessed_phys_labels_site(self, site):
         return diff_list(self.tensors[site].labels, self.get_left_labels_site(site)+self.get_right_labels_site(site))
 
+    def replace_phys_labels_site(self, site, labels):
+        self.tensors[site].replace_labels(self.phys_labelss[site], labels)
+        self.phys_labelss[site] = copyModule.copy(labels)
+
     def get_left_shape_site(self, site):
         return self.tensors[site].dims(self.get_left_labels_site(site))
 
@@ -113,14 +118,14 @@ class Fin1DSimBTPS(Fin1DSimBTPMixin, _1DSimBTPSMixin):
         self.tensors = tensors
         self.bdts = bdts
         if len(self.bdts)+1==len(self.tensors):
-            self.bdts = [dummy_diagonalTensor()] + self.bdts + [dummy_diagonalTensor()]
+            self.bdts = [tni.dummy_diagonalTensor()] + self.bdts + [tni.dummy_diagonalTensor()]
         if phys_labelss is None:
             self.phys_labelss = [self.get_guessed_phys_labels_site(site) for site in range(len(self))]
         else:
             self.phys_labelss = phys_labelss
 
     def __repr__(self):
-        return f"Fin1DSimTPS(tensors={self.tensors}, bdts={self.bdts}, phys_labelss={self.phys_labelss})"
+        return f"Fin1DSimBTPS(tensors={self.tensors}, bdts={self.bdts}, phys_labelss={self.phys_labelss})"
 
     def __str__(self):
         if len(self) > 20:
@@ -337,7 +342,7 @@ class Inf1DSimBTPS(Inf1DSimBTPMixin, Fin1DSimBTPS):
         self.phys_labelss = phys_labelss
 
     def __repr__(self):
-        return f"Inf1DSimTPS(tensors={self.tensors}, bdts={self.bdts}, phys_labelss={self.phys_labelss})"
+        return f"Inf1DSimBTPS(tensors={self.tensors}, bdts={self.bdts}, phys_labelss={self.phys_labelss})"
 
     def __str__(self):
         if len(self) > 20:
@@ -489,8 +494,8 @@ class Inf1DSimBTPS(Inf1DSimBTPMixin, Fin1DSimBTPS):
             """
         else:
             if right_already is None: right_already = len(self)
-            self.globally_left_canonize_upto(right_already, left_already, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
-            self.globally_right_canonize_upto(left_already, right_already, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+            self.globally_left_canonize_upto(right_already-1, left_already, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+            self.globally_right_canonize_upto(left_already+1, right_already, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
 
     canonize = universally_canonize
 
@@ -498,7 +503,14 @@ class Inf1DSimBTPS(Inf1DSimBTPMixin, Fin1DSimBTPS):
 
 
 
-"""
+
+
+
+
+
+
+
+
 class Fin1DSimTPO(Fin1DSimTPMixin):
     def __init__(self, tensors, physin_labelss, physout_labelss, is_unitary=False):
         self.tensors = tensors
@@ -506,8 +518,69 @@ class Fin1DSimTPO(Fin1DSimTPMixin):
         self.physout_labelss = physout_labelss
         self.is_unitary = is_unitary
 
+    def __repr__(self):
+        return f"Fin1DSimTPO(tensors={self.tensors}, physin_labelss={self.physin_labelss}, physout_labelss={self.physout_labelss}, is_unitary={self.is_unitary})"
+
+    def __str__(self):
+        if len(self) > 20:
+            dataStr = " ... "
+        else:
+            dataStr = ""
+            for i in range(len(self)):
+                tensor = self.tensors[i]
+                dataStr += str(tensor)
+                dataStr += ",\n"
+        dataStr = textwrap.indent(dataStr, "    ")
+
+        dataStr = "[\n" + dataStr + "],\n"
+        dataStr += f"physin_labelss={self.physin_labelss},\n"
+        dataStr += f"physout_labelss={self.physout_labelss},\n"
+        dataStr = textwrap.indent(dataStr, "    ")
+
+        re = \
+        f"Fin1DSimTPO(\n" + \
+        dataStr + \
+        f")"
+
+        return re
+
+    def __len__(self):
+        return self.tensors.__len__()
+
+
+
+    def replace_physout_labels_site(self, site, labels):
+        self.tensors[site].replace_labels(self.physout_labelss[site], labels)
+        self.physout_labelss[site] = copyModule.copy(labels)
+
+    def replace_physin_labels_site(self, site, labels):
+        self.tensors[site].replace_labels(self.physin_labelss[site], labels)
+        self.physin_labelss[site] = copyModule.copy(labels)
+
+    def get_left_shape_site(self, site):
+        return self.tensors[site].dims(self.get_left_labels_site(site))
+
+    def get_right_shape_site(self, site):
+        return self.tensors[site].dims(self.get_right_labels_site(site))
+
+
+
     def to_BTPO(self):
-        pass
+        bdts = [tni.dummy_diagonalTensor()]
+        for i in range(1,len(self)):
+            labels = self.get_left_labels_site(i)
+            shape = self.get_left_shape_site(i)
+            bdt = tni.identity_diagonalTensor(shape, labels)
+            bdts.append(bdt)
+        bdts.append(tni.dummy_diagonalTensor())
+        return Fin1DSimBTPO(self.tensors, bdts, self.physin_labelss, self.physout_labelss, is_unitary=self.is_unitary)
+
+    def to_tensor(self):
+        re = 1
+        for i in range(len(self)):
+            re *= self.tensors[i]
+        return re
+
 
 
 
@@ -515,21 +588,95 @@ class Fin1DSimBTPO(Fin1DSimBTPMixin):
     def __init__(self, tensors, bdts, physin_labelss, physout_labelss, is_unitary=False):
         self.tensors = tensors
         self.bdts = bdts
+        if len(self.bdts)+1==len(self.tensors):
+            self.bdts = [tni.dummy_diagonalTensor()] + self.bdts + [tni.dummy_diagonalTensor()]
         self.physin_labelss = physin_labelss
         self.physout_labelss = physout_labelss
         self.is_unitary = is_unitary
 
+    def __repr__(self):
+        return f"Fin1DSimBTPO(tensors={self.tensors}, bdts={self.bdts}, physin_labelss={self.physin_labelss}, physout_labelss={self.physout_labelss}, is_unitary={self.is_unitary})"
+
+    def __str__(self):
+        if len(self) > 20:
+            dataStr = " ... "
+        else:
+            dataStr = ""
+            for i in range(len(self)):
+                bdt = self.bdts[i]
+                dataStr += str(bdt)
+                dataStr += "\n"
+                tensor = self.tensors[i]
+                dataStr += str(tensor)
+                dataStr += ",\n"
+            bdt = self.bdts[len(self)]
+            dataStr += str(bdt)
+            dataStr += "\n"
+        dataStr = textwrap.indent(dataStr, "    ")
+
+        dataStr = "[\n" + dataStr + "],\n"
+        dataStr += f"physin_labelss={self.physin_labelss},\n"
+        dataStr += f"physout_labelss={self.physout_labelss},\n"
+        dataStr = textwrap.indent(dataStr, "    ")
+
+        re = \
+        f"Fin1DSimBTPO(\n" + \
+        dataStr + \
+        f")"
+
+        return re
+
+    def __len__(self):
+        return self.tensors.__len__()
+
+    def to_tensor(self):
+        re = self.bdts[0].copy(shallow=False)
+        for i in range(len(self)):
+            re *= self.tensors[i]
+            re *= self.bdts[i+1]
+        return re
 
 
 
 
 
 
+def apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, offset=0, chi=None, keep_universal_canonicality=True, keep_phys_labels=False):
+    if keep_phys_labels:
+        keeping_phys_labels = [mps.phys_labelss[offset+i] for i in range(len(mpo))]
 
-def apply_fin1DSimBTPS_fin1DSimTPO(self, mps, mpo):
-    pass
+    for i in range(len(mpo)):
+        mps.tensors[offset+i] = mps.tensors[offset+i][mps.phys_labelss[offset+i]] * mpo.tensors[i][mpo.physin_labelss[i]]
+        mps.phys_labelss[offset+i] = copyModule.copy(mpo.physout_labelss[i])
+    for i in range(len(mpo)+1):
+        mps.bdts[offset+i] = mps.bdts[offset+i] * mpo.bdts[i]
 
-"""
+    if mpo.is_unitary or not keep_universal_canonicality:
+        mps.universally_canonize(offset, offset+len(mpo))
+    else:
+        mps.universally_canonize()
+    
+    if chi is not None:
+        if not mpo.is_unitary and not keep_universal_canonicality:
+            logging.warn("apply_fin1DSimBTPS_fin1DSimTPO: Execute not optimal truncation.")
+
+        for i in range(offset+1,offset+len(mpo)):
+            labels = mps.get_left_labels_bond(i)
+            assert len(labels) == 1
+            label = labels[0]
+            mps.tensors[i-1].truncate_index(label, chi, inplace=True)
+            mps.bdts[i].truncate_index(label, chi, inplace=True)
+
+            labels = mps.get_right_labels_bond(i)
+            assert len(labels) == 1
+            label = labels[0]
+            mps.bdts[i].truncate_index(label, chi, inplace=True)
+            mps.tensors[i].truncate_index(label, chi, inplace=True)
+
+    if keep_phys_labels:
+        for i in range(len(mpo)):
+            mps.replace_phys_labels_site(offset+i, keeping_phys_labels[i])
+
 
 
 

@@ -179,7 +179,7 @@ class AutoContractor:
         prev_mu_cap = 0.0
 
         while len(tensordict_of_size[-1])<1:
-            logging.info("netcon: searching with mu_cap={0:.6e}".format(mu_cap))
+            logging.info("AutoContractor._generate_eternity_jermyn: searching with mu_cap={0:.6e}".format(mu_cap))
             next_mu_cap = sys.float_info.max
             for c in range(2,n+1):
                 for d1 in range(1,c//2+1):
@@ -204,7 +204,7 @@ class AutoContractor:
             for s in tensordict_of_size:
                 for t in s.values(): t.is_new = False
 
-            logging.debug("netcon: tensor_num=" +  str([ len(s) for s in tensordict_of_size]))
+            logging.debug("AutoContractor._generate_eternity_jermyn: tensor_num=" +  str([ len(s) for s in tensordict_of_size]))
 
         return tensordict_of_size[-1][(1<<n)-1]
 
