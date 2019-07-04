@@ -138,11 +138,6 @@ class TestInf1DSimBTPS(unittest.TestCase):
         self.assertEqual(a2*sqrt(w_L1), a1)
 
 
-class TestHeritation(unittest.TestCase):
-    def test_inherit(self):
-        A = random_inf1DSimBTPS([["p0"], ["p1"], ["p2"]], virt_labelss=[["v0"],["v1"],["v2"]])
-
-
 
 
 

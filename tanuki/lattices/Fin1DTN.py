@@ -476,10 +476,6 @@ class Inf1DSimBTPS(Inf1DSimBTPMixin, Fin1DSimBTPS):
         self.locally_right_canonize_around_not_end_bond(bde, chi=chi, rtol=rtol, atol=atol)
 
 
-
-    globally_left_canonize_upto = NotImplemented
-    globally_right_canonize_upto = NotImplemented
-
     def universally_canonize(self, left_already=0, right_already=None, chi=None, rtol=None, atol=None, transfer_normalize=True):
         if left_already == 0 and right_already is None:
             self.universally_canonize_around_end_bond(0, chi=chi, rtol=rtol, atol=atol, transfer_normalize=transfer_normalize)
