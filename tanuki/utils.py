@@ -137,11 +137,16 @@ class CyclicList(list):
 
 
 class CollateralBool:
-    def __init__(self, trueOrFalse, expression):
+    def __init__(self, trueOrFalse, expression=None):
         self.trueOrFalse = bool(trueOrFalse)
+        if expression is None: expression = {}
         self.expression = expression
     def __bool__(self):
         return self.trueOrFalse
+    def __and__(x,y):
+        return CollateralBool(x.trueOrFalse and y.trueOrFalse, {"left":x.expression, "right":y.expression})
+    def __or__(x,y):
+        return CollateralBool(x.trueOrFalse or y.trueOrFalse, {"left":x.expression, "right":y.expression})
     def __repr__(self):
         return f"CollateralBool({self.trueOrFalse}, {self.expression})"
     def __str__(self):
