@@ -3,7 +3,7 @@ from tanuki import tensor_instant as tni
 from tanuki import decomp as tnd
 from tanuki.utils import *
 from tanuki.errors import *
-from tanuki.onedim import *
+from tanuki.onedim.models import *
 
 
 
