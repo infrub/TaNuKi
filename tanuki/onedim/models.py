@@ -122,7 +122,7 @@ class Fin1DSimBTPS(Fin1DSimBTPMixin, _1DSimBTPSMixin):
         if phys_labelss is None:
             self.phys_labelss = [self.get_guessed_phys_labels_site(site) for site in range(len(self))]
         else:
-            self.phys_labelss = phys_labelss
+            self.phys_labelss = list(phys_labelss)
 
     def __repr__(self):
         return f"Fin1DSimBTPS(tensors={self.tensors}, bdts={self.bdts}, phys_labelss={self.phys_labelss})"
@@ -512,14 +512,14 @@ class Inf1DSimBTPS(Inf1DSimBTPMixin, Fin1DSimBTPS):
 
 
 class Fin1DSimTPO(Fin1DSimTPMixin):
-    def __init__(self, tensors, physin_labelss, physout_labelss, is_unitary=False):
+    def __init__(self, tensors, physout_labelss, physin_labelss, is_unitary=False):
         self.tensors = tensors
-        self.physin_labelss = physin_labelss
-        self.physout_labelss = physout_labelss
+        self.physout_labelss = list(physout_labelss)
+        self.physin_labelss = list(physin_labelss)
         self.is_unitary = is_unitary
 
     def __repr__(self):
-        return f"Fin1DSimTPO(tensors={self.tensors}, physin_labelss={self.physin_labelss}, physout_labelss={self.physout_labelss}, is_unitary={self.is_unitary})"
+        return f"Fin1DSimTPO(tensors={self.tensors}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary})"
 
     def __str__(self):
         if len(self) > 20:
@@ -533,8 +533,8 @@ class Fin1DSimTPO(Fin1DSimTPMixin):
         dataStr = textwrap.indent(dataStr, "    ")
 
         dataStr = "[\n" + dataStr + "],\n"
-        dataStr += f"physin_labelss={self.physin_labelss},\n"
         dataStr += f"physout_labelss={self.physout_labelss},\n"
+        dataStr += f"physin_labelss={self.physin_labelss},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
         re = \
@@ -573,7 +573,7 @@ class Fin1DSimTPO(Fin1DSimTPMixin):
             bdt = tni.identity_diagonalTensor(shape, labels)
             bdts.append(bdt)
         bdts.append(tni.dummy_diagonalTensor())
-        return Fin1DSimBTPO(self.tensors, bdts, self.physin_labelss, self.physout_labelss, is_unitary=self.is_unitary)
+        return Fin1DSimBTPO(self.tensors, bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary)
 
     def to_tensor(self):
         re = 1
@@ -585,17 +585,17 @@ class Fin1DSimTPO(Fin1DSimTPMixin):
 
 
 class Fin1DSimBTPO(Fin1DSimBTPMixin):
-    def __init__(self, tensors, bdts, physin_labelss, physout_labelss, is_unitary=False):
+    def __init__(self, tensors, bdts, physout_labelss, physin_labelss, is_unitary=False):
         self.tensors = tensors
         self.bdts = bdts
         if len(self.bdts)+1==len(self.tensors):
             self.bdts = [tni.dummy_diagonalTensor()] + self.bdts + [tni.dummy_diagonalTensor()]
-        self.physin_labelss = physin_labelss
-        self.physout_labelss = physout_labelss
+        self.physout_labelss = list(physout_labelss)
+        self.physin_labelss = list(physin_labelss)
         self.is_unitary = is_unitary
 
     def __repr__(self):
-        return f"Fin1DSimBTPO(tensors={self.tensors}, bdts={self.bdts}, physin_labelss={self.physin_labelss}, physout_labelss={self.physout_labelss}, is_unitary={self.is_unitary})"
+        return f"Fin1DSimBTPO(tensors={self.tensors}, bdts={self.bdts}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary})"
 
     def __str__(self):
         if len(self) > 20:
@@ -615,8 +615,8 @@ class Fin1DSimBTPO(Fin1DSimBTPMixin):
         dataStr = textwrap.indent(dataStr, "    ")
 
         dataStr = "[\n" + dataStr + "],\n"
-        dataStr += f"physin_labelss={self.physin_labelss},\n"
         dataStr += f"physout_labelss={self.physout_labelss},\n"
+        dataStr += f"physin_labelss={self.physin_labelss},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
         re = \

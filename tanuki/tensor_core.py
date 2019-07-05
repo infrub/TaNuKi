@@ -989,6 +989,10 @@ class DiagonalTensor(TensorMixin):
     def sqrt(self):
         return DiagonalTensor(xp.sqrt(self.data), labels=self.labels)
 
+    @inplacable_tensorMixin_method
+    def exp(self, coeff=1):
+        return DiagonalTensor(xp.exp(coeff*self.data), labels=self.labels)
+
 
 
     #methods for truncate, pad, dummy
