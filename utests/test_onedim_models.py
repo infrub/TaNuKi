@@ -45,6 +45,13 @@ class TestFin1DSimBTPS(unittest.TestCase):
         self.assertEqual(a3, a1.normalize())
         self.assertAlmostEqual(a3.norm(), 1, 10)
 
+    def test_convert(self):
+        phys_labelss = [["p0"], ["p1"], ["p2"]]
+        A = random_fin1DSimTPS(phys_labelss)
+        self.assertEqual(A.to_BTPS().to_tensor(), A.to_tensor())
+        B = random_fin1DSimBTPS(phys_labelss)
+        self.assertEqual(B.to_TPS().to_tensor(), B.to_tensor())
+
 
 
 

@@ -16,8 +16,12 @@ class Fin1DSimTPMixin:
     def get_left_labels_site(self, site):
         if site==0:
             return []
+        if site==len(self):
+            return []
         return tnc.intersection_list(self.tensors[site-1].labels, self.tensors[site].labels)
     def get_right_labels_site(self, site):
+        if site==-1:
+            return []
         if site==len(self)-1:
             return []
         return tnc.intersection_list(self.tensors[site].labels, self.tensors[site+1].labels)
@@ -52,6 +56,41 @@ class Inf1DSimBTPMixin:
     def get_right_labels_bond(self, bondsite):
         return self.get_left_labels_site(bondsite)
 
+
+class _1DSimTPSMixin:
+    def get_phys_labels_site(self, site):
+        return self.phys_labelss[site]
+
+    def get_guessed_phys_labels_site(self, site):
+        return diff_list(self.tensors[site].labels, self.get_left_labels_site(site)+self.get_right_labels_site(site))
+
+    def replace_phys_labels_site(self, site, labels):
+        self.tensors[site].replace_labels(self.phys_labelss[site], labels)
+        self.phys_labelss[site] = copyModule.copy(labels)
+
+    def get_left_shape_site(self, site):
+        return self.tensors[site].dims(self.get_left_labels_site(site))
+
+    def get_right_shape_site(self, site):
+        return self.tensors[site].dims(self.get_right_labels_site(site))
+
+    def get_ket_site(self, site):
+        return self.tensors[site].copy(shallow=True)
+
+    def get_bra_site(self, site):
+        return self.tensors[site].adjoint(self.get_left_labels_site(site), self.get_right_labels_site(site), style="aster")
+
+    def get_ket_left_labels_site(self, site):
+        return self.get_left_labels_site(site)
+
+    def get_ket_right_labels_site(self, site):
+        return self.get_right_labels_site(site)
+
+    def get_bra_left_labels_site(self, site):
+        return aster_labels(self.get_left_labels_site(site))
+
+    def get_bra_right_labels_site(self, site):
+        return aster_labels(self.get_right_labels_site(site))
 
 
 class _1DSimBTPSMixin:
@@ -108,6 +147,67 @@ class _1DSimBTPSMixin:
         return aster_labels(self.get_right_labels_bond(bondsite))
 
 
+
+
+
+
+
+# tensors[0] -- tensors[1] -- ... -- tensors[len-1]
+class Fin1DSimTPS(Fin1DSimTPMixin, _1DSimTPSMixin):
+    def __init__(self, tensors, phys_labelss=None):
+        self.tensors = tensors
+        if phys_labelss is None:
+            self.phys_labelss = [self.get_guessed_phys_labels_site(site) for site in range(len(self))]
+        else:
+            self.phys_labelss = list(phys_labelss)
+
+    def __repr__(self):
+        return f"Fin1DSimTPS(tensors={self.tensors}, phys_labelss={self.phys_labelss})"
+
+    def __str__(self):
+        if len(self) > 20:
+            dataStr = " ... "
+        else:
+            dataStr = ""
+            for i in range(len(self)):
+                tensor = self.tensors[i]
+                dataStr += str(tensor)
+                dataStr += ",\n"
+        dataStr = textwrap.indent(dataStr, "    ")
+
+        dataStr = "[\n" + dataStr + "],\n"
+        dataStr += f"phys_labelss={self.phys_labelss},\n"
+        dataStr = textwrap.indent(dataStr, "    ")
+
+        re = \
+        f"Fin1DSimTPS(\n" + \
+        dataStr + \
+        f")"
+
+        return re
+
+    def __len__(self):
+        return self.tensors.__len__()
+
+    def adjoint(self):
+        tensors = [self.get_bra_site(site) for site in range(len(self))]
+        return Fin1DSimTPS(tensors, self.phys_labelss)
+
+    def to_tensor(self):
+        re = 1
+        for i in range(len(self)):
+            re *= self.tensors[i]
+        return re
+
+    def to_BTPS(self):
+        bdts = [tni.dummy_diagonalTensor()]
+        for i in range(1,len(self)):
+            labels = self.get_left_labels_site(i)
+            shape = self.get_left_shape_site(i)
+            bdt = tni.identity_diagonalTensor(shape, labels)
+            bdts.append(bdt)
+        bdts.append(tni.dummy_diagonalTensor())
+        return Fin1DSimBTPS(self.tensors, bdts, self.phys_labelss)
 
 
 
@@ -169,6 +269,13 @@ class Fin1DSimBTPS(Fin1DSimBTPMixin, _1DSimBTPSMixin):
             re *= self.tensors[i]
             re *= self.bdts[i+1]
         return re
+
+    def to_TPS(self):
+        tensors = []
+        for i in range(len(self)):
+            tensors.append( self.bdts[i][self.get_right_labels_bond(i)] * self.tensors[i][self.get_left_labels_site(i)] )
+        tensors[-1] = tensors[-1][self.get_right_labels_site(len(self)-1)] * self.bdts[len(self)][self.get_left_labels_bond(len(self))]
+        return Fin1DSimTPS(tensors, self.phys_labelss)
 
 
 

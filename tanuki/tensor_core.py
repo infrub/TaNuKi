@@ -522,6 +522,11 @@ class TensorMixin(TensorLabelingMixin):
             if self.shape != other.shape:
                 return False
             return xp.allclose(self.data, other.data, rtol=rtol, atol=atol)
+        elif xp.isscalar(other):
+            if self.ndim == 0:
+                return xp.allclose(self.to_scalar(), other, rtol=rtol, atol=atol)
+            else:
+                return False
         return NotImplemented
 
 
