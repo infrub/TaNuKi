@@ -181,12 +181,9 @@ class Fin1DSimTPS(Fin1DSimTP_Mixin, _1DSim_PSMixin, _1DSimTPSMixin):
         dataStr += f"phys_labelss={self.phys_labelss},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        re = \
-        f"Fin1DSimTPS(\n" + \
-        dataStr + \
-        f")"
+        dataStr = f"Fin1DSimTPS(\n" + dataStr + f")"
 
-        return re
+        return dataStr
 
     def __len__(self):
         return self.tensors.__len__()
@@ -256,12 +253,9 @@ class Fin1DSimBTPS(Fin1DSimBTP_Mixin, _1DSim_PSMixin, _1DSimBTPSMixin):
         dataStr += f"phys_labelss={self.phys_labelss},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        re = \
-        f"Fin1DSimBTPS(\n" + \
-        dataStr + \
-        f")"
+        dataStr = f"Fin1DSimBTPS(\n" + dataStr + f")"
 
-        return re
+        return dataStr
 
     def __len__(self):
         return self.tensors.__len__()
@@ -479,12 +473,9 @@ class Inf1DSimBTPS(Inf1DSimBTP_Mixin, Fin1DSimBTPS):
         dataStr += f"phys_labelss={self.phys_labelss},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        re = \
-        f"Inf1DSimBTPS(\n" + \
-        dataStr + \
-        f")"
+        dataStr = f"Inf1DSimBTPS(\n" + dataStr + f")"
 
-        return re
+        return dataStr
 
     def __len__(self):
         return self.tensors.__len__()
@@ -633,6 +624,23 @@ class Fin1DSimTMO: #Tensor Mass Operator
         self.physin_labelss = physin_labelss
         self.is_unitary = is_unitary
 
+    def __repr__(self):
+        return f"Fin1DSimTMO(tensor={self.tensor}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary})"
+
+    def __str__(self):
+        dataStr = f"{self.tensor},\n"
+        dataStr += f"physout_labelss={self.physout_labelss},\n"
+        dataStr += f"physin_labelss={self.physin_labelss},\n"
+        dataStr += f"is_unitary={self.is_unitary},\n"
+        dataStr = textwrap.indent(dataStr, "    ")
+
+        dataStr = f"Fin1DSimTMO(\n" + dataStr + f")"
+
+        return dataStr
+
+    def __len__(self):
+        return len(self.physout_labelss)
+
     def to_tensor(self):
         return self.tensor
 
@@ -654,6 +662,7 @@ class Fin1DSimTMO: #Tensor Mass Operator
         rev_tensors.reverse()
         rev_bdts.reverse()
         return Fin1DSimBTPO(rev_tensors, rev_bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary)
+
 
 
 
@@ -681,14 +690,12 @@ class Fin1DSimTPO(Fin1DSimTP_Mixin):
         dataStr = "[\n" + dataStr + "],\n"
         dataStr += f"physout_labelss={self.physout_labelss},\n"
         dataStr += f"physin_labelss={self.physin_labelss},\n"
+        dataStr += f"is_unitary={self.is_unitary},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        re = \
-        f"Fin1DSimTPO(\n" + \
-        dataStr + \
-        f")"
+        dataStr = f"Fin1DSimTPO(\n" + dataStr + f")"
 
-        return re
+        return dataStr
 
     def __len__(self):
         return self.tensors.__len__()
@@ -769,14 +776,12 @@ class Fin1DSimBTPO(Fin1DSimBTP_Mixin):
         dataStr = "[\n" + dataStr + "],\n"
         dataStr += f"physout_labelss={self.physout_labelss},\n"
         dataStr += f"physin_labelss={self.physin_labelss},\n"
+        dataStr += f"is_unitary={self.is_unitary},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        re = \
-        f"Fin1DSimBTPO(\n" + \
-        dataStr + \
-        f")"
+        dataStr = f"Fin1DSimBTPO(\n" + dataStr + f")"
 
-        return re
+        return dataStr
 
     def __len__(self):
         return self.tensors.__len__()
