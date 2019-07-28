@@ -123,6 +123,37 @@ class _1DSimBTPSMixin:
 
 
 
+
+
+class Fin1DSimTMS: #Tensor Mass State
+    def __init__(self, tensor, phys_labelss):
+        self.tensor = tensor
+        self.phys_labelss = phys_labelss
+
+    def to_tensor(self):
+        return self.tensor
+
+    def to_TMS(self):
+        return self
+
+    def to_TPS(self):
+        return self.to_BTPS().to_TPS()
+
+    def to_BTPS(self):
+        G = self.tensor.copy()
+        rev_tensors = []
+        rev_bdts = []
+        for i in range(len(self)-1,0,-1):
+            G, b, a = tensor_svd(G, sum(self.phys_labelss[:i],[]))
+            rev_tensors.append(a)
+            rev_bdts.append(b)
+        rev_tensors.append(G)
+        rev_tensors.reverse()
+        rev_bdts.reverse()
+        return Fin1DSimBTPS(rev_tensors, rev_bdts, self.phys_labelss)
+
+
+
 # tensors[0] -- tensors[1] -- ... -- tensors[len-1]
 class Fin1DSimTPS(Fin1DSimTP_Mixin, _1DSim_PSMixin, _1DSimTPSMixin):
     def __init__(self, tensors, phys_labelss=None):
@@ -165,10 +196,16 @@ class Fin1DSimTPS(Fin1DSimTP_Mixin, _1DSim_PSMixin, _1DSimTPSMixin):
         return Fin1DSimTPS(tensors, self.phys_labelss)
 
     def to_tensor(self):
-        re = 1
+        return self.to_TMS().to_tensor()
+
+    def to_TMS(self):
+        t = 1
         for i in range(len(self)):
-            re *= self.tensors[i]
-        return re
+            t *= self.tensors[i]
+        return Fin1DSimTMS(t, self.phys_labelss)
+
+    def to_TPS(self):
+        return self
 
     def to_BTPS(self):
         bdts = [tni.dummy_diagonalTensor()]
@@ -235,11 +272,10 @@ class Fin1DSimBTPS(Fin1DSimBTP_Mixin, _1DSim_PSMixin, _1DSimBTPSMixin):
         return Fin1DSimBTPS(tensors, bdts, self.phys_labelss)
 
     def to_tensor(self):
-        re = self.bdts[0].copy(shallow=False)
-        for i in range(len(self)):
-            re *= self.tensors[i]
-            re *= self.bdts[i+1]
-        return re
+        return self.to_TPS().to_TMS().to_tensor()
+
+    def to_TMS(self):
+        return self.to_TPS().to_TMS()
 
     def to_TPS(self):
         tensors = []
@@ -247,6 +283,9 @@ class Fin1DSimBTPS(Fin1DSimBTP_Mixin, _1DSim_PSMixin, _1DSimBTPSMixin):
             tensors.append( self.bdts[i][self.get_right_labels_bond(i)] * self.tensors[i][self.get_left_labels_site(i)] )
         tensors[-1] = tensors[-1][self.get_right_labels_site(len(self)-1)] * self.bdts[len(self)][self.get_left_labels_bond(len(self))]
         return Fin1DSimTPS(tensors, self.phys_labelss)
+
+    def to_BTPS(self):
+        return self
 
 
 
@@ -587,6 +626,35 @@ class Inf1DSimBTPS(Inf1DSimBTP_Mixin, Fin1DSimBTPS):
 
 
 
+class Fin1DSimTMO: #Tensor Mass Operator
+    def __init__(self, tensor, physout_labelss, physin_labelss, is_unitary=False):
+        self.tensor = tensor
+        self.physout_labelss = physout_labelss
+        self.physin_labelss = physin_labelss
+        self.is_unitary = is_unitary
+
+    def to_tensor(self):
+        return self.tensor
+
+    def to_TMO(self):
+        return self
+
+    def to_TPO(self):
+        return self.to_BTPO().to_TPO()
+
+    def to_BTPO(self):
+        G = self.tensor.copy()
+        rev_tensors = []
+        rev_bdts = []
+        for i in range(len(self)-1,0,-1):
+            G, b, a = tensor_svd(G, sum(self.physout_labelss[:i]+self.physin_labelss[:i],[]))
+            rev_tensors.append(a)
+            rev_bdts.append(b)
+        rev_tensors.append(G)
+        rev_tensors.reverse()
+        rev_bdts.reverse()
+        return Fin1DSimBTPO(rev_tensors, rev_bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary)
+
 
 
 class Fin1DSimTPO(Fin1DSimTP_Mixin):
@@ -643,6 +711,18 @@ class Fin1DSimTPO(Fin1DSimTP_Mixin):
 
 
 
+    def to_tensor(self):
+        return self.to_TMO().to_tensor()
+
+    def to_TMO(self):
+        t = 1
+        for i in range(len(self)):
+            t *= self.tensors[i]
+        return Fin1DSimTMO(t, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary)
+
+    def to_TPO(self):
+        return self
+
     def to_BTPO(self):
         bdts = [tni.dummy_diagonalTensor()]
         for i in range(1,len(self)):
@@ -652,12 +732,6 @@ class Fin1DSimTPO(Fin1DSimTP_Mixin):
             bdts.append(bdt)
         bdts.append(tni.dummy_diagonalTensor())
         return Fin1DSimBTPO(self.tensors, bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary)
-
-    def to_tensor(self):
-        re = 1
-        for i in range(len(self)):
-            re *= self.tensors[i]
-        return re
 
 
 
@@ -708,13 +782,19 @@ class Fin1DSimBTPO(Fin1DSimBTP_Mixin):
         return self.tensors.__len__()
 
     def to_tensor(self):
-        re = self.bdts[0].copy(shallow=False)
+        return self.to_TPO().to_TMO().to_tensor()
+
+    def to_TMO(self):
+        return self.to_TPO().to_TMO()
+
+    def to_TPO(self):
+        tensors = []
         for i in range(len(self)):
-            re *= self.tensors[i]
-            re *= self.bdts[i+1]
-        return re
+            tensors.append( self.bdts[i][self.get_right_labels_bond(i)] * self.tensors[i][self.get_left_labels_site(i)] )
+        tensors[-1] = tensors[-1][self.get_right_labels_site(len(self)-1)] * self.bdts[len(self)][self.get_left_labels_bond(len(self))]
+        return Fin1DSimTPO(tensors, self.physout_labelss, self.physin_labelss)
 
-
-
+    def to_BTPO(self):
+        return self
 
 
