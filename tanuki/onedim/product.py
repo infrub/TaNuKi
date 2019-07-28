@@ -61,7 +61,7 @@ def apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, offset=0, chi=None, keep_universal_
             mps.replace_phys_labels_site(offset+i, keeping_phys_labels[i])
 
 
-def apply_everyplace_fin1DSimBTPS_fin1DSimTPOs(psi, gates, chi=None, keep_universal_canonicality=keep_universal_canonicality, gating_order="grissand"):
+def apply_everyplace_fin1DSimBTPS_fin1DSimTPOs(psi, gates, chi=None, keep_universal_canonicality=True, gating_order="grissand"):
     if gating_order == "grissand":
         for gate in gates:
             for k in range(len(psi)-len(gate)+1):
