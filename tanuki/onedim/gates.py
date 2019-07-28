@@ -23,12 +23,15 @@ class OneDimGate:
 
         return re
 
+    def __len__(self):
+        return len(self.physout_labelss)
+
 
     def to_fin1DSimBTPO(self):
         G = self.tensor.copy()
         tensors = []
         bdts = []
-        for physout_labels, physin_labels in zip(self.physout_labelss, self.physin_labelss):
+        for physout_labels, physin_labels in zip(self.physout_labelss[:-1], self.physin_labelss[:-1]):
             a, b, G = tensor_svd(G, physout_labels+physin_labels)
             tensors.append(a)
             bdts.append(b)

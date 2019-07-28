@@ -24,7 +24,8 @@ class TestGates(unittest.TestCase):
         self.assertEqual(G.tensor, F)
         self.assertTrue(G.tensor.is_unitary(["out0","out1"]))
         G = G.to_fin1DSimBTPO()
-
+        self.assertEqual(len(G),2)
+        print(G)
 
 
 
