@@ -1,6 +1,7 @@
 from tanuki.tnxp import xp
 from tanuki.utils import *
 from tanuki import tensor_core as tnc
+import warnings
 
 #decomposition functions
 def normarg_svd_labels(svd_labels):

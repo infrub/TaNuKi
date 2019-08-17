@@ -7,6 +7,10 @@ import numpy as np
 from math import sqrt
 import copy
 
+
+#(Fin|Inf)1DSim(TM|TP|BTP)(S|O)
+
+
 class TestFin1DSimBTPS(unittest.TestCase):
     def test_instant(self):
         phys_labelss = [["p0"], ["p1"], ["p2"]]
@@ -165,10 +169,10 @@ class TestMPO(unittest.TestCase):
         mps0 = copyModule.deepcopy(mps)
         self.assertAlmostEqual(mps.to_tensor().norm(), 1)
         self.assertTrue(mps.is_canonical())
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, bmpo)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, bmpo)
         self.assertTrue(mps.is_canonical())
         self.assertFalse(mps.to_tensor().__eq__(mps0.to_tensor(), skipLabelSort=True))
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, bmpo)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, bmpo)
         self.assertTrue(mps.is_canonical())
         self.assertTrue(mps.to_tensor().__eq__(mps0.to_tensor(), skipLabelSort=True))
 
@@ -185,13 +189,13 @@ class TestMPO(unittest.TestCase):
         mps0 = random_fin1DSimBTPS([["p0"], ["p1"], ["p2"], ["p3"], ["p4"], ["p5"]], chi=5, phys_dim=3)
         mps = copyModule.deepcopy(mps0)
         self.assertFalse(mps.is_canonical())
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 0, keep_phys_labels=True)
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 1, keep_phys_labels=True)
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 2, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 0, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 1, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 2, keep_phys_labels=True)
         self.assertFalse(mps.is_canonical())
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 3, keep_phys_labels=True)
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 2, keep_phys_labels=True)
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 1, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 3, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 2, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 1, keep_phys_labels=True)
         self.assertTrue(mps.is_canonical())
 
     def test_03(self):
@@ -207,23 +211,23 @@ class TestMPO(unittest.TestCase):
 
         mps = copyModule.deepcopy(mps0)
         mps.canonize()
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 0, keep_phys_labels=True)
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 1, keep_phys_labels=True)
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 2, keep_phys_labels=True)
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 3, keep_phys_labels=True)
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 2, keep_phys_labels=True)
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 1, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 0, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 1, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 2, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 3, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 2, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 1, keep_phys_labels=True)
         self.assertTrue(mps.is_canonical())
         mps1 = mps
 
         mps = copyModule.deepcopy(mps0)
         mps.canonize()
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 0, chi=26, keep_phys_labels=True)
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 1, chi=26, keep_phys_labels=True)
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 2, chi=26, keep_phys_labels=True)
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 3, chi=26, keep_phys_labels=True)
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 2, chi=26, keep_phys_labels=True)
-        apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, 1, chi=26, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 0, chi=26, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 1, chi=26, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 2, chi=26, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 3, chi=26, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 2, chi=26, keep_phys_labels=True)
+        apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 1, chi=26, keep_phys_labels=True)
         mps2 = mps
 
         a = mps1.to_tensor()
@@ -241,6 +245,24 @@ class TestMPO(unittest.TestCase):
         self.assertLess(diff2, 2e-4)
         self.assertAlmostEqual(diff1, diff2)
 
+
+    def test_04(self):
+        G = zeros_tensor((2,2,2,2), ["out0","out1","in0","in1"])
+        G.data[0,0,0,0] = 1.5
+        G.data[0,1,0,1] = -1.5
+        G.data[1,0,1,0] = -1.5
+        G.data[1,1,1,1] = 1.5
+        G = Fin1DSimTMO(G, [["out0"],["out1"]],[["in0"],["in1"]])
+        G = G.exp(-2j)
+        F = zeros_tensor((2,2,2,2), ["out0","out1","in0","in1"])
+        F.data[0,0,0,0] = np.exp(-3j)
+        F.data[0,1,0,1] = np.exp(3j)
+        F.data[1,0,1,0] = np.exp(3j)
+        F.data[1,1,1,1] = np.exp(-3j)
+        self.assertEqual(G.tensor, F)
+        self.assertTrue(G.tensor.is_unitary(["out0","out1"]))
+        G = G.to_BTPO()
+        self.assertEqual(len(G),2)
 
 
 

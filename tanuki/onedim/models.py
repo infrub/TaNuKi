@@ -7,6 +7,7 @@ from tanuki.errors import *
 import textwrap
 from math import sqrt
 import logging
+import numpy as np
 
 
 
@@ -163,6 +164,21 @@ class Fin1DSimTMS: #Tensor Mass State
         self.tensor = tensor
         self.phys_labelss = phys_labelss
 
+    def __repr__(self):
+        return f"Fin1DSimTMS(tensor={self.tensor}, phys_labelss={self.physout_labelss})"
+
+    def __str__(self):
+        dataStr = f"{self.tensor},\n"
+        dataStr += f"phys_labelss={self.phys_labelss},\n"
+        dataStr = textwrap.indent(dataStr, "    ")
+
+        dataStr = f"Fin1DSimTMS(\n" + dataStr + f")"
+
+        return dataStr
+
+    def __len__(self):
+        return len(self.phys_labelss)
+
     def to_tensor(self):
         return self.tensor
 
@@ -184,6 +200,9 @@ class Fin1DSimTMS: #Tensor Mass State
         rev_tensors.reverse()
         rev_bdts.reverse()
         return Fin1DSimBTPS(rev_tensors, rev_bdts, self.phys_labelss)
+
+    def __eq__(self, other):
+        return self.tensor.move_all_indices(sum(self.phys_labelss,[])) == other.tensor.move_all_indices(sum(other.phys_labelss,[]))
 
 
 
@@ -651,20 +670,22 @@ class Inf1DSimBTPS(Inf1DSimBTP_Mixin, Fin1DSimBTPS):
 
 
 class Fin1DSimTMO: #Tensor Mass Operator
-    def __init__(self, tensor, physout_labelss, physin_labelss, is_unitary=False):
+    def __init__(self, tensor, physout_labelss, physin_labelss, is_unitary=False, is_hermite=False):
         self.tensor = tensor
         self.physout_labelss = physout_labelss
         self.physin_labelss = physin_labelss
         self.is_unitary = is_unitary
+        self.is_hermite = is_hermite
 
     def __repr__(self):
-        return f"Fin1DSimTMO(tensor={self.tensor}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary})"
+        return f"Fin1DSimTMO(tensor={self.tensor}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
 
     def __str__(self):
         dataStr = f"{self.tensor},\n"
         dataStr += f"physout_labelss={self.physout_labelss},\n"
         dataStr += f"physin_labelss={self.physin_labelss},\n"
         dataStr += f"is_unitary={self.is_unitary},\n"
+        dataStr += f"is_hermite={self.is_hermite},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
         dataStr = f"Fin1DSimTMO(\n" + dataStr + f")"
@@ -688,26 +709,40 @@ class Fin1DSimTMO: #Tensor Mass Operator
         rev_tensors = []
         rev_bdts = []
         for i in range(len(self)-1,0,-1):
-            G, b, a = tensor_svd(G, sum(self.physout_labelss[:i]+self.physin_labelss[:i],[]))
+            G, b, a = tnd.tensor_svd(G, sum(self.physout_labelss[:i]+self.physin_labelss[:i],[]))
             rev_tensors.append(a)
             rev_bdts.append(b)
         rev_tensors.append(G)
         rev_tensors.reverse()
         rev_bdts.reverse()
-        return Fin1DSimBTPO(rev_tensors, rev_bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary)
+        return Fin1DSimBTPO(rev_tensors, rev_bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
+
+    def exp(self, coeff=1):
+        G = self.tensor
+        V,W,Vh = tnd.tensor_eigh(G, sum(self.physout_labelss, []), sum(self.physin_labelss, []))
+        W = W.exp(coeff)
+        G = V*W*Vh
+        is_hermite = False
+        is_unitary = False
+        if self.is_hermite and np.real(coeff)==0:
+            is_unitary = True
+        if self.is_hermite and np.imag(coeff)==0:
+            is_hermite = True
+        return Fin1DSimTMO(G, self.physout_labelss, self.physin_labelss, is_unitary=is_unitary, is_hermite=is_hermite)
 
 
 
 
 class Fin1DSimTPO(_1DSim_POMixin, Fin1DSimTP_Mixin):
-    def __init__(self, tensors, physout_labelss, physin_labelss, is_unitary=False):
+    def __init__(self, tensors, physout_labelss, physin_labelss, is_unitary=False, is_hermite=False):
         self.tensors = tensors
         self.physout_labelss = list(physout_labelss)
         self.physin_labelss = list(physin_labelss)
         self.is_unitary = is_unitary
+        self.is_hermite = is_hermite
 
     def __repr__(self):
-        return f"Fin1DSimTPO(tensors={self.tensors}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary})"
+        return f"Fin1DSimTPO(tensors={self.tensors}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
 
     def __str__(self):
         if len(self) > 20:
@@ -724,6 +759,7 @@ class Fin1DSimTPO(_1DSim_POMixin, Fin1DSimTP_Mixin):
         dataStr += f"physout_labelss={self.physout_labelss},\n"
         dataStr += f"physin_labelss={self.physin_labelss},\n"
         dataStr += f"is_unitary={self.is_unitary},\n"
+        dataStr += f"is_hermite={self.is_hermite},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
         dataStr = f"Fin1DSimTPO(\n" + dataStr + f")"
@@ -742,7 +778,7 @@ class Fin1DSimTPO(_1DSim_POMixin, Fin1DSimTP_Mixin):
         t = 1
         for i in range(len(self)):
             t *= self.tensors[i]
-        return Fin1DSimTMO(t, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary)
+        return Fin1DSimTMO(t, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
 
     def to_TPO(self):
         return self
@@ -755,13 +791,13 @@ class Fin1DSimTPO(_1DSim_POMixin, Fin1DSimTP_Mixin):
             bdt = tni.identity_diagonalTensor(shape, labels)
             bdts.append(bdt)
         bdts.append(tni.dummy_diagonalTensor())
-        return Fin1DSimBTPO(self.tensors, bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary)
+        return Fin1DSimBTPO(self.tensors, bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
 
 
 
 
 class Fin1DSimBTPO(Fin1DSimBTP_Mixin):
-    def __init__(self, tensors, bdts, physout_labelss, physin_labelss, is_unitary=False):
+    def __init__(self, tensors, bdts, physout_labelss, physin_labelss, is_unitary=False, is_hermite=False):
         self.tensors = tensors
         self.bdts = bdts
         if len(self.bdts)+1==len(self.tensors):
@@ -769,9 +805,10 @@ class Fin1DSimBTPO(Fin1DSimBTP_Mixin):
         self.physout_labelss = list(physout_labelss)
         self.physin_labelss = list(physin_labelss)
         self.is_unitary = is_unitary
+        self.is_hermite = is_hermite
 
     def __repr__(self):
-        return f"Fin1DSimBTPO(tensors={self.tensors}, bdts={self.bdts}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary})"
+        return f"Fin1DSimBTPO(tensors={self.tensors}, bdts={self.bdts}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
 
     def __str__(self):
         if len(self) > 20:
@@ -794,6 +831,7 @@ class Fin1DSimBTPO(Fin1DSimBTP_Mixin):
         dataStr += f"physout_labelss={self.physout_labelss},\n"
         dataStr += f"physin_labelss={self.physin_labelss},\n"
         dataStr += f"is_unitary={self.is_unitary},\n"
+        dataStr += f"is_hermite={self.is_hermite},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
         dataStr = f"Fin1DSimBTPO(\n" + dataStr + f")"
@@ -814,7 +852,7 @@ class Fin1DSimBTPO(Fin1DSimBTP_Mixin):
         for i in range(len(self)):
             tensors.append( self.bdts[i][self.get_right_labels_bond(i)] * self.tensors[i][self.get_left_labels_site(i)] )
         tensors[-1] = tensors[-1][self.get_right_labels_site(len(self)-1)] * self.bdts[len(self)][self.get_left_labels_bond(len(self))]
-        return Fin1DSimTPO(tensors, self.physout_labelss, self.physin_labelss)
+        return Fin1DSimTPO(tensors, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
 
     def to_BTPO(self):
         return self

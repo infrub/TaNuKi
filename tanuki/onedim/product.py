@@ -24,7 +24,7 @@ def abs_sub_fin1DSimTPS_fin1DSimTPS(mps1, mps2): # |mps1-mps2|
 
 
 
-def apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, offset=0, chi=None, keep_universal_canonicality=True, keep_phys_labels=True):
+def apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, offset=0, chi=None, keep_universal_canonicality=True, keep_phys_labels=True):
     if keep_phys_labels:
         keeping_phys_labels = [mps.phys_labelss[offset+i] for i in range(len(mpo))]
 
@@ -41,7 +41,7 @@ def apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, offset=0, chi=None, keep_universal_
     
     if chi is not None:
         if not mpo.is_unitary and not keep_universal_canonicality:
-            logging.warn("apply_fin1DSimBTPS_fin1DSimTPO: Execute not optimal truncation.")
+            logging.warn("apply_fin1DSimBTPS_fin1DSimBTPO: Execute not optimal truncation.")
 
         for i in range(offset+1,offset+len(mpo)):
             labels = mps.get_left_labels_bond(i)
@@ -61,17 +61,17 @@ def apply_fin1DSimBTPS_fin1DSimTPO(mps, mpo, offset=0, chi=None, keep_universal_
             mps.replace_phys_labels_site(offset+i, keeping_phys_labels[i])
 
 
-def apply_everyplace_fin1DSimBTPS_fin1DSimTPOs(psi, gates, chi=None, keep_universal_canonicality=True, gating_order="grissand"):
+def apply_everyplace_fin1DSimBTPS_fin1DSimBTPOs(psi, gates, chi=None, keep_universal_canonicality=True, gating_order="grissand"):
     if gating_order == "grissand":
         for gate in gates:
             for k in range(len(psi)-len(gate)+1):
-                apply_fin1DSimBTPS_fin1DSimTPO(psi, gate, offset=k, chi=chi, keep_universal_canonicality=keep_universal_canonicality, keep_phys_labels=True)
+                apply_fin1DSimBTPS_fin1DSimBTPO(psi, gate, offset=k, chi=chi, keep_universal_canonicality=keep_universal_canonicality, keep_phys_labels=True)
     elif gating_order == "trill":
         for gate in self.gates:
             for i in range(len(gate)):
                 for j in range((len(self.psi) - i) // len(gate)):
                     k = j * len(gate) + i
-                    apply_fin1DSimBTPS_fin1DSimTPO(psi, gate, offset=k, chi=chi, keep_universal_canonicality=keep_universal_canonicality, keep_phys_labels=True)
+                    apply_fin1DSimBTPS_fin1DSimBTPO(psi, gate, offset=k, chi=chi, keep_universal_canonicality=keep_universal_canonicality, keep_phys_labels=True)
 
 
 
