@@ -56,8 +56,8 @@ def truncated_svd(A, rows, cols=None, chi=None, rtol=None, atol=None, svd_labels
     if chi:
         trunc_s_diag = trunc_s_diag[:chi]
 
-    if rtol is None: rtol = 0
-    if atol is None: atol = 0
+    if rtol is None: rtol = 1e-40
+    if atol is None: atol = 1e-60
     threshold = atol + rtol * s_diag[0]
     trunc_s_diag = trunc_s_diag[trunc_s_diag > threshold]
 

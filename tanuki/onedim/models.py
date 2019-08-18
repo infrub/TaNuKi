@@ -704,12 +704,12 @@ class Fin1DSimTMO: #Tensor Mass Operator
     def to_TPO(self):
         return self.to_BTPO().to_TPO()
 
-    def to_BTPO(self):
+    def to_BTPO(self, chi=None, rtol=None, atol=None):
         G = self.tensor.copy()
         rev_tensors = []
         rev_bdts = []
         for i in range(len(self)-1,0,-1):
-            G, b, a = tnd.tensor_svd(G, sum(self.physout_labelss[:i]+self.physin_labelss[:i],[]))
+            G, b, a = tnd.truncated_svd(G, sum(self.physout_labelss[:i]+self.physin_labelss[:i],[]), chi=chi, rtol=rtol, atol=atol)
             rev_tensors.append(a)
             rev_bdts.append(b)
         rev_tensors.append(G)

@@ -33,18 +33,21 @@ class TestITEBD(unittest.TestCase):
             return psi.to_TMS()
 
         a = f(1,0)
+        print(a)
         self.assertTrue(abs(a.tensor.data[1,1,1,1]) > 1000*abs(a.tensor.data[0,1,1,0]))
         self.assertTrue(abs(a.tensor.data[1,1,1,1]) > 1000*abs(a.tensor.data[0,1,1,1]))
         self.assertTrue(abs(a.tensor.data[1,1,1,1]) > 1000*abs(a.tensor.data[0,1,0,1]))
         self.assertTrue(abs(a.tensor.data[1,1,1,1]) > 1000*abs(a.tensor.data[0,0,0,0]))
 
-        a = f(-1,0)
+        a = f(-6,0)
+        print(a)
         self.assertTrue(abs(a.tensor.data[0,0,0,0]) > 1000*abs(a.tensor.data[0,1,1,0]))
         self.assertTrue(abs(a.tensor.data[0,0,0,0]) > 1000*abs(a.tensor.data[0,1,1,1]))
         self.assertTrue(abs(a.tensor.data[0,0,0,0]) > 1000*abs(a.tensor.data[0,1,0,1]))
         self.assertTrue(abs(a.tensor.data[0,0,0,0]) > 1000*abs(a.tensor.data[1,1,1,1]))
 
-        a = f(0,1)
+        a = f(0,2)
+        print(a)
         self.assertTrue(abs(a.tensor.data[0,1,0,1]) > 1000*abs(a.tensor.data[0,0,0,0]))
         self.assertTrue(abs(a.tensor.data[0,1,0,1]) > 1000*abs(a.tensor.data[0,1,1,0]))
         self.assertTrue(abs(a.tensor.data[0,1,0,1]) > 1000*abs(a.tensor.data[0,1,1,1]))
