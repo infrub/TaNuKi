@@ -158,7 +158,11 @@ class Inf1DSimBTP_Mixin:
 
 
 
-
+# ███████ ████████ ███    ███ ███████ 
+# ██         ██    ████  ████ ██      
+# █████      ██    ██ ████ ██ ███████ 
+# ██         ██    ██  ██  ██      ██ 
+# ██         ██    ██      ██ ███████ 
 class Fin1DSimTMS: #Tensor Mass State
     def __init__(self, tensor, phys_labelss):
         self.tensor = tensor
@@ -205,7 +209,11 @@ class Fin1DSimTMS: #Tensor Mass State
         return self.tensor.move_all_indices(sum(self.phys_labelss,[])) == other.tensor.move_all_indices(sum(other.phys_labelss,[]))
 
 
-
+# ███████ ████████ ██████  ███████ 
+# ██         ██    ██   ██ ██      
+# █████      ██    ██████  ███████ 
+# ██         ██    ██           ██ 
+# ██         ██    ██      ███████ 
 # tensors[0] -- tensors[1] -- ... -- tensors[len-1]
 class Fin1DSimTPS(_1DSim_PSMixin, Fin1DSimTP_Mixin):
     def __init__(self, tensors, phys_labelss=None):
@@ -268,7 +276,11 @@ class Fin1DSimTPS(_1DSim_PSMixin, Fin1DSimTP_Mixin):
 
 
 
-
+# ███████ ██████  ████████ ██████  ███████ 
+# ██      ██   ██    ██    ██   ██ ██      
+# █████   ██████     ██    ██████  ███████ 
+# ██      ██   ██    ██    ██           ██ 
+# ██      ██████     ██    ██      ███████ 
 # bdts[0] -- tensors[0] -- bdts[1] -- tensors[1] -- ... -- tensors[len-1] -- bdts[len]
 class Fin1DSimBTPS(_1DSim_PSMixin, _1DSimBTPSMixin, Fin1DSimBTP_Mixin):
     def __init__(self, tensors, bdts, phys_labelss=None):
@@ -488,7 +500,11 @@ class Fin1DSimBTPS(_1DSim_PSMixin, _1DSimBTPSMixin, Fin1DSimBTP_Mixin):
 
 
 
-
+# ██ ██████  ████████ ██████  ███████ 
+# ██ ██   ██    ██    ██   ██ ██      
+# ██ ██████     ██    ██████  ███████ 
+# ██ ██   ██    ██    ██           ██ 
+# ██ ██████     ██    ██      ███████ 
 # )-- bdts[0] -- tensors[0] -- bdts[1] -- tensors[1] -- ... -- bdts[-1] -- tensors[-1] --(
 class Inf1DSimBTPS(Inf1DSimBTP_Mixin, Fin1DSimBTPS):
     def __init__(self, tensors, bdts, phys_labelss=None):
@@ -668,7 +684,11 @@ class Inf1DSimBTPS(Inf1DSimBTP_Mixin, Fin1DSimBTPS):
 
 
 
-
+# ███████ ████████ ███    ███  ██████  
+# ██         ██    ████  ████ ██    ██ 
+# █████      ██    ██ ████ ██ ██    ██ 
+# ██         ██    ██  ██  ██ ██    ██ 
+# ██         ██    ██      ██  ██████  
 class Fin1DSimTMO: #Tensor Mass Operator
     def __init__(self, tensor, physout_labelss, physin_labelss, is_unitary=False, is_hermite=False):
         self.tensor = tensor
@@ -732,7 +752,11 @@ class Fin1DSimTMO: #Tensor Mass Operator
 
 
 
-
+# ███████ ████████ ██████   ██████  
+# ██         ██    ██   ██ ██    ██ 
+# █████      ██    ██████  ██    ██ 
+# ██         ██    ██      ██    ██ 
+# ██         ██    ██       ██████  
 class Fin1DSimTPO(_1DSim_POMixin, Fin1DSimTP_Mixin):
     def __init__(self, tensors, physout_labelss, physin_labelss, is_unitary=False, is_hermite=False):
         self.tensors = tensors
@@ -795,7 +819,11 @@ class Fin1DSimTPO(_1DSim_POMixin, Fin1DSimTP_Mixin):
 
 
 
-
+# ███████ ██████  ████████ ██████   ██████  
+# ██      ██   ██    ██    ██   ██ ██    ██ 
+# █████   ██████     ██    ██████  ██    ██ 
+# ██      ██   ██    ██    ██      ██    ██ 
+# ██      ██████     ██    ██       ██████  
 class Fin1DSimBTPO(Fin1DSimBTP_Mixin):
     def __init__(self, tensors, bdts, physout_labelss, physin_labelss, is_unitary=False, is_hermite=False):
         self.tensors = tensors
@@ -858,3 +886,66 @@ class Fin1DSimBTPO(Fin1DSimBTP_Mixin):
         return self
 
 
+
+
+
+
+
+
+
+
+# ██ ██████  ████████ ██████   ██████  
+# ██ ██   ██    ██    ██   ██ ██    ██ 
+# ██ ██████     ██    ██████  ██    ██ 
+# ██ ██   ██    ██    ██      ██    ██ 
+# ██ ██████     ██    ██       ██████  
+# )-- bdts[0] -- tensors[0] -- bdts[1] -- tensors[1] -- ... -- bdts[-1] -- tensors[-1] --(
+class Inf1DSimBTPO(Inf1DSimBTP_Mixin, Fin1DSimBTPO):
+    def __init__(self, tensors, bdts, physout_labelss, physin_labelss, is_unitary=False, is_hermite=False):
+        if type(tensors) != CyclicList:
+            tensors = CyclicList(tensors)
+        if type(bdts) != CyclicList:
+            bdts = CyclicList(bdts)
+        if type(physout_labelss) != CyclicList:
+            physout_labelss = CyclicList(physout_labelss)
+        if type(physin_labelss) != CyclicList:
+            physin_labelss = CyclicList(physin_labelss)
+        self.tensors = tensors
+        self.bdts = bdts
+        self.physout_labelss = physout_labelss
+        self.physin_labelss = physin_labelss
+        self.is_unitary = is_unitary
+        self.is_hermite = is_hermite
+
+    def __repr__(self):
+        return f"Inf1DSimBTPO(tensors={self.tensors}, bdts={self.bdts}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
+
+    def __str__(self):
+        if len(self) > 20:
+            dataStr = " ... "
+        else:
+            dataStr = ""
+            for i in range(len(self)):
+                bdt = self.bdts[i]
+                dataStr += str(bdt)
+                dataStr += "\n"
+                tensor = self.tensors[i]
+                dataStr += str(tensor)
+                dataStr += ",\n"
+        dataStr = textwrap.indent(dataStr, "    ")
+
+        dataStr = "[\n" + dataStr + "],\n"
+        dataStr += f"physout_labelss={self.physout_labelss},\n"
+        dataStr += f"physin_labelss={self.physin_labelss},\n"
+        dataStr += f"is_unitary={self.is_unitary},\n"
+        dataStr += f"is_hermite={self.is_hermite},\n"
+        dataStr = textwrap.indent(dataStr, "    ")
+
+        dataStr = f"Inf1DSimBTPO(\n" + dataStr + f")"
+
+        return dataStr
+
+    def __len__(self):
+        return self.tensors.__len__()
+
+        
