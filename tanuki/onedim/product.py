@@ -106,7 +106,7 @@ def apply_inf1DSimBTPS_fin1DSimBTPO(mps, mpo, offset=0, chi=None, keep_universal
             labels = mps.get_right_labels_bond(i)
             assert len(labels) == 1
             label = labels[0]
-            mps.bdts[i].truncate_index(label, chi, inplace=True)
+            #mps.bdts[i].truncate_index(label, chi, inplace=True) #kabutteta
             mps.tensors[i].truncate_index(label, chi, inplace=True)
 
     if keep_phys_labels:
@@ -125,3 +125,43 @@ def apply_everyplace_inf1DSimBTPS_fin1DSimBTPOs(psi, gates, chi=None, keep_unive
                 for k in range(i,len(self.psi),len(gate)):
                     apply_inf1DSimBTPS_fin1DSimBTPO(psi, gate, offset=k, chi=chi, keep_universal_canonicality=keep_universal_canonicality, keep_phys_labels=True)
 
+
+
+
+
+def apply_inf1DSimBTPS_inf1DSimBTPO(mps, mpo, offset=0, chi=None, keep_universal_canonicality=True, keep_phys_labels=True):
+    assert len(mps) == len(mpo)
+
+    if keep_phys_labels:
+        keeping_phys_labelss = [mps.phys_labelss[offset+i] for i in range(len(mpo))]
+
+    for i in range(len(mpo)):
+        mps.tensors[offset+i] = mps.tensors[offset+i][mps.phys_labelss[offset+i]] * mpo.tensors[i][mpo.physin_labelss[i]]
+        mps.phys_labelss[offset+i] = copyModule.copy(mpo.physout_labelss[i])
+        mps.bdts[offset+i] = mps.bdts[offset+i] * mpo.bdts[i]
+
+    if not keep_universal_canonicality: #TODO what situation is end_canonicality kept in?
+        mps.universally_canonize(offset, offset+len(mpo))
+    else:
+        mps.universally_canonize()
+    
+    if chi is not None:
+        if not keep_universal_canonicality:
+            logging.warn("apply_inf1DSimBTPS_inf1DSimBTPO: Execute not optimal truncation.")
+
+        for i in range(offset,offset+len(mpo)):
+            labels = mps.get_left_labels_bond(i)
+            assert len(labels) == 1
+            label = labels[0]
+            mps.tensors[i-1].truncate_index(label, chi, inplace=True)
+            mps.bdts[i].truncate_index(label, chi, inplace=True)
+
+            labels = mps.get_right_labels_bond(i)
+            assert len(labels) == 1
+            label = labels[0]
+            #mps.bdts[i].truncate_index(label, chi, inplace=True) #kabutteta
+            mps.tensors[i].truncate_index(label, chi, inplace=True)
+
+    if keep_phys_labels:
+        for i in range(len(mpo)):
+            mps.replace_phys_labels_site(offset+i, keeping_phys_labelss[i])
