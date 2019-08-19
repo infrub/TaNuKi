@@ -644,6 +644,12 @@ class Tensor(TensorMixin):
 
 
 
+    #methods for basic binary operations
+    def round(self, decimals=8):
+        return Tensor(self.data.round(decimals=decimals), self.labels)
+
+
+
     #methods for truncate, pad, dummy
     @inplacable_tensorMixin_method
     def truncate_index(self, index, fromto1, fromto2=None):
@@ -986,6 +992,9 @@ class DiagonalTensor(TensorMixin):
 
 
     #methods for basic binary operations
+    def round(self, decimals=8):
+        return Tensor(self.data.round(decimals=decimals), self.labels)
+
     @inplacable_tensorMixin_method
     def inv(self):
         return DiagonalTensor(1.0/self.data, labels=self.labels)
