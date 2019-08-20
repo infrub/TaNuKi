@@ -1,8 +1,0 @@
-import unittest
-import sys
-sys.path.append('../')
-from tanuki import *
-from tanuki.autocontract import *
-import numpy as np
-from math import sqrt
-import time

@@ -7,7 +7,7 @@ import numpy as np
 from math import sqrt
 import copy
 
-class TestApply(unittest.TestCase):
+class TestProduct(unittest.TestCase):
     def test_inner(self):
         A = random_fin1DSimTPS([["p0"],["p1"],["p2"]])
         B = random_fin1DSimTPS([["q0"],["q1"],["q2"]])
