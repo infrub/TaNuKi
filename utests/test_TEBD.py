@@ -11,8 +11,8 @@ import copy
 
 
 
-class TestRTEBD(unittest.TestCase):
-    def test_rtebd(self):
+class TestRealFinTEBD(unittest.TestCase):
+    def test01(self):
         def f(h,J): #Ising model
             H1 = Fin1DSimTMO(Tensor([[1,0],[0,-1]],["o","i"]),[["o"]],[["i"]],is_hermite=True)
             H2 = zeros_tensor((2,2,2,2),["o0","o1","i0","i1"])
@@ -62,8 +62,8 @@ class TestRTEBD(unittest.TestCase):
 
 
 
-class TestITEBD(unittest.TestCase):
-    def test_itebd(self):
+class TestImagFinTEBD(unittest.TestCase):
+    def test01(self):
         J = 1
         psi = zeros_tensor((2,2,2,2),["p0","p1","p2","p3"])
         psi.data[0,0,0,0] = 0.2
