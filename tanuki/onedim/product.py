@@ -61,20 +61,6 @@ def apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, offset=0, chi=None, keep_universal
             mps.replace_phys_labels_site(offset+i, keeping_phys_labelss[i])
 
 
-def apply_everyplace_fin1DSimBTPS_fin1DSimBTPOs(psi, gates, chi=None, keep_universal_canonicality=True, gating_order="grissand"):
-    if gating_order == "grissand":
-        for gate in gates:
-            for k in range(len(psi)-len(gate)+1):
-                apply_fin1DSimBTPS_fin1DSimBTPO(psi, gate, offset=k, chi=chi, keep_universal_canonicality=keep_universal_canonicality, keep_phys_labels=True)
-    elif gating_order == "trill":
-        for gate in self.gates:
-            for i in range(len(gate)):
-                for j in range((len(self.psi) - i) // len(gate)):
-                    k = j * len(gate) + i
-                    apply_fin1DSimBTPS_fin1DSimBTPO(psi, gate, offset=k, chi=chi, keep_universal_canonicality=keep_universal_canonicality, keep_phys_labels=True)
-
-
-
 
 
 def apply_inf1DSimBTPS_fin1DSimBTPO(mps, mpo, offset=0, chi=None, keep_universal_canonicality=True, keep_phys_labels=True):
@@ -112,19 +98,6 @@ def apply_inf1DSimBTPS_fin1DSimBTPO(mps, mpo, offset=0, chi=None, keep_universal
     if keep_phys_labels:
         for i in range(len(mpo)):
             mps.replace_phys_labels_site(offset+i, keeping_phys_labelss[i])
-
-
-def apply_everyplace_inf1DSimBTPS_fin1DSimBTPOs(psi, gates, chi=None, keep_universal_canonicality=True, gating_order="grissand"):
-    if gating_order == "grissand":
-        for gate in gates:
-            for k in range(len(psi)):
-                apply_inf1DSimBTPS_fin1DSimBTPO(psi, gate, offset=k, chi=chi, keep_universal_canonicality=keep_universal_canonicality, keep_phys_labels=True)
-    elif gating_order == "trill":
-        for gate in self.gates:
-            for i in range(len(gate)):
-                for k in range(i,len(self.psi),len(gate)):
-                    apply_inf1DSimBTPS_fin1DSimBTPO(psi, gate, offset=k, chi=chi, keep_universal_canonicality=keep_universal_canonicality, keep_phys_labels=True)
-
 
 
 

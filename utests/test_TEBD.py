@@ -32,7 +32,7 @@ class TestRTEBD(unittest.TestCase):
             psi = random_fin1DSimBTPS([["p0"],["p1"],["p2"],["p3"]])
 
             for _ in range(100):
-                apply_everyplace_fin1DSimBTPS_fin1DSimBTPOs(psi, [EH1,EH2], chi=4)
+                psi.apply_everyplace([EH1,EH2], chi=4)
 
             return psi.to_TMS()
 
@@ -95,12 +95,12 @@ class TestITEBD(unittest.TestCase):
         self.assertTrue(EH2.is_unitary)
 
         for _ in range(10):
-            apply_everyplace_fin1DSimBTPS_fin1DSimBTPOs(psi, [EH2], chi=4)
+            psi.apply_everyplace([EH2], chi=4)
         a = psi.to_TMS().tensor.round()
         self.assertNotEqual(a.data[0,0,0,0],0.1)
 
         for _ in range(Meh-10):
-            apply_everyplace_fin1DSimBTPS_fin1DSimBTPOs(psi, [EH2], chi=4)
+            psi.apply_everyplace([EH2], chi=4)
         a = psi.to_TMS().tensor.round()
         self.assertEqual(a.data[0,0,0,0],0.1)
         self.assertEqual(a.data[0,1,0,1],0.5)

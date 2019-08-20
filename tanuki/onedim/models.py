@@ -4,6 +4,7 @@ from tanuki import tensor_instant as tni
 from tanuki import decomp as tnd
 from tanuki.utils import *
 from tanuki.errors import *
+from tanuki.onedim import product as tnop
 import textwrap
 from math import sqrt
 import logging
@@ -495,6 +496,36 @@ class Fin1DSimBTPS(_1DSim_PSMixin, _1DSimBTPSMixin, Fin1DSimBTP_Mixin):
 
 
 
+    # applying methods
+    def apply(self, gate, offset=0, chi=None, keep_universal_canonicality=True, keep_phys_labels=True):
+        if type(gate) in [Fin1DSimBTPO, Fin1DSimTPO, Fin1DSimTMO]:
+            gate = gate.to_BTPO()
+        else: # list of gates
+            for reallygate in gate:
+                self.apply(reallygate,offset=offset,chi=chi,keep_universal_canonicality=keep_universal_canonicality,keep_phys_labels=keep_phys_labels)
+            return
+        tnop.apply_fin1DSimBTPS_fin1DSimBTPO(self,gate,offset=offset,chi=chi,keep_universal_canonicality=keep_universal_canonicality,keep_phys_labels=keep_phys_labels)
+
+    def apply_everyplace(self, gate, chi=None, keep_universal_canonicality=True, gating_order="grissand"):
+        if type(gate) in [Fin1DSimBTPO, Fin1DSimTPO, Fin1DSimTMO]:
+            gate = gate.to_BTPO()
+        else:
+            for reallygate in gate:
+                self.apply_everyplace(reallygate,chi=chi,keep_universal_canonicality=keep_universal_canonicality,gating_order=gating_order)
+            return
+        if gating_order == "grissand":
+            for k in range(len(self)-len(gate)+1):
+                self.apply(gate, offset=k, chi=chi, keep_universal_canonicality=keep_universal_canonicality, keep_phys_labels=True)
+        elif gating_order == "trill":
+            for i in range(len(gate)):
+                for k in range(i,len(self)-len(gate)+1,len(gate)):
+                    self.apply(gate, offset=k, chi=chi, keep_universal_canonicality=keep_universal_canonicality, keep_phys_labels=True)
+
+
+
+
+
+
 
 
 
@@ -674,6 +705,39 @@ class Inf1DSimBTPS(Inf1DSimBTP_Mixin, Fin1DSimBTPS):
             self.globally_right_canonize_upto(left_already+1, right_already, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
 
     canonize = universally_canonize
+
+
+
+    # applying methods
+    def apply(self, gate, offset=0, chi=None, keep_universal_canonicality=True, keep_phys_labels=True):
+        if type(gate)==Inf1DSImBTPO:
+            tnop.apply_inf1DSimBTPS_inf1DSimBTPO(self,gate,offset=offset,chi=chi,keep_universal_canonicality=keep_universal_canonicality,keep_phys_labels=keep_phys_labels)
+        elif type(gate) in [Fin1DSimBTPO, Fin1DSimTPO, Fin1DSimTMO]:
+            gate = gate.to_BTPO()
+            tnop.apply_inf1DSimBTPS_fin1DSimBTPO(self,gate,offset=offset,chi=chi,keep_universal_canonicality=keep_universal_canonicality,keep_phys_labels=keep_phys_labels)
+        else: # list of gates
+            for reallygate in gate:
+                self.apply(reallygate,offset=offset,chi=chi,keep_universal_canonicality=keep_universal_canonicality,keep_phys_labels=keep_phys_labels)
+            return
+
+    def apply_everyplace(self, gate, chi=None, keep_universal_canonicality=True, gating_order="grissand"):
+        if type(gate)==Inf1DSImBTPO:
+            pass
+        elif type(gate) in [Fin1DSimBTPO, Fin1DSimTPO, Fin1DSimTMO]:
+            gate = gate.to_BTPO()
+        else:
+            for reallygate in gate:
+                self.apply_everyplace(reallygate,chi=chi,keep_universal_canonicality=keep_universal_canonicality,gating_order=gating_order)
+            return
+        if gating_order == "grissand":
+            for k in range(len(self)):
+                self.apply(gate, offset=k, chi=chi, keep_universal_canonicality=keep_universal_canonicality, keep_phys_labels=True)
+        elif gating_order == "trill":
+            for i in range(len(gate)):
+                for k in range(i,len(self),len(gate)):
+                    self.apply(gate, offset=k, chi=chi, keep_universal_canonicality=keep_universal_canonicality, keep_phys_labels=True)
+
+
 
 
 
@@ -948,4 +1012,3 @@ class Inf1DSimBTPO(Inf1DSimBTP_Mixin, Fin1DSimBTPO):
     def __len__(self):
         return self.tensors.__len__()
 
-        
