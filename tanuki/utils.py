@@ -148,9 +148,9 @@ class CollateralBool:
     def __bool__(self):
         return self.trueOrFalse
     def __and__(x,y):
-        return CollateralBool(x.trueOrFalse and y.trueOrFalse, {"left":x.expression, "right":y.expression})
+        return CollateralBool(x.trueOrFalse and y.trueOrFalse, {"op":"and", "left":x.expression, "right":y.expression})
     def __or__(x,y):
-        return CollateralBool(x.trueOrFalse or y.trueOrFalse, {"left":x.expression, "right":y.expression})
+        return CollateralBool(x.trueOrFalse or y.trueOrFalse, {"op":"or", "left":x.expression, "right":y.expression})
     def __repr__(self):
         return f"{self.trueOrFalse}({self.expression})" #f"CollateralBool({self.trueOrFalse}, {self.expression})"
     def __str__(self):

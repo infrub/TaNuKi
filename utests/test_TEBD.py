@@ -9,7 +9,6 @@ from math import sqrt
 import copy
 
 
-#(Fin|Inf)1DSim(TM|TP|BTP)(S|O)
 
 
 class TestRTEBD(unittest.TestCase):
