@@ -726,7 +726,7 @@ class Inf1DSimBTPS(Inf1DSimBTP_Mixin, Fin1DSimBTPS):
         Yh, d_L, Y = tnd.tensor_eigh(V_L, self.get_ket_left_labels_bond(bde), self.get_bra_left_labels_bond(bde), eigh_labels=dl_label)
         Y.unaster_labels(self.get_bra_left_labels_bond(bde), inplace=True)
         X, d_R, Xh = tnd.tensor_eigh(V_R, self.get_ket_right_labels_bond(bde), self.get_bra_right_labels_bond(bde), eigh_labels=dr_label)
-        Xh.unaster_labels(self.get_bra_right_labels_bond(bde))
+        Xh.unaster_labels(self.get_bra_right_labels_bond(bde), inplace=True)
         l0 = self.bdts[bde]
         G = d_L.sqrt() * Yh * l0 * X * d_R.sqrt()
         U, S, V = tnd.truncated_svd(G, dl_label, dr_label, chi=chi, rtol=rtol, atol=atol)
