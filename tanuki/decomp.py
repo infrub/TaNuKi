@@ -165,3 +165,27 @@ def tensor_eigsh(A, rows, cols=None):
     v = v[:,0]
     V = tnc.vector_to_tensor(v, col_dims, col_labels)
     return w,V
+
+
+def truncated_eigh(A, rows, cols=None, chi=None, rtol=None, atol=None, eigh_labels=None):
+    eigh_labels = normarg_eigh_labels(eigh_labels)
+
+    V,W,Vh = tensor_eigh(A, rows, cols, eigh_labels=eigh_labels)
+    w_diag = W.data
+    trunc_w_diag = w_diag
+
+    if chi:
+        trunc_w_diag = trunc_w_diag[-chi:]
+
+    if rtol is None: rtol = 1e-14
+    if atol is None: atol = 1e-14
+    threshold = atol + rtol * w_diag[-1]
+    trunc_w_diag = trunc_w_diag[xp.fabs(trunc_w_diag) > threshold]
+
+    chi = len(trunc_w_diag)
+
+    W.data = trunc_w_diag
+    V = V.truncate_index(eigh_labels[0], len(w_diag)-chi, len(w_diag))
+    Vh = Vh.truncate_index(eigh_labels[3], len(w_diag)-chi, len(w_diag))
+
+    return V, W, Vh
