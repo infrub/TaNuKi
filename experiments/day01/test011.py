@@ -67,7 +67,10 @@ def test0110():
 def test0111():
     for b in range(1,31):
         for n in range(b,b**2+1):
-            juubun_chi = (4*b+1 - np.sqrt((4*b+1)**2-16*n))/4 # jouken to jiyuudo kara koredake areba itti suru to omou
+            # juubun hyougen dekiru
+            # <=> 4*b*chi + chi >= 2*n + 2*chi*chi
+            #  (U,V free) (S free)  (mokuhyou jouken) (U,V unitary jouken)
+            juubun_chi = (4*b+1 - np.sqrt((4*b+1)**2-16*n))/4
             dekakute_chi = n / b
             jissai_chi = max(1, n // b)
             assert dekakute_chi >= juubun_chi # this is proven
