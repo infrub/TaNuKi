@@ -4,10 +4,11 @@ sys.path.append('../')
 from tanuki import *
 from tanuki.onedim import *
 from tanuki.matrices import *
-import numpy as np
 from math import sqrt
 import copy
 import warnings
+import faulthandler
+faulthandler.enable()
 
 
 
@@ -176,19 +177,19 @@ class TestUnbridgeBondEnv(unittest.TestCase):
         self.assertAlmostEqual(er2s[c],0)
         self.assertAlmostEqual(er2s[b-1],0)
 
-
+    
     def test_crazy_degenerated(self):
         b = 8
         n = 7
         c = 1
         H = random_tensor((b,b,n),["kl","kr","extraction"])
         V = H * H.adjoint(["kl","kr"],style="aster")
+        V.is_hermite(["kl","kr"]) # kesuto nazeka segmentation fault okiru
         sigma0 = random_tensor((b,b),["kl","kr"])
         ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
 
         Ms,Ss,Ns,er1s,er2s = [],[],[],[],[]
         def wa(chi):
-            #print(ENV.tensor)
             memo = {}
             M,S,N = ENV.optimal_truncate(sigma0, chi=chi, memo=memo)
             self.assertTrue(memo["env_is_crazy_degenerated"])
