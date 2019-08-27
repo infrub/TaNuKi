@@ -169,34 +169,4 @@ def test0112():
 30 726 16 -> 16 999 5.106705528015934 LARGE
 """
 
-def test0113():
-    def f(b,n,chi):
-        H = random_tensor((b,b,n),["kl","kr","extraction"])
-        V = H * H.adjoint(["kl","kr"],style="aster")
-        sigma0 = random_tensor((b,b),["kl","kr"])
-        ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
-
-        memo = {}
-        M,S,N = ENV.optimal_truncate_dont_shrink(sigma0, chi=chi, memo=memo)
-        nrm = ((M*S*N-sigma0)*H).norm()
-
-        print(b,n,chi,"->",memo["chi"],memo["iter_times"], nrm, ("small" if nrm < 1e-6 else "LARGE"))
-
-    print()
-    print("5 20 1.5 mada ikeru")
-    f(5,20,5)
-    f(5,20,4)
-    f(5,20,3)
-    f(5,20,2)
-    print()
-    print("8 29 1.0 mada ikeru")
-    f(8,29,4)
-    f(8,29,3)
-    f(8,29,2)
-    f(8,29,1)
-
-
-
-
-#test0111()
-test0113()
+test0111()
