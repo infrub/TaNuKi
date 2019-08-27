@@ -53,5 +53,18 @@ def test0101():
     print(m10)
     """
 
+def test0102():
+    def f(b,n,chi):
+        H = random_tensor((b,b,n),["kl","kr","extraction"])
+        V = H * H.adjoint(["kl","kr"],style="aster")
+        sigma0 = random_tensor((b,b),["kl","kr"])
+        ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
 
-test0101()
+        M,S,N = ENV.optimal_truncate(sigma0, chi=chi)
+        print((sigma0-M*S*N)*H)
+
+    f(5,5,1)
+
+
+
+test0102()

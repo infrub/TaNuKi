@@ -53,19 +53,22 @@ class UnbridgeBondEnv:
 
 
     def optimal_truncate(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, memo=None):
+        maxchi = soujou(sigma0.dims(self.ket_left_labels))
+        chi = max(1,min(chi, maxchi))
+
         ket_ms_label = unique_label()
         ket_sn_label = unique_label()
         bra_ms_label = aster_label(ket_ms_label)
         bra_sn_label = aster_label(ket_sn_label)
 
         ETA = self.tensor
+        Cbase = ETA * sigma0
 
         def optimize_M_from_S_N(S,N):
             Sh = S.adjoint(ket_ms_label, ket_sn_label, style="aster")
             Nh = N.adjoint(ket_sn_label, self.ket_right_labels, style="aster")
-            B = ETA * Nh * Sh
-            C = B * sigma0
-            B = S * N * B
+            B = S * N * ETA * Nh * Sh
+            C = Cbase * Nh * Sh
             Mshape = B.dims(self.ket_left_labels+[ket_ms_label])
             #assert B.is_hermite(self.ket_left_labels+[ket_ms_label])
             B = B.to_matrix(self.bra_left_labels+[bra_ms_label], self.ket_left_labels+[ket_ms_label])
@@ -78,9 +81,8 @@ class UnbridgeBondEnv:
         def optimize_N_from_M_S(M,S):
             Mh = M.adjoint(self.ket_left_labels, ket_ms_label, style="aster")
             Sh = S.adjoint(ket_ms_label, ket_sn_label, style="aster")
-            B = Sh * Mh * ETA
-            C = B * sigma0
-            B = B * M * S
+            B = Sh * Mh * ETA * M * S
+            C = Sh * Mh * Cbase
             Nshape = B.dims([ket_sn_label]+self.ket_right_labels)
             B = B.to_matrix([bra_sn_label]+self.bra_right_labels, [ket_sn_label]+self.ket_right_labels)
             C = C.to_vector([bra_sn_label]+self.bra_right_labels)
@@ -99,7 +101,7 @@ class UnbridgeBondEnv:
                     M = optimize_M_from_S_N(S,N)
                     N = optimize_N_from_M_S(M,S)
                 except (xp.linalg.LinAlgError, xp.linalg.misc.LinAlgWarning) as e:
-                    # Let (b,chi)=M.shape, n = rank(ENV).
+                    # Let (b,chi)=M.shape, n = rank(ENV). (b=maxchi)
                     # When b*chi > n, LinAlgError("matrix is singular") or LinAlgWarning("Ill-conditioned matrix: result may not be accurate") occurs, it means "no sufficient terms to decide M,S,N" then "with more small chi I can optimize M,S,N", so deal by shrinking chi.
                     # "no sufficient terms to decide M,S,N" => "with more small chi I can optimize M,S,N" is proven.
                     # Note: converse proposition does NOT work! (so chi can be wasteful even when the program did not storm in this block)
@@ -109,14 +111,34 @@ class UnbridgeBondEnv:
                     # ((M*S*N)-sigma0).norm() != 0
                     # (((M*S*N)-sigma0)*H).norm() == 0 (ETA=H*H.adjoint)
                     if chi == 1:
-                        # When b > n
-                        # Note: It converges immediately (= in this iteri)
+                        # When b > n.
                         is_crazy_singular = True
+                        break
                     else:
                         chi -= 1
+                        M.truncate_index(ket_ms_label,chi,inplace=True)
+                        S.truncate_index(ket_ms_label,chi,inplace=True)
+                        N.truncate_index(ket_sn_label,chi,inplace=True)
+                        continue
             M,S,N = tnd.truncated_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
             if S.__eq__(oldS, atol=conv_atol, rtol=conv_rtol):
                 break
+
+        if is_crazy_singular:
+            # When b>n, even if chi=1, S * N * ETA * Nh * Sh is singular. So need special treatment.
+            # However fortunately, when b>=n, decomposition ETA=HTA*_*_ (HTA:Matrix(b^2,n))) can be done and HTA*(M*S*N-sigma0)==0 can be achieved only by once M-optimizing.
+            # it is done by solve( Matrix(n, b), Vector(b) ), but the calling is scared as "not square!" by numpy, add waste element in HTA to make it solve( Matrix(b, b), Vector(b) ).
+            extraction_label = unique_label()
+            HTA,_,_ = tnd.truncated_eigh(ETA, self.ket_left_labels+self.ket_right_labels, chi=maxchi, atol=-1, rtol=-1, eigh_labels=extraction_label)
+            Mshape = M.shape
+            B = S * N * HTA
+            B = B.to_matrix(extraction_label, self.ket_left_labels+[ket_ms_label])
+            C = sigma0 * HTA
+            C = C.to_vector(extraction_label)
+            M = xp.linalg.solve(B,C)
+            M = tnc.vector_to_tensor(M, Mshape, self.ket_left_labels+[ket_ms_label])
+            M,S,N = tnd.truncated_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
+
 
         if memo is None:
             memo = {}
