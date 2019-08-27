@@ -149,6 +149,7 @@ class TestUnbridgeBondEnv(unittest.TestCase):
         def wa(chi):
             memo = {}
             M,S,N = ENV.optimal_truncate(sigma0, chi=chi, memo=memo)
+            #print(memo)
             er1 = ((M*S*N)-sigma0).norm()
             er2 = (((M*S*N)-sigma0)*H).norm()
             Ms.append(M)
