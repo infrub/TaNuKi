@@ -9,7 +9,7 @@ import warnings
 
 
 
-# If a bond in TN is a bridge, when remove the bond, the TN is disconnected into left and right
+# A bond in TN is a bridge :<=> when remove the bond, the TN is disconnected into left and right
 class BridgeBondEnv:
     def __init__(self,leftTensor,rightTensor,ket_left_labels,ket_right_labels):
         self.leftTensor = leftTensor
@@ -100,11 +100,14 @@ class UnbridgeBondEnv:
                     N = optimize_N_from_M_S(M,S)
                 except (xp.linalg.LinAlgError, xp.linalg.misc.LinAlgWarning) as e:
                     # Let (b,chi)=M.shape, n = rank(ENV).
-                    # When b*chi > n, LinAlgError("matrix is singular") or LinAlgWarning("Ill-conditioned matrix: result may not be accurate") occurs, it means "with more small chi I can optimize M,S,N", so deal by shrinking chi. (proven by infrub. need publishing? #TODO)
+                    # When b*chi > n, LinAlgError("matrix is singular") or LinAlgWarning("Ill-conditioned matrix: result may not be accurate") occurs, it means "no sufficient terms to decide M,S,N" then "with more small chi I can optimize M,S,N", so deal by shrinking chi.
+                    # "no sufficient terms to decide M,S,N" => "with more small chi I can optimize M,S,N" is proven.
+                    # Note: converse proposition does NOT work! (so chi can be wasteful even when the program did not storm in this block)
+                    # the proof written by infrub is in test0111. need publishing? #TODO)
+
                     # Therefore finally the result become
                     # ((M*S*N)-sigma0).norm() != 0
                     # (((M*S*N)-sigma0)*H).norm() == 0 (ETA=H*H.adjoint)
-                    # Note: It does NOT mean S has 0.
                     if chi == 1:
                         # When b > n
                         # Note: It converges immediately (= in this iteri)
