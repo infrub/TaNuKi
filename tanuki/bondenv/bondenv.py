@@ -51,7 +51,7 @@ class UnbridgeBondEnv:
         self.bra_right_labels = aster_labels(ket_right_labels)
 
 
-    def optimal_truncate(self, sigma0, chi=20):
+    def optimal_truncate(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, memo=None):
         ket_ms_label = unique_label()
         ket_sn_label = unique_label()
         bra_ms_label = aster_label(ket_ms_label)
@@ -89,7 +89,8 @@ class UnbridgeBondEnv:
 
         M,S,N = tnd.truncated_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
 
-        for iteri in range(100):
+        for iteri in range(maxiter):
+            oldS = S
             try:
                 M = optimize_M_from_S_N(S,N)
                 N = optimize_N_from_M_S(M,S)
@@ -97,9 +98,16 @@ class UnbridgeBondEnv:
                 # sometimes LinAlgError("matrix is singular") occurs, it means "no sufficient terms to decide M,S,N, so deal by shrinking chi. 
                 # ((M*S*N)-sigma0).norm() != 0
                 # (((M*S*N)-sigma0)*H).norm() == 0 (ETA=H*H.adjoint)
-                # I don't know why but the shrinkings occur on first continuous steps.
+                # I don't know why but the shrinkings occur when optimizing M in first continuous steps.
                 # Note: It does NOT mean S has 0.
                 chi -= 1
             M,S,N = tnd.truncated_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
+            if S.__eq__(oldS, atol=conv_atol, rtol=conv_rtol):
+                break
+
+        if memo is None:
+            memo = {}
+        memo["num_iter"] = iteri
+
 
         return M,S,N

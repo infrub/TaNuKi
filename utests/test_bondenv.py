@@ -147,7 +147,8 @@ class TestUnbridgeBondEnv(unittest.TestCase):
 
         Ms,Ss,Ns,er1s,er2s = [],[],[],[],[]
         def wa(chi):
-            M,S,N = ENV.optimal_truncate(sigma0, chi=chi)
+            memo = {}
+            M,S,N = ENV.optimal_truncate(sigma0, chi=chi, memo=memo)
             er1 = ((M*S*N)-sigma0).norm()
             er2 = (((M*S*N)-sigma0)*H).norm()
             Ms.append(M)
@@ -169,12 +170,12 @@ class TestUnbridgeBondEnv(unittest.TestCase):
                     self.assertGreater(Ss[i].data[j], Ss[i].data[j+1])
 
         for i in range(b-1):
-            self.assertTrue(er2s[i] > er2s[i+1] or er2s[i+1] < 1e-10)
+            self.assertTrue(er2s[i] > er2s[i+1] or er2s[i+1] < 1e-8)
 
         self.assertAlmostEqual(er2s[c],0)
         self.assertAlmostEqual(er2s[b-1],0)
 
-        
+
 
 if __name__ == "__main__":
     unittest.main()
