@@ -46,7 +46,7 @@ def tensor_svd(A, rows, cols=None, svd_labels=None):
     return U, S, V
 
 
-def truncated_svd(A, rows, cols=None, chi=None, rtol=1e-40, atol=1e-60, svd_labels=None):
+def truncated_svd(A, rows, cols=None, chi=None, rtol=None, atol=None, svd_labels=None):
     svd_labels = normarg_svd_labels(svd_labels)
 
     U, S, V = tensor_svd(A, rows, cols, svd_labels=svd_labels)
@@ -56,6 +56,10 @@ def truncated_svd(A, rows, cols=None, chi=None, rtol=1e-40, atol=1e-60, svd_labe
     if chi:
         trunc_s_diag = trunc_s_diag[:chi]
 
+    if rtol is None:
+        rtol = 1e-40
+    if atol is None:
+        atol = 1e-60
     threshold = atol + rtol * s_diag[0]
     trunc_s_diag = trunc_s_diag[trunc_s_diag > threshold]
 
@@ -165,7 +169,7 @@ def tensor_eigsh(A, rows, cols=None):
     return w,V
 
 
-def truncated_eigh(A, rows, cols=None, chi=None, rtol=1e-14, atol=1e-14, eigh_labels=None):
+def truncated_eigh(A, rows, cols=None, chi=None, rtol=None, atol=None, eigh_labels=None):
     eigh_labels = normarg_eigh_labels(eigh_labels)
 
     V,W,Vh = tensor_eigh(A, rows, cols, eigh_labels=eigh_labels)
@@ -175,6 +179,10 @@ def truncated_eigh(A, rows, cols=None, chi=None, rtol=1e-14, atol=1e-14, eigh_la
     if chi:
         trunc_w_diag = trunc_w_diag[-chi:]
 
+    if rtol is None:
+        rtol = 1e-14
+    if atol is None:
+        atol = 1e-14
     threshold = atol + rtol * w_diag[-1]
     trunc_w_diag = trunc_w_diag[xp.fabs(trunc_w_diag) > threshold]
 

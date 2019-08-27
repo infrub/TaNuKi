@@ -100,7 +100,7 @@ class TestBridgeBondEnv(unittest.TestCase):
 
 class TestUnbridgeBondEnv(unittest.TestCase):
     def test_fullrank(self):
-        b = 10
+        b = 8
         H = random_tensor((b,b,b*b+5),["kl","kr","extraction"])
         V = H * H.adjoint(["kl","kr"],style="aster")
         sigma0 = random_tensor((b,b),["kl","kr"])
@@ -137,10 +137,10 @@ class TestUnbridgeBondEnv(unittest.TestCase):
 
 
     def test_degenerated(self):
-        b = 10
-        nazo = 8 #TODO why??
-        c = 6 #TODO why??
-        H = random_tensor((b,b,nazo*nazo),["kl","kr","extraction"])
+        b = 8
+        n = 48
+        c = 6
+        H = random_tensor((b,b,n),["kl","kr","extraction"])
         V = H * H.adjoint(["kl","kr"],style="aster")
         sigma0 = random_tensor((b,b),["kl","kr"])
         ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
@@ -149,7 +149,7 @@ class TestUnbridgeBondEnv(unittest.TestCase):
         def wa(chi):
             memo = {}
             M,S,N = ENV.optimal_truncate(sigma0, chi=chi, memo=memo)
-            #print(memo)
+            self.assertFalse(memo["env_is_crazy_degenerated"])
             er1 = ((M*S*N)-sigma0).norm()
             er2 = (((M*S*N)-sigma0)*H).norm()
             Ms.append(M)
@@ -158,6 +158,48 @@ class TestUnbridgeBondEnv(unittest.TestCase):
             er1s.append(er1)
             er2s.append(er2)
 
+        for i in range(1,b+1):
+            wa(i)
+
+        for i in range(b):
+            self.assertEqual(Ss[i].dim(0), min(i+1,c))
+
+        for i in range(b):
+            for j in range(min(i+1,c)):
+                self.assertGreater(Ss[i].data[j], 0)
+                if j < min(i+1,c)-1:
+                    self.assertGreater(Ss[i].data[j], Ss[i].data[j+1])
+
+        for i in range(b-1):
+            self.assertTrue(er2s[i] > er2s[i+1] or er2s[i+1] < 1e-8)
+
+        self.assertAlmostEqual(er2s[c],0)
+        self.assertAlmostEqual(er2s[b-1],0)
+
+
+    def test_crazy_degenerated(self):
+        b = 8
+        n = 7
+        c = 1
+        H = random_tensor((b,b,n),["kl","kr","extraction"])
+        V = H * H.adjoint(["kl","kr"],style="aster")
+        sigma0 = random_tensor((b,b),["kl","kr"])
+        ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
+
+        Ms,Ss,Ns,er1s,er2s = [],[],[],[],[]
+        def wa(chi):
+            #print(ENV.tensor)
+            memo = {}
+            M,S,N = ENV.optimal_truncate(sigma0, chi=chi, memo=memo)
+            self.assertTrue(memo["env_is_crazy_degenerated"])
+            er1 = ((M*S*N)-sigma0).norm()
+            er2 = (((M*S*N)-sigma0)*H).norm()
+            Ms.append(M)
+            Ss.append(S)
+            Ns.append(N)
+            er1s.append(er1)
+            er2s.append(er2)
+            
         for i in range(1,b+1):
             wa(i)
 

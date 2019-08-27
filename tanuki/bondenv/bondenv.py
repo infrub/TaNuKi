@@ -92,7 +92,7 @@ class UnbridgeBondEnv:
 
         M,S,N = tnd.truncated_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
 
-        is_crazy_singular = False
+        env_is_crazy_degenerated = False
         for iteri in range(maxiter):
             oldS = S
             with warnings.catch_warnings():
@@ -112,7 +112,7 @@ class UnbridgeBondEnv:
                     # (((M*S*N)-sigma0)*H).norm() == 0 (ETA=H*H.adjoint)
                     if chi == 1:
                         # When b > n.
-                        is_crazy_singular = True
+                        env_is_crazy_degenerated = True
                         break
                     else:
                         chi -= 1
@@ -124,7 +124,7 @@ class UnbridgeBondEnv:
             if S.__eq__(oldS, atol=conv_atol, rtol=conv_rtol):
                 break
 
-        if is_crazy_singular:
+        if env_is_crazy_degenerated:
             # When b>n, even if chi=1, S * N * ETA * Nh * Sh is singular. So need special treatment.
             # However fortunately, when b>=n, decomposition ETA=HTA*_*_ (HTA:Matrix(b^2,n))) can be done and HTA*(M*S*N-sigma0)==0 can be achieved only by once M-optimizing.
             # it is done by solve( Matrix(n, b), Vector(b) ), but the calling is scared as "not square!" by numpy, add waste element in HTA to make it solve( Matrix(b, b), Vector(b) ).
@@ -143,7 +143,7 @@ class UnbridgeBondEnv:
         if memo is None:
             memo = {}
         memo["iter_times"] = iteri
-        memo["is_crazy_singular"] = is_crazy_singular
+        memo["env_is_crazy_degenerated"] = env_is_crazy_degenerated
         memo["chi"] = chi
 
 

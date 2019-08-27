@@ -401,7 +401,7 @@ class TensorMixin(TensorLabelingMixin):
 
     @inplacable_tensorMixin_method
     def abs(self):
-        return self.__class__(xp.fabs(self.data), self.labels)
+        return self.__class__(xp.absolute(self.data), self.labels)
 
     @inplacable_tensorMixin_method
     def conjugate(self):
