@@ -104,8 +104,8 @@ class UnbridgeBondEnv:
 
 
 
-        if chi >= strictly_representable_chi > avoiding_singular_chi:
-            print(f"called with chi={chi}, which is enough large to approximate accurately (chi>={strictly_representable_chi}), however to avoid singular, it is truncated into chi={avoiding_singular_chi}.")
+        if chi > avoiding_singular_chi and strictly_representable_chi > avoiding_singular_chi:
+            print(f"called with chi={chi}, it is truncated into chi={avoiding_singular_chi}, but this is yarisugi, cannot approximate accurately. Actually I want stop at chi={strictly_representable_chi}. :(")
 
         chi = max(1,min(avoiding_singular_chi,chi))
 

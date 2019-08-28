@@ -18,7 +18,8 @@ def test0150():
             jissai_chi = max(1, n // b)
             yoyuu = jissai_chi - juubun_chi
             if yoyuu < 0:
-                print(b,n,jissai_chi,juubun_chi,yoyuu)
+                print(f"{b:2},{n:3}: {jissai_chi:2} - {juubun_chi:6.3f} = {yoyuu:2.3f}")
+        print()
 
 
 
