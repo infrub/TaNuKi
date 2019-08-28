@@ -7,6 +7,8 @@ from tanuki.errors import *
 from tanuki.onedim.models import *
 import warnings
 import time
+import math
+import numpy
 
 
 # A bond in TN is a bridge :<=> when remove the bond, the TN is disconnected into left and right
@@ -53,17 +55,65 @@ class UnbridgeBondEnv:
 
 
     def optimal_truncate(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, memo=None):
+        if memo is None:
+            memo = {}
         start_time = time.time()
 
-        maxchi = soujou(sigma0.dims(self.ket_left_labels))
-        chi = max(1,min(chi, maxchi))
+        b = soujou(sigma0.dims(self.ket_left_labels))
+        n = numpy.linalg.matrix_rank(self.tensor.to_matrix(self.ket_left_labels+self.ket_right_labels))
+        avoiding_singular_chi = n // b
+        strictly_representable_chi = math.ceil((4*b+1 - math.sqrt((4*b+1)**2-8*b-16*n))/4)
+
+
+        if avoiding_singular_chi == 0:
+            # When b>n, even if chi=1, N * ETA * Nh is singular. So need special treatment.
+            # However fortunately, when b>=n, decomposition ETA=HTA*_*_ (HTA:Matrix(b^2,n))) can be done and HTA*(M*S*N-sigma0)==0 can be achieved only by once M-optimizing.
+            # it is done by solve( Matrix(n, b), Vector(b) ), but the calling is scared as "not square!" by numpy, add waste element in HTA to make it solve( Matrix(b, b), Vector(b) ).
+
+            chi = 1
+
+            ket_mn_label = unique_label()
+            bra_mn_label = aster_label(ket_mn_label)
+
+            ETA = self.tensor
+            Cbase = ETA * sigma0
+
+            M,S,N = tnd.truncated_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = ket_mn_label)
+            M = M * S.sqrt()
+            N = S.sqrt() * N
+            del S
+
+            extraction_label = unique_label()
+            HTA,_,_ = tnd.truncated_eigh(ETA, self.ket_left_labels+self.ket_right_labels, chi=b, atol=0, rtol=0, eigh_labels=extraction_label) #TODO sometimes segmentation fault occurs (why?)
+            Mshape = M.shape
+            B = N * HTA
+            B = B.to_matrix(extraction_label, self.ket_left_labels+[ket_mn_label])
+            C = sigma0 * HTA
+            C = C.to_vector(extraction_label)
+            M = xp.linalg.solve(B,C)
+            M = tnc.vector_to_tensor(M, Mshape, self.ket_left_labels+[ket_mn_label])
+        
+            M,S,N = tnd.truncated_svd(M*N, self.ket_left_labels, self.ket_right_labels, chi=chi)
+
+            memo["iter_times"] = 0
+            memo["env_is_crazy_degenerated"] = True
+            memo["chi"] = chi
+            memo["elapsed_time"] = time.time()-start_time
+
+            return M,S,N
+
+
+
+        if chi >= strictly_representable_chi > avoiding_singular_chi:
+            print(f"called with chi={chi}, which is enough large to approximate accurately (chi>={strictly_representable_chi}), however to avoid singular, it is truncated into chi={avoiding_singular_chi}.")
+
+        chi = max(1,min(avoiding_singular_chi,chi))
 
         ket_mn_label = unique_label()
         bra_mn_label = aster_label(ket_mn_label)
 
         ETA = self.tensor
         Cbase = ETA * sigma0
-
 
         def optimize_M_from_N(N):
             Nh = N.adjoint(ket_mn_label, self.ket_right_labels, style="aster")
@@ -94,61 +144,18 @@ class UnbridgeBondEnv:
         N = S.sqrt() * N
         del S
 
-        env_is_crazy_degenerated = False
         for iteri in range(maxiter):
             oldM = M
-            with warnings.catch_warnings():
-                warnings.filterwarnings('error')
-                try:
-                    M = optimize_M_from_N(N)
-                    N = optimize_N_from_M(M)
-                except (xp.linalg.LinAlgError, xp.linalg.misc.LinAlgWarning) as e:
-                    #!!!WRONG shuchou start!!!
-                    # Let (b,chi)=M.shape, n = rank(ENV). (b=maxchi)
-                    # When b*chi > n, LinAlgError("matrix is singular") or LinAlgWarning("Ill-conditioned matrix: result may not be accurate") occurs, it means "no sufficient terms to decide M,N" then "with more small chi I can optimize M,N", so deal by shrinking chi.
-                    # "no sufficient terms to decide M,N" => "with more small chi I can optimize M,N" is proven.
-                    # Note: converse proposition does NOT work! (so chi can be wasteful even when the program did not storm in this block)
-                    # the proof written by infrub is in test0111. need publishing? #TODO)
-                    #!!!WRONG shuchou end!!!
-
-
-                    # Therefore finally the result becomes
-                    # ((M*S*N)-sigma0).norm() != 0
-                    # (((M*S*N)-sigma0)*H).norm() == 0 (ETA=H*H.adjoint)
-                    if chi == 1:
-                        # When b > n.
-                        env_is_crazy_degenerated = True
-                        break
-                    else:
-                        chi -= 1
-                        M.truncate_index(ket_mn_label,chi,inplace=True)
-                        N.truncate_index(ket_mn_label,chi,inplace=True)
-                        continue
+            M = optimize_M_from_N(N)
+            N = optimize_N_from_M(M)
             if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
                 break
 
-
-        if env_is_crazy_degenerated:
-            # When b>n, even if chi=1, N * ETA * Nh is singular. So need special treatment.
-            # However fortunately, when b>=n, decomposition ETA=HTA*_*_ (HTA:Matrix(b^2,n))) can be done and HTA*(M*S*N-sigma0)==0 can be achieved only by once M-optimizing.
-            # it is done by solve( Matrix(n, b), Vector(b) ), but the calling is scared as "not square!" by numpy, add waste element in HTA to make it solve( Matrix(b, b), Vector(b) ).
-            extraction_label = unique_label()
-            HTA,_,_ = tnd.truncated_eigh(ETA, self.ket_left_labels+self.ket_right_labels, chi=maxchi, atol=0, rtol=0, eigh_labels=extraction_label) #TODO sometimes segmentation fault occurs (why?)
-            Mshape = M.shape
-            B = N * HTA
-            B = B.to_matrix(extraction_label, self.ket_left_labels+[ket_mn_label])
-            C = sigma0 * HTA
-            C = C.to_vector(extraction_label)
-            M = xp.linalg.solve(B,C)
-            M = tnc.vector_to_tensor(M, Mshape, self.ket_left_labels+[ket_mn_label])
-        
         M,S,N = tnd.truncated_svd(M*N, self.ket_left_labels, self.ket_right_labels, chi=chi)
 
 
-        if memo is None:
-            memo = {}
         memo["iter_times"] = iteri
-        memo["env_is_crazy_degenerated"] = env_is_crazy_degenerated
+        memo["env_is_crazy_degenerated"] = False
         memo["chi"] = chi
         memo["elapsed_time"] = time.time()-start_time
 

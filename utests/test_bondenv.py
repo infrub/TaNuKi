@@ -136,7 +136,6 @@ class TestUnbridgeBondEnv(unittest.TestCase):
         self.assertAlmostEqual(er1s[b-1],0)
         self.assertAlmostEqual(er2s[b-1],0)
 
-
     def test_degenerated(self):
         b = 8
         n = 48
@@ -219,6 +218,44 @@ class TestUnbridgeBondEnv(unittest.TestCase):
         self.assertAlmostEqual(er2s[c],0)
         self.assertAlmostEqual(er2s[b-1],0)
 
+    # this is not omeate no kyodou. naosite~
+    def test_truncatesisugi(self):
+        b = 5
+        n = 24
+        jissai_chi = 4
+        H = random_tensor((b,b,n),["kl","kr","extraction"])
+        V = H * H.adjoint(["kl","kr"],style="aster")
+        sigma0 = random_tensor((b,b),["kl","kr"])
+        ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
+
+        Ms,Ss,Ns,er1s,er2s = [],[],[],[],[]
+        def wa(chi):
+            memo = {}
+            M,S,N = ENV.optimal_truncate(sigma0, chi=chi, memo=memo)
+            er1 = ((M*S*N)-sigma0).norm()
+            er2 = (((M*S*N)-sigma0)*H).norm()
+            Ms.append(M)
+            Ss.append(S)
+            Ns.append(N)
+            er1s.append(er1)
+            er2s.append(er2)
+
+        for i in range(jissai_chi+2):
+            wa(i+1)
+        print(er2s)
+
+        for i in range(jissai_chi+2):
+            self.assertEqual(Ss[i].dim(0), min(i+1,jissai_chi))
+
+        for i in range(jissai_chi+2):
+            for j in range(min(i+1,jissai_chi)):
+                self.assertGreater(Ss[i].data[j], 0)
+                if j < min(i+1,jissai_chi)-1:
+                    self.assertGreater(Ss[i].data[j], Ss[i].data[j+1])
+
+        self.assertNotAlmostEqual(er2s[jissai_chi-2],0, places=6)
+        self.assertNotAlmostEqual(er2s[jissai_chi-1],0, places=10) #hontoha motto ikeru noni!
+        self.assertNotAlmostEqual(er2s[jissai_chi+1],0, places=10) #hontoha motto ikeru noni!
 
 
 if __name__ == "__main__":
