@@ -103,11 +103,14 @@ class UnbridgeBondEnv:
                     M = optimize_M_from_N(N)
                     N = optimize_N_from_M(M)
                 except (xp.linalg.LinAlgError, xp.linalg.misc.LinAlgWarning) as e:
+                    #!!!WRONG shuchou start!!!
                     # Let (b,chi)=M.shape, n = rank(ENV). (b=maxchi)
                     # When b*chi > n, LinAlgError("matrix is singular") or LinAlgWarning("Ill-conditioned matrix: result may not be accurate") occurs, it means "no sufficient terms to decide M,N" then "with more small chi I can optimize M,N", so deal by shrinking chi.
                     # "no sufficient terms to decide M,N" => "with more small chi I can optimize M,N" is proven.
                     # Note: converse proposition does NOT work! (so chi can be wasteful even when the program did not storm in this block)
                     # the proof written by infrub is in test0111. need publishing? #TODO)
+                    #!!!WRONG shuchou end!!!
+
 
                     # Therefore finally the result becomes
                     # ((M*S*N)-sigma0).norm() != 0
