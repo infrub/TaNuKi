@@ -90,7 +90,7 @@ class UnbridgeBondEnv:
 
 
         if n <= chi*b:
-            assert memo["exactly_solvable"]
+            # assert memo["exactly_solvable"] # proven in test0167
             memo["used_algorithm"] = "exact_solving"
             # solve exactly
             # this case includes avoiding_singular_chi==0 case. (Because if n<b: exactly_solvable_chi==1).
@@ -111,7 +111,7 @@ class UnbridgeBondEnv:
 
 
         else: # chi < n/b  ==>  chi*b<n  ==>  B is not singular
-            assert chi <= avoiding_singular_chi
+            # assert chi <= avoiding_singular_chi # proven in test0167
             memo["used_algorithm"] = "iterating_method"
 
             def optimize_M_from_N(N):
