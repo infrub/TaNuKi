@@ -6,7 +6,7 @@ from tanuki.utils import *
 from tanuki.errors import *
 from tanuki.onedim.models import *
 import warnings
-
+import time
 
 
 # A bond in TN is a bridge :<=> when remove the bond, the TN is disconnected into left and right
@@ -53,61 +53,63 @@ class UnbridgeBondEnv:
 
 
     def optimal_truncate(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, memo=None):
+        start_time = time.time()
+
         maxchi = soujou(sigma0.dims(self.ket_left_labels))
         chi = max(1,min(chi, maxchi))
 
-        ket_ms_label = unique_label()
-        ket_sn_label = unique_label()
-        bra_ms_label = aster_label(ket_ms_label)
-        bra_sn_label = aster_label(ket_sn_label)
+        ket_mn_label = unique_label()
+        bra_mn_label = aster_label(ket_mn_label)
 
         ETA = self.tensor
         Cbase = ETA * sigma0
 
-        def optimize_M_from_S_N(S,N):
-            Sh = S.adjoint(ket_ms_label, ket_sn_label, style="aster")
-            Nh = N.adjoint(ket_sn_label, self.ket_right_labels, style="aster")
-            B = S * N * ETA * Nh * Sh
-            C = Cbase * Nh * Sh
-            Mshape = B.dims(self.ket_left_labels+[ket_ms_label])
-            #assert B.is_hermite(self.ket_left_labels+[ket_ms_label])
-            B = B.to_matrix(self.bra_left_labels+[bra_ms_label], self.ket_left_labels+[ket_ms_label])
-            C = C.to_vector(self.bra_left_labels+[bra_ms_label])
+
+        def optimize_M_from_N(N):
+            Nh = N.adjoint(ket_mn_label, self.ket_right_labels, style="aster")
+            B = N * ETA * Nh
+            C = Cbase * Nh
+            Mshape = B.dims(self.ket_left_labels+[ket_mn_label])
+            B = B.to_matrix(self.bra_left_labels+[bra_mn_label], self.ket_left_labels+[ket_mn_label])
+            C = C.to_vector(self.bra_left_labels+[bra_mn_label])
             M = xp.linalg.solve(B, C, assume_a="pos")
 
-            M = tnc.vector_to_tensor(M, Mshape, self.ket_left_labels+[ket_ms_label])
+            M = tnc.vector_to_tensor(M, Mshape, self.ket_left_labels+[ket_mn_label])
             return M
 
-        def optimize_N_from_M_S(M,S):
-            Mh = M.adjoint(self.ket_left_labels, ket_ms_label, style="aster")
-            Sh = S.adjoint(ket_ms_label, ket_sn_label, style="aster")
-            B = Sh * Mh * ETA * M * S
-            C = Sh * Mh * Cbase
-            Nshape = B.dims([ket_sn_label]+self.ket_right_labels)
-            B = B.to_matrix([bra_sn_label]+self.bra_right_labels, [ket_sn_label]+self.ket_right_labels)
-            C = C.to_vector([bra_sn_label]+self.bra_right_labels)
+        def optimize_N_from_M(M):
+            Mh = M.adjoint(self.ket_left_labels, ket_mn_label, style="aster")
+            B = Mh * ETA * M
+            C = Mh * Cbase
+            Nshape = B.dims([ket_mn_label]+self.ket_right_labels)
+            B = B.to_matrix([bra_mn_label]+self.bra_right_labels, [ket_mn_label]+self.ket_right_labels)
+            C = C.to_vector([bra_mn_label]+self.bra_right_labels)
             N = xp.linalg.solve(B, C, assume_a="pos")
-            N = tnc.vector_to_tensor(N, Nshape, [ket_sn_label]+self.ket_right_labels)
+            N = tnc.vector_to_tensor(N, Nshape, [ket_mn_label]+self.ket_right_labels)
             return N
 
-        M,S,N = tnd.truncated_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
+
+        M,S,N = tnd.truncated_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = ket_mn_label)
+        M = M * S.sqrt()
+        N = S.sqrt() * N
+        del S
 
         env_is_crazy_degenerated = False
         for iteri in range(maxiter):
-            oldS = S
+            oldM = M
             with warnings.catch_warnings():
                 warnings.filterwarnings('error')
                 try:
-                    M = optimize_M_from_S_N(S,N)
-                    N = optimize_N_from_M_S(M,S)
+                    M = optimize_M_from_N(N)
+                    N = optimize_N_from_M(M)
                 except (xp.linalg.LinAlgError, xp.linalg.misc.LinAlgWarning) as e:
                     # Let (b,chi)=M.shape, n = rank(ENV). (b=maxchi)
-                    # When b*chi > n, LinAlgError("matrix is singular") or LinAlgWarning("Ill-conditioned matrix: result may not be accurate") occurs, it means "no sufficient terms to decide M,S,N" then "with more small chi I can optimize M,S,N", so deal by shrinking chi.
-                    # "no sufficient terms to decide M,S,N" => "with more small chi I can optimize M,S,N" is proven.
+                    # When b*chi > n, LinAlgError("matrix is singular") or LinAlgWarning("Ill-conditioned matrix: result may not be accurate") occurs, it means "no sufficient terms to decide M,N" then "with more small chi I can optimize M,N", so deal by shrinking chi.
+                    # "no sufficient terms to decide M,N" => "with more small chi I can optimize M,N" is proven.
                     # Note: converse proposition does NOT work! (so chi can be wasteful even when the program did not storm in this block)
                     # the proof written by infrub is in test0111. need publishing? #TODO)
 
-                    # Therefore finally the result become
+                    # Therefore finally the result becomes
                     # ((M*S*N)-sigma0).norm() != 0
                     # (((M*S*N)-sigma0)*H).norm() == 0 (ETA=H*H.adjoint)
                     if chi == 1:
@@ -116,28 +118,28 @@ class UnbridgeBondEnv:
                         break
                     else:
                         chi -= 1
-                        M.truncate_index(ket_ms_label,chi,inplace=True)
-                        S.truncate_index(ket_ms_label,chi,inplace=True)
-                        N.truncate_index(ket_sn_label,chi,inplace=True)
+                        M.truncate_index(ket_mn_label,chi,inplace=True)
+                        N.truncate_index(ket_mn_label,chi,inplace=True)
                         continue
-            M,S,N = tnd.truncated_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
-            if S.__eq__(oldS, atol=conv_atol, rtol=conv_rtol):
+            if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
                 break
 
+
         if env_is_crazy_degenerated:
-            # When b>n, even if chi=1, S * N * ETA * Nh * Sh is singular. So need special treatment.
+            # When b>n, even if chi=1, N * ETA * Nh is singular. So need special treatment.
             # However fortunately, when b>=n, decomposition ETA=HTA*_*_ (HTA:Matrix(b^2,n))) can be done and HTA*(M*S*N-sigma0)==0 can be achieved only by once M-optimizing.
             # it is done by solve( Matrix(n, b), Vector(b) ), but the calling is scared as "not square!" by numpy, add waste element in HTA to make it solve( Matrix(b, b), Vector(b) ).
             extraction_label = unique_label()
             HTA,_,_ = tnd.truncated_eigh(ETA, self.ket_left_labels+self.ket_right_labels, chi=maxchi, atol=0, rtol=0, eigh_labels=extraction_label) #TODO sometimes segmentation fault occurs (why?)
             Mshape = M.shape
-            B = S * N * HTA
-            B = B.to_matrix(extraction_label, self.ket_left_labels+[ket_ms_label])
+            B = N * HTA
+            B = B.to_matrix(extraction_label, self.ket_left_labels+[ket_mn_label])
             C = sigma0 * HTA
             C = C.to_vector(extraction_label)
             M = xp.linalg.solve(B,C)
-            M = tnc.vector_to_tensor(M, Mshape, self.ket_left_labels+[ket_ms_label])
-            M,S,N = tnd.truncated_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
+            M = tnc.vector_to_tensor(M, Mshape, self.ket_left_labels+[ket_mn_label])
+        
+        M,S,N = tnd.truncated_svd(M*N, self.ket_left_labels, self.ket_right_labels, chi=chi)
 
 
         if memo is None:
@@ -145,7 +147,7 @@ class UnbridgeBondEnv:
         memo["iter_times"] = iteri
         memo["env_is_crazy_degenerated"] = env_is_crazy_degenerated
         memo["chi"] = chi
+        memo["elapsed_time"] = time.time()-start_time
 
 
         return M,S,N
-

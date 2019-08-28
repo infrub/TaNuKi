@@ -184,7 +184,7 @@ class TestUnbridgeBondEnv(unittest.TestCase):
         c = 1
         H = random_tensor((b,b,n),["kl","kr","extraction"])
         V = H * H.adjoint(["kl","kr"],style="aster")
-        V.is_hermite(["kl","kr"]) # kesuto nazeka segmentation fault okiru
+        V.is_hermite(["kl","kr"]) # kesuto nazeka segmentation fault okiru (b=8,16)
         sigma0 = random_tensor((b,b),["kl","kr"])
         ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
 
