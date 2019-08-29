@@ -108,8 +108,12 @@ class TestUnbridgeBondEnv(unittest.TestCase):
         sigma0 = random_tensor((b,b),["kl","kr"])
         ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
 
+        n = min(n,b**2)
+        max_chi_can_use_iterating_method = n // b # = floor(n/b)
+        min_chi_can_use_exact_solving = (n-1)//b+1 # = ceil(n/b)
+
         Ms,Ss,Ns,er1s,er2s,memos = [None],[None],[None],[None],[None],[None]
-        def wa(c):
+        for c in range(1,mc+3):
             memo = {}
             M,S,N = ENV.optimal_truncate(sigma0, chi=c, memo=memo)
             er1 = ((M*S*N)-sigma0).norm()
@@ -122,85 +126,66 @@ class TestUnbridgeBondEnv(unittest.TestCase):
             memos.append(memo)
             print(b,n,c,er2,memo)
 
-        for c in range(1,mc+3):
-            wa(c)
-
-        for c in range(1,mc+3): # S is positive and descending
-            for j in range(memos[c]["chi"]):
-                self.assertGreaterEqual(Ss[c].data[j], 0)
-                if j < memos[c]["chi"]-1:
-                    self.assertGreaterEqual(Ss[c].data[j], Ss[c].data[j+1])
-
-        for c in range(1,mc+3):
-            self.assertEqual(memos[c]["chi"], min(c,mc))
-            if memos[c]["exactly_solvable"]:
-                self.assertAlmostEqual(er2s[c],0, places=7)
+            self.assertEqual(memo["chi"], min(c,mc))
+            if memo["used_algorithm"] == "exact_solving":
+                self.assertGreaterEqual(memo["chi"], min_chi_can_use_exact_solving)
+                self.assertTrue(memo["has_enough_degree_of_freedom_to_solve_exactly"])
+                self.assertAlmostEqual(er2,0, places=12)
             else:
-                self.assertEqual(memos[c]["used_algorithm"], "iterating_method")
+                self.assertLessEqual(memo["chi"], max_chi_can_use_iterating_method)
+
+            # S is positive and descending
+            for j in range(memo["chi"]):
+                self.assertGreaterEqual(Ss[c].data[j], 0)
+                if j < memo["chi"]-1:
+                    self.assertGreaterEqual(Ss[c].data[j], Ss[c].data[j+1])
 
         for c in range(1,mc+2):
             self.assertTrue(er2s[c] >= er2s[c+1] or er2s[c+1] < 1e-8)
-
+    
     def test_a0e1(self):
         # [1<=n<b]
-        # avoiding_singular_chi == 0
-        # exactly_solvable_chi == 1
+        # max_chi_can_use_iterating_method = 0
+        # min_chi_can_use_exact_solving = 1
         # exact_solve(1)
         b = 10
         mc = 1
         for n in [1,5,9]:
             self.test_iroiro(b,n,mc)
-
+    
     def test_a1e1(self):
-        # [b<=n<1.5b]
-        # avoiding_singular_chi == 1
-        # exactly_solvable_chi == 1
-        # exact_solve(1)
+        # [n==b]
+        # max_chi_can_use_iterating_method = 1
+        # min_chi_can_use_exact_solving = 1
         b = 10
         mc = 1
-        for n in [10,12,14]:
-            self.test_iroiro(b,n,mc)
+        n = 10
+        self.test_iroiro(b,n,mc)
 
     def test_a1e2(self):
-        # [1.5b<=n<2b]
-        # avoiding_singular_chi == 1
-        # exactly_solvable_chi == 2
-        # exact_solve(2)
+        # [b<=n<2*b]
+        # max_chi_can_use_iterating_method = 1
+        # min_chi_can_use_exact_solving = 2
         b = 10
         mc = 2
-        for n in [15,17,19]:
+        for n in [11,15,19]:
             self.test_iroiro(b,n,mc)
-
+    
     def test_hanpa(self):
-        # [2b<=n<b**2-1]
-        # exactly_solvable_chi <= avoiding_singular_chi
-        # obviously no problem
-        # mc = exactly_solvable_chi
+        # [2b<=n<b**2]
         b = 10
-        for n,mc in [(20,2), (30,2), (48,4), (90,8), (98,9)]:
-            #           0,      1,      0,      1,     0      == avoiding_singular_chi - exactly_solvable_chi
+        for n,mc in [(20,2), (30,3), (51,6), (96,10), (99,10)]:
             self.test_iroiro(b,n,mc)
-
-    def test_abm1eb(self):
-        # [n==b**2-1]
-        # avoiding_singular_chi == b-1
-        # exactly_solvable_chi == b
-        # exact_solve(b)
-        b = 10
-        n = b**2-1
-        mc = b
-        self.test_iroiro(b,n,mc)
 
     def test_fullrank(self):
         # [n==b**2] (if input n>b**2, it becomes n=b**2)
-        # avoiding_singular_chi == b
-        # exactly_solvable_chi == b
-        # exact_solve(b)
+        # max_chi_can_use_iterating_method = b
+        # min_chi_can_use_exact_solving = b
         b = 10
         mc = b
         for n in [100, 102, 104]:
             self.test_iroiro(b,n,mc)
-
+    
 
 
 if __name__ == "__main__":

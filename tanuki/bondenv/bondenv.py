@@ -61,21 +61,25 @@ class UnbridgeBondEnv:
             memo = {}
         start_time = time.time()
 
-        maxchi = max(1,chi)
-        del chi
+        chi = max(1,chi)
         b = soujou(sigma0.dims(self.ket_left_labels))
         memo["b"] = b
         n = numpy.linalg.matrix_rank(self.tensor.to_matrix(self.ket_left_labels+self.ket_right_labels))
         memo["n"] = n
-        avoiding_singular_chi = n // b
-        exactly_solvable_chi = math.ceil((4*b+1 - math.sqrt((4*b+1)**2-8*b-16*n))/4)
+        max_chi_can_use_iterating_method = n // b # = floor(n/b)
+        min_chi_can_use_exact_solving = (n-1)//b+1 # = ceil(n/b)
+        exactly_solvable_chi = math.ceil(b - math.sqrt(b**2-n))
 
-        if exactly_solvable_chi <= maxchi:
-            chi = exactly_solvable_chi
-            memo["exactly_solvable"] = True
+        if chi >= min_chi_can_use_exact_solving:
+            chi = min_chi_can_use_exact_solving
+            #assert memo["has_enough_degree_of_freedom_to_solve_exactly"] #proven
+            memo["used_algorithm"] = "exact_solving"
         else:
-            chi = maxchi
-            memo["exactly_solvable"] = False
+            #assert chi <= max_chi_can_use_iterating_method #proven
+            memo["used_algorithm"] = "iterating_method"
+        memo["chi"] = chi
+        memo["has_enough_degree_of_freedom_to_solve_exactly"] = (4*b*chi - 2*chi*chi) >= 2*n
+
 
         ket_mn_label = unique_label()
         bra_mn_label = aster_label(ket_mn_label)
@@ -89,11 +93,9 @@ class UnbridgeBondEnv:
         del S
 
 
-        if n <= chi*b:
-            # assert memo["exactly_solvable"] # proven in test0167
-            memo["used_algorithm"] = "exact_solving"
+        if memo["used_algorithm"] == "exact_solving":
             # solve exactly
-            # this case includes avoiding_singular_chi==0 case. (Because if n<b: exactly_solvable_chi==1).
+            # this case includes max_chi_can_use_iterating_method==0 case. (Because if n<b: exactly_solvable_chi==1).
 
             extraction_label = unique_label()
             HTA,HTAw,_ = tnd.truncated_eigh(ETA, self.ket_left_labels+self.ket_right_labels, chi=chi*b, atol=0, rtol=0, eigh_labels=extraction_label) #TODO sometimes segmentation fault occurs (why?)
@@ -111,7 +113,7 @@ class UnbridgeBondEnv:
 
 
         else: # chi < n/b  ==>  chi*b<n  ==>  B is not singular
-            # assert chi <= avoiding_singular_chi # proven in test0167
+            assert chi <= max_chi_can_use_iterating_method # proven in test0167
             memo["used_algorithm"] = "iterating_method"
 
             def optimize_M_from_N(N):
@@ -149,7 +151,6 @@ class UnbridgeBondEnv:
 
         M,S,N = tnd.truncated_svd(M*N, self.ket_left_labels, self.ket_right_labels, chi=chi)
 
-        memo["chi"] = chi
         memo["elapsed_time"] = time.time()-start_time
 
 
