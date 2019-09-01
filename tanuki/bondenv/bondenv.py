@@ -64,7 +64,7 @@ class UnbridgeBondEnv:
         chi = max(1,chi)
         b = soujou(sigma0.dims(self.ket_left_labels))
         memo["b"] = b
-        n = numpy.linalg.matrix_rank(self.tensor.to_matrix(self.ket_left_labels+self.ket_right_labels))
+        n = numpy.linalg.matrix_rank(self.tensor.to_matrix(self.ket_left_labels+self.ket_right_labels), hermitian=True)
         memo["n"] = n
         max_chi_can_use_iterating_method = n // b # = floor(n/b)
         min_chi_can_use_exact_solving = (n-1)//b+1 # = ceil(n/b)
