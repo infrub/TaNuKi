@@ -534,11 +534,31 @@ class TensorMixin(TensorLabelingMixin):
 
 
     #methods for contract
-    def __getitem__(self, indices):
-        if len(indices)==1 and isinstance(indices[0],list): #if called like as A[["a"]]
-            indices = indices[0]
+    def __getitem__(self, kusonmiteenashorisaretahikisuu):
+        # kusonmiteenashorisaretahikisuu is really shit.
+        #
+        # input   => kusonmiteenashorisaretahikisuu => indices
+        # []      => error          => []
+        # [x]     => x              => [x]
+        # [x,y]   => (x,y) # fuck   => [x,y]
+        # [()]    => ()             => [()]
+        # [(x,)]  => (x,)           => [(x,)]
+        # [(x,y)] => (x,y) # fuck   => [(x,y)]
+        # [[]]    => []             => []
+        # [[x]]   => [x]            => [x]
+        # [[x,y]] => [x,y]          => [x,y]
+        #
+        # so inevitable ambiguousity exist in some cases e.g. calling [(x,y)] vs [x,y] when labels==[x,y,(x,y)]
+        if isinstance(kusonmiteenashorisaretahikisuu, list):
+            indices = kusonmiteenashorisaretahikisuu
+        elif type(kusonmiteenashorisaretahikisuu)==tuple:
+            if kusonmiteenashorisaretahikisuu in self.labels:
+                indices = [kusonmiteenashorisaretahikisuu]
+            else:
+                indices = list(kusonmiteenashorisaretahikisuu)
         else:
-            indices = list(indices)
+            indices = [kusonmiteenashorisaretahikisuu]
+
         return ToContract(self, indices)
 
 

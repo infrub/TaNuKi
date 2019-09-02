@@ -50,6 +50,8 @@ def random_tensor_like(tensor):
 def zeros_tensor_like(tensor):
     return zeros_tensor(tensor.shape, labels=tensor.labels, dtype=tensor.dtype)
 
+def identity_tensor_like(tensor):
+    return identity_tensor(tensor.shape[:tensor.ndim//2], tensor.shape[tensor.ndim//2:], labels=tensor.labels, dtype=tensor.dtype)
 
 
 def dummy_tensor():
