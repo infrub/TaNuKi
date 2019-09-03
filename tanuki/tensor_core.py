@@ -410,7 +410,7 @@ class TensorMixin(TensorLabelingMixin):
     conj = conjugate
 
     @inplacable_tensorMixin_method
-    def adjoint(self, rows=None, cols=None, style="transpose"):
+    def adjoint(self, rows=None, cols=None, style="aster"):
         if style=="transpose":
             rows, cols = self.normarg_complement_indices(rows, cols)
             row_labels, col_labels = self.labels_of_indices(rows), self.labels_of_indices(cols)
