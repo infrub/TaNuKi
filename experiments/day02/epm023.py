@@ -45,6 +45,7 @@ def epm0231():
     for algname in ["alg01", "alg03", "alg04", "alg04'", "alg07", "msn01", "msn04"]:
         memo = {}
         M,S,N = ENV.optimal_truncate(A, maxiter=1000, chi=chi, memo=memo, algname=algname)
+        print()
         print(S)
         print(memo)
         lastM = M

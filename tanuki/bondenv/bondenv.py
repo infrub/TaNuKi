@@ -357,6 +357,7 @@ class UnbridgeBondEnv:
                     M,S,N = tnd.truncated_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
                     if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
                         break
+                N = S*N
 
             elif algname == "msn04":
                 M,S,N = tnd.truncated_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
@@ -372,6 +373,8 @@ class UnbridgeBondEnv:
                         break
                     M = M + x*dM
                     N = N + x*dN
+                    M,S,N = tnd.truncated_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
+                N = S*N
 
 
 
