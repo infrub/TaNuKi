@@ -59,6 +59,7 @@ class UnbridgeBondEnv:
     def optimal_truncate(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, memo=None, algname="alg01"):
         if memo is None:
             memo = {}
+        memo["algname"] = algname
         start_time = time.time()
 
         chi = max(1,chi)
@@ -182,7 +183,7 @@ class UnbridgeBondEnv:
                     if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
                         break
 
-            elif algname == "alg02":
+            elif algname == "alg02": # sindou suru. kuso osoi.
                 for iteri in range(maxiter):
                     oldM = M
                     M = optimize_M_from_N(N)
@@ -190,7 +191,7 @@ class UnbridgeBondEnv:
                     if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
                         break
 
-            elif algname == "alg03":
+            elif algname == "alg03": # musiro osoi.
                 for iteri in range(maxiter):
                     kariNewM = optimize_M_from_N(N)
                     kariNewN = optimize_N_from_M(M)
@@ -204,6 +205,34 @@ class UnbridgeBondEnv:
                     M = M + x*dM
                     N = N + x*dN
             
+            elif algname == "alg04": # hayame
+                for iteri in range(maxiter):
+                    kariNewM = optimize_M_from_N(N)
+                    kariNewN = optimize_N_from_M(kariNewM)
+                    if M.__eq__(kariNewM, atol=conv_atol, rtol=conv_rtol):
+                        break
+                    dM = kariNewM - M
+                    dN = kariNewN - N
+                    x = solve_argmin_xxxx_equation(get_equation_coeffs(M,N,dM,dN))
+                    if x==0:
+                        break
+                    M = M + x*dM
+                    N = N + x*dN
+
+            elif algname == "alg05": # gomikasu. alg02 de sindou surunoni ataru toki, dM,dN majide kankei nai houkou ni ikou to suru
+                for iteri in range(maxiter):
+                    kariNewM = optimize_M_from_N(optimize_N_from_M(M))
+                    kariNewN = optimize_N_from_M(optimize_M_from_N(N))
+                    if M.__eq__(optimize_M_from_N(N), atol=conv_atol, rtol=conv_rtol):
+                        break
+                    dM = kariNewM - M
+                    dN = kariNewN - N
+                    x = solve_argmin_xxxx_equation(get_equation_coeffs(M,N,dM,dN))
+                    #if x==0:
+                    #    break
+                    M = M + x*dM
+                    N = N + x*dN
+
             memo["iter_times"] = iteri
 
 
