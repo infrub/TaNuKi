@@ -10,7 +10,7 @@ import math
 
 
 
-
+# test backward trunc houteisiki is correct
 def test0210():
     b = 3
     n = b**b
@@ -60,11 +60,14 @@ def test0210():
 
 
     HETA = H
+    HETAh = H.adjoint(["kl","kr"],style="aster")
     ETA = V
     HZETA = (anti_pph["pphin"]*H["kr"]).replace_labels("pphout","kr",inplace=False)
     HZETAh = HZETA.adjoint(["kl","kr"],style="aster")
     ZETA = HZETA * HZETAh
     HCV = HETA*u*ph
+
+    assert np.linalg.matrix_rank(ZETA.to_matrix(["kl","kr"])) == b*b-b
 
     def costVector(G):
         return HZETA*G + HCV
@@ -111,10 +114,39 @@ def test0210():
     assert abs(cost(fnctOptG) - cost(D)) < 1e-5
     assert fnctOptG == D
 
-    print(optG * ZETA - HCV*HZETAh)
-    print(fnctOptG * ZETA - HCV*HZETAh)
+
+    assert optG * ZETA + HCV*HZETAh 
+    print(fnctOptG * ZETA + HCV*HZETAh)
+    print(fnctOptG * HZETA * HETAh + HCV*HETAh)
 
 
 
-test0210()
+# test backward opttrunc repeating doesn't give correct optimal_trunc
+def test0211():
+    b = 7
+    n = b**b
+
+    H = random_tensor((b,b,n),["kl","kr","extraction"])
+    V = H * H.adjoint(["kl","kr"],style="aster")
+    A = random_tensor((b,b),["kl","kr"])
+    ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
+
+    memo = {}
+    M,S,N = ENV.optimal_truncate(A, chi=b-1, memo=memo)
+    A1 = M*S*N
+    print(memo["iter_times"])
+    memo = {}
+    M,S,N = ENV.optimal_truncate(A1, chi=b-2, memo=memo)
+    A11 = M*S*N
+    print(memo["iter_times"])
+    memo = {}
+    M,S,N = ENV.optimal_truncate(A, chi=b-2, memo=memo)
+    A2 = M*S*N
+    print(memo["iter_times"])
+
+    print(A11-A2)
+
+
+
+test0211()
 
