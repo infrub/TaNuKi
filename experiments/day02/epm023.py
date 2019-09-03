@@ -42,7 +42,7 @@ def epm0231():
     A = random_tensor((b,b),["kl","kr"])
     ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
 
-    for algname in ["alg01", "alg02", "alg03", "alg04", "alg05"]:
+    for algname in ["alg01", "alg03", "alg04", "alg06"]:
         memo = {}
         M,S,N = ENV.optimal_truncate(A, maxiter=1000, chi=chi, memo=memo, algname=algname)
         print(S)

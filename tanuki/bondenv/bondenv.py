@@ -233,6 +233,34 @@ class UnbridgeBondEnv:
                     M = M + x*dM
                     N = N + x*dN
 
+            elif algname == "alg06": # opt N no atoni opt N siteru wakedakara musiro osoi. alg03 yoriha tyoimasi?
+                for iteri in range(maxiter):
+                    if iteri % 2 == 0:
+                        kariNewM = optimize_M_from_N(N)
+                        kariNewN = optimize_N_from_M(kariNewM)
+                        if M.__eq__(kariNewM, atol=conv_atol, rtol=conv_rtol):
+                            break
+                        dM = kariNewM - M
+                        dN = kariNewN - N
+                        x = solve_argmin_xxxx_equation(get_equation_coeffs(M,N,dM,dN))
+                        if x==0:
+                            break
+                        M = M + x*dM
+                        N = N + x*dN
+                    else:
+                        kariNewN = optimize_N_from_M(M)
+                        kariNewM = optimize_M_from_N(kariNewN)
+                        if N.__eq__(kariNewN, atol=conv_atol, rtol=conv_rtol):
+                            break
+                        dM = kariNewM - M
+                        dN = kariNewN - N
+                        x = solve_argmin_xxxx_equation(get_equation_coeffs(M,N,dM,dN))
+                        if x==0:
+                            break
+                        M = M + x*dM
+                        N = N + x*dN
+
+
             memo["iter_times"] = iteri
 
 
