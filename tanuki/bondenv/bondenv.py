@@ -151,7 +151,16 @@ class UnbridgeBondEnv:
                     if fxkouho < fx:
                         fx = fxkouho
                         x = xkouho
+                print(f"   {np.real(x):.6f}")
                 return x
+
+            def css_to_cs(css):
+                cs = [0,0,0,0,0]
+                for i in range(3):
+                    for k in range(3):
+                        cs[i+k] += css[i][k]
+                return cs
+
 
             def get_equation_coeffs(M,N,dM,dN):
                 Tss = [[0,0],[0,0]]
@@ -165,14 +174,24 @@ class UnbridgeBondEnv:
                         Thss[i][j] = Tss[i][j].adjoint()
                 # minimize_x,y || \sum_{i=0,1}{j=0,1} x^i y^j T[i,j] * HETA ||^2
 
+                css = [[0,0,0],[0,0,0],[0,0,0]]
                 cs = [0,0,0,0,0]
                 for i in range(2):
                     for j in range(2):
                         for k in range(2):
                             for l in range(2):
-                                cs[i+j+k+l] += (Tss[i][k] * ETA * Thss[j][l]).real().to_scalar()
+                                css[i+j][k+l] += (Tss[i][k] * ETA * Thss[j][l]).real().to_scalar()
 
-                return cs
+                print("[",end="")
+                for i in range(3):
+                    print("[",end="")
+                    for k in range(3):
+                        cs[i+k] += css[i][k]
+                        print(f"{css[i][k]:+.4e}",end=" ")
+                    print("]",end="")
+                print("]",end="")
+
+                return css
 
 
             ket_ms_label, ket_sn_label = ket_mn_label, ket_mn_label
@@ -248,7 +267,7 @@ class UnbridgeBondEnv:
                         break
                     dM = kariNewM - M
                     dN = kariNewN - N
-                    x = solve_argmin_xxxx_equation(get_equation_coeffs(M,N,dM,dN))
+                    x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                     if x==0:
                         break
                     M = M + x*dM
@@ -262,7 +281,7 @@ class UnbridgeBondEnv:
                         break
                     dM = kariNewM - M
                     dN = kariNewN - N
-                    x = solve_argmin_xxxx_equation(get_equation_coeffs(M,N,dM,dN))
+                    x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                     if x==0:
                         break
                     M = M + x*dM
@@ -276,7 +295,7 @@ class UnbridgeBondEnv:
                         break
                     dM = kariNewM - M
                     dN = kariNewN - N
-                    x = solve_argmin_xxxx_equation(get_equation_coeffs(M,N,dM,dN))
+                    x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                     if x==0:
                         break
                     M = M + x*dM
@@ -290,7 +309,7 @@ class UnbridgeBondEnv:
                         break
                     dM = kariNewM - M
                     dN = kariNewN - N
-                    x = solve_argmin_xxxx_equation(get_equation_coeffs(M,N,dM,dN))
+                    x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                     #if x==0:
                     #    break
                     M = M + x*dM
@@ -305,7 +324,7 @@ class UnbridgeBondEnv:
                             break
                         dM = kariNewM - M
                         dN = kariNewN - N
-                        x = solve_argmin_xxxx_equation(get_equation_coeffs(M,N,dM,dN))
+                        x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                         if x==0:
                             break
                         M = M + x*dM
@@ -317,7 +336,7 @@ class UnbridgeBondEnv:
                             break
                         dM = kariNewM - M
                         dN = kariNewN - N
-                        x = solve_argmin_xxxx_equation(get_equation_coeffs(M,N,dM,dN))
+                        x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                         if x==0:
                             break
                         M = M + x*dM
@@ -332,7 +351,7 @@ class UnbridgeBondEnv:
                             break
                         dM = kariNewM - M
                         dN = kariNewN - N
-                        x = solve_argmin_xxxx_equation(get_equation_coeffs(M,N,dM,dN))
+                        x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                         if x==0:
                             break
                         M = M + x*dM
@@ -343,7 +362,7 @@ class UnbridgeBondEnv:
                             break
                         dM = kariNewM - M
                         dN = kariNewN - N
-                        x = solve_argmin_xxxx_equation(get_equation_coeffs(M,N,dM,dN))
+                        x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                         if x==0:
                             break
                         N = N + x*dN
@@ -368,7 +387,7 @@ class UnbridgeBondEnv:
                         break
                     dM = kariNewM - M
                     dN = kariNewN - N
-                    x = solve_argmin_xxxx_equation(get_equation_coeffs_msn(S,M,N,dM,dN))
+                    x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs_msn(S,M,N,dM,dN)))
                     if x==0:
                         break
                     M = M + x*dM
