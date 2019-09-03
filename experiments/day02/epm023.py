@@ -34,15 +34,15 @@ def epm0230():
 
 # test katamuki keisan!
 def epm0231():
-    b = 4
+    b = 8
     n = b*b
-    chi = 3
+    chi = 5
     H = random_tensor((b,b,n),["kl","kr","extraction"])
     V = H * H.adjoint(["kl","kr"],style="aster")
     A = random_tensor((b,b),["kl","kr"])
     ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
 
-    for algname in ["alg01", "alg03", "alg04", "alg06"]:
+    for algname in ["alg01", "alg03", "alg04", "alg07"]:
         memo = {}
         M,S,N = ENV.optimal_truncate(A, maxiter=1000, chi=chi, memo=memo, algname=algname)
         print(S)
