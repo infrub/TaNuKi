@@ -201,7 +201,27 @@ class UnbridgeBondEnv:
                 N = xp.linalg.solve(B, C, assume_a="pos")
                 N = tnc.vector_to_tensor(N, Nshape, [ket_sn_label]+self.ket_right_labels)
                 return N
-                
+
+            def get_equation_coeffs_msn(S,M,N,dM,dN):
+                Tss = [[0,0],[0,0]]
+                Tss[0][0] = M*S*N-sigma0
+                Tss[1][0] = dM*S*N
+                Tss[0][1] = M*S*dN
+                Tss[1][1] = dM*S*dN
+                Thss = [[0,0],[0,0]]
+                for i in range(2):
+                    for j in range(2):
+                        Thss[i][j] = Tss[i][j].adjoint()
+                # minimize_x,y || \sum_{i=0,1}{j=0,1} x^i y^j T[i,j] * HETA ||^2
+
+                cs = [0,0,0,0,0]
+                for i in range(2):
+                    for j in range(2):
+                        for k in range(2):
+                            for l in range(2):
+                                cs[i+j+k+l] += (Tss[i][k] * ETA * Thss[j][l]).real().to_scalar()
+
+                return cs
 
 
             if algname == "alg01":
@@ -338,6 +358,20 @@ class UnbridgeBondEnv:
                     if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
                         break
 
+            elif algname == "msn04":
+                M,S,N = tnd.truncated_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
+                for iteri in range(maxiter):
+                    kariNewM = optimize_M_from_S_N(S,N)
+                    kariNewN = optimize_N_from_M_S(kariNewM,S)
+                    if M.__eq__(kariNewM, atol=conv_atol, rtol=conv_rtol):
+                        break
+                    dM = kariNewM - M
+                    dN = kariNewN - N
+                    x = solve_argmin_xxxx_equation(get_equation_coeffs_msn(S,M,N,dM,dN))
+                    if x==0:
+                        break
+                    M = M + x*dM
+                    N = N + x*dN
 
 
 
