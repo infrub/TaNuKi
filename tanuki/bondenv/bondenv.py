@@ -175,6 +175,35 @@ class UnbridgeBondEnv:
                 return cs
 
 
+            ket_ms_label, ket_sn_label = ket_mn_label, ket_mn_label
+            bra_ms_label, bra_sn_label = bra_mn_label, bra_mn_label
+            def optimize_M_from_S_N(S,N):
+                Sh = S.adjoint(ket_ms_label, ket_sn_label, style="aster")
+                Nh = N.adjoint(ket_sn_label, self.ket_right_labels, style="aster")
+                B = S * N * ETA * Nh * Sh
+                C = Cbase * Nh * Sh
+                Mshape = B.dims(self.ket_left_labels+[ket_ms_label])
+                B = B.to_matrix(self.bra_left_labels+[bra_ms_label], self.ket_left_labels+[ket_ms_label])
+                C = C.to_vector(self.bra_left_labels+[bra_ms_label])
+                M = xp.linalg.solve(B, C, assume_a="pos")
+
+                M = tnc.vector_to_tensor(M, Mshape, self.ket_left_labels+[ket_ms_label])
+                return M
+
+            def optimize_N_from_M_S(M,S):
+                Mh = M.adjoint(self.ket_left_labels, ket_ms_label, style="aster")
+                Sh = S.adjoint(ket_ms_label, ket_sn_label, style="aster")
+                B = Sh * Mh * ETA * M * S
+                C = Sh * Mh * Cbase
+                Nshape = B.dims([ket_sn_label]+self.ket_right_labels)
+                B = B.to_matrix([bra_sn_label]+self.bra_right_labels, [ket_sn_label]+self.ket_right_labels)
+                C = C.to_vector([bra_sn_label]+self.bra_right_labels)
+                N = xp.linalg.solve(B, C, assume_a="pos")
+                N = tnc.vector_to_tensor(N, Nshape, [ket_sn_label]+self.ket_right_labels)
+                return N
+                
+
+
             if algname == "alg01":
                 for iteri in range(maxiter):
                     oldM = M
@@ -210,6 +239,20 @@ class UnbridgeBondEnv:
                     kariNewM = optimize_M_from_N(N)
                     kariNewN = optimize_N_from_M(kariNewM)
                     if M.__eq__(kariNewM, atol=conv_atol, rtol=conv_rtol):
+                        break
+                    dM = kariNewM - M
+                    dN = kariNewN - N
+                    x = solve_argmin_xxxx_equation(get_equation_coeffs(M,N,dM,dN))
+                    if x==0:
+                        break
+                    M = M + x*dM
+                    N = N + x*dN
+
+            elif algname == "alg04'": # hayame
+                for iteri in range(maxiter):
+                    kariNewN = optimize_N_from_M(M)
+                    kariNewM = optimize_M_from_N(kariNewN)
+                    if N.__eq__(kariNewN, atol=conv_atol, rtol=conv_rtol):
                         break
                     dM = kariNewM - M
                     dN = kariNewN - N
@@ -260,7 +303,7 @@ class UnbridgeBondEnv:
                         M = M + x*dM
                         N = N + x*dN
 
-            elif algname == "alg07":
+            elif algname == "alg07": # hayamenohou dakedo alg04 no hou ga ii
                 for iteri in range(maxiter):
                     if iteri % 2 == 0:
                         kariNewM = optimize_M_from_N(N)
@@ -284,6 +327,18 @@ class UnbridgeBondEnv:
                         if x==0:
                             break
                         N = N + x*dN
+
+            elif algname == "msn01":
+                M,S,N = tnd.truncated_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
+                for iteri in range(maxiter):
+                    oldM = M
+                    M = optimize_M_from_S_N(S,N)
+                    N = optimize_N_from_M_S(M,S)
+                    M,S,N = tnd.truncated_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
+                    if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
+                        break
+
+
 
 
             memo["iter_times"] = iteri
