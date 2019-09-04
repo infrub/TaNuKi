@@ -11,6 +11,9 @@ import math
 import numpy,scipy
 
 
+
+loglevel = 10
+
 # A bond in TN is a bridge :<=> when remove the bond, the TN is disconnected into left and right
 class BridgeBondEnv:
     def __init__(self,leftTensor,rightTensor,ket_left_labels,ket_right_labels):
@@ -152,7 +155,7 @@ class UnbridgeBondEnv:
                     if fxkouho < fx:
                         fx = fxkouho
                         x = xkouho
-                print(f"  {x:.10f},  {fx:.10e}")
+                if loglevel>=20: print(f"  {x:.10f},  {fx:.10e}")
                 return x,fx
 
             def solve_argmin_xxyy_equation(css):
@@ -193,7 +196,7 @@ class UnbridgeBondEnv:
                 result = scipy.optimize.minimize(f, np.array([1.5,1.5]), jac=jac, hess=hess, method="Newton-CG")
                 xy = result["x"]
                 fxy = result["fun"]
-                print(f"  {xy[0]:.10f},  {xy[1]:.10f},  {fxy:.10e}")
+                if loglevel>=20: print(f"  {xy[0]:.10f},  {xy[1]:.10f},  {fxy:.10e}")
                 return xy,fxy
 
             def css_to_cs(css):
@@ -224,14 +227,14 @@ class UnbridgeBondEnv:
                             for l in range(2):
                                 css[i+j][k+l] += (Tss[i][k] * ETA * Thss[j][l]).real().to_scalar()
 
-                print("[",end="")
-                for i in range(3):
+                if loglevel>=20: 
                     print("[",end="")
-                    for k in range(3):
-                        cs[i+k] += css[i][k]
-                        print(f"{css[i][k]:+.4e}",end=" ")
+                    for i in range(3):
+                        print("[",end="")
+                        for k in range(3):
+                            print(f"{css[i][k]:+.4e}",end=" ")
+                        print("]",end="")
                     print("]",end="")
-                print("]",end="")
 
                 return css
 
@@ -292,6 +295,7 @@ class UnbridgeBondEnv:
                     N = optimize_N_from_M(M)
                     if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
                         break
+                fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
 
             elif algname == "alg02": # sindou suru. kuso osoi.
                 for iteri in range(maxiter):
@@ -300,6 +304,7 @@ class UnbridgeBondEnv:
                     N = optimize_N_from_M(oldM)
                     if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
                         break
+                fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
 
             elif algname == "alg03": # musiro osoi.
                 oldFx = 1.0
@@ -325,7 +330,6 @@ class UnbridgeBondEnv:
                     x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                     M = M + x*dM
                     N = N + x*dN
-                    print( abs(fx-oldFx) , oldFx*conv_rtol+conv_atol)
                     if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
                     oldFx = fx
@@ -405,6 +409,28 @@ class UnbridgeBondEnv:
                     if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
                     oldFx = fx
+
+            elif algname == "alg08": # SOR ppoku kasoku # soukantannni ikuwake naine~
+                kasoku = 1.618
+                for iteri in range(maxiter):
+                    oldM = M
+                    oldN = N
+                    M = (optimize_M_from_N(N)-M)*kasoku+M
+                    N = (optimize_N_from_M(M)-N)*kasoku+N
+                    if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
+                        break
+                fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
+
+            elif algname == "alg09": # SOR ppoku kasoku
+                kasoku = 1.618
+                for iteri in range(maxiter):
+                    oldM = M
+                    oldN = N
+                    M = (optimize_M_from_N(N)-M)*kasoku+M
+                    N = (optimize_N_from_M(oldM)-N)*kasoku+N
+                    if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
+                        break
+                fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
 
             elif algname == "alg14": # nanka scipy seido matomojanee..
                 oldFx = 1.0

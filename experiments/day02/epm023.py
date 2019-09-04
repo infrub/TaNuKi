@@ -42,14 +42,16 @@ def epm0231():
     ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
 
     #algnames = ["alg01", "alg07", "alg04", "alg04'", "alg14"]
-    algnames = ["alg04", "alg14", "alg15"]
+    #algnames = ["alg04", "alg14", "alg15"]
+    algnames = ["alg04", "alg01", "alg02","alg08", "alg09"]
     for algname in algnames:
         print(algname)
         memo = {}
         M,S,N = ENV.optimal_truncate(A, maxiter=100, chi=chi, memo=memo, algname=algname)
         print(S)
         print(memo)
-        print("\n\n\n\n\n")
+        #print("\n\n\n\n\n")
+        print()
         lastM = M
 
 
