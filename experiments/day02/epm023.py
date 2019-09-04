@@ -102,7 +102,7 @@ def epm0232():
 
     memo = {}
     M,S,N = ENV.optimal_truncate(A, maxiter=1000, conv_atol=1e-14, conv_rtol=1e-14, chi=chi, memo=memo, algname="alg04")
-    trueError = memo["sq_diff"]*(1-1e-7)
+    trueError = memo["sq_diff"]*(1-1e-10)
 
     def yaru(algname, kasoku, color):
         print(f"{algname}({kasoku:4.2f})")
@@ -150,7 +150,8 @@ def epm0233():
         memo = {}
         M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname=algname, kasoku=kasoku)
         y_X = np.array(memo.pop("fxs"))
-        plt.plot(y_X-trueError, label=f"{algname}({kasoku:4.2f})", color=color)
+        cpsY_X = y_X-trueError
+        plt.plot(cpsY_X, label=f"{algname}({kasoku:4.2f})", color=color)
         print(S)
         print(memo)
         print()
@@ -169,4 +170,50 @@ def epm0233():
     plt.show()
 
 
-epm0233()
+
+
+
+# katamuki mitemiyou
+def epm0234():
+    b,chi = 10,8
+    n = b*b
+    H = random_tensor((b,b,n),["kl","kr","extraction"])
+    V = H * H.adjoint(["kl","kr"],style="aster")
+    A = random_tensor((b,b),["kl","kr"])
+    ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
+
+    plt.figure()
+
+    memo = {}
+    M,S,N = ENV.optimal_truncate(A, maxiter=1000, conv_atol=1e-14, conv_rtol=1e-14, chi=chi, memo=memo, algname="alg04")
+    trueError = memo["sq_diff"]*(1-1e-10)
+
+    def yaru(algname, kasoku, color):
+        print(f"{algname}({kasoku:4.2f})")
+        memo = {}
+        M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname=algname, kasoku=kasoku)
+        ys = np.array(memo.pop("fxs"))
+        xs = np.arange(1,ys.size+1)
+        c1xs = np.log10(xs)
+        c1ys = 1/ys
+
+        plt.plot(c1xs, c1ys, label=f"{algname}({kasoku:4.2f})", color=color)
+        print(S)
+        print(memo)
+        print()
+
+    yaru("alg04", 1, "black")
+
+    for kasoku in np.linspace(1.65,1.95,11):
+        yaru("alg08", kasoku, cm.gist_rainbow(float(kasoku-1.65)*3.3))
+
+    yaru("alg01", 1, "gray")
+    
+
+    plt.xscale("linear")
+    plt.yscale("linear")
+    plt.legend()
+    plt.show()
+
+
+epm0234()
