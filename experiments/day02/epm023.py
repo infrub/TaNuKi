@@ -100,30 +100,27 @@ def epm0232():
 
     plt.figure()
 
-    for algname in ["alg04"]:
-        print(algname)
+    memo = {}
+    M,S,N = ENV.optimal_truncate(A, maxiter=1000, conv_atol=1e-14, conv_rtol=1e-14, chi=chi, memo=memo, algname="alg04")
+    trueError = memo["sq_diff"]*(1-1e-7)
+
+    def yaru(algname, kasoku, color):
+        print(f"{algname}({kasoku:4.2f})")
         memo = {}
-        M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname=algname)
-        trueError = memo["sq_diff"]*(1-1e-7)
-        plt.plot(np.array(memo.pop("fxs"))-trueError, label=algname, color="black")
+        M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname=algname, kasoku=kasoku)
+        y_X = np.array(memo.pop("fxs"))
+        plt.plot(y_X-trueError, label=f"{algname}({kasoku:4.2f})", color=color)
+        print(S)
+        print(memo)
+        print()
+
+    yaru("alg04", 1, "black")
 
     for kasoku in np.linspace(1.0,1.9,10):
-        print(kasoku)
-        memo = {}
-        M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname="alg08", kasoku=kasoku)
-        plt.plot(np.array(memo.pop("fxs"))-trueError, label=kasoku, color=cm.gist_rainbow(float(kasoku-1)))
-        print(S)
-        print(memo)
-        print()
+        yaru("alg08", kasoku, cm.gist_rainbow(float(kasoku-1.65)*3))
 
-    for algname in ["alg01"]:
-        print(algname)
-        memo = {}
-        M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname=algname)
-        plt.plot(np.array(memo.pop("fxs"))-trueError, label=algname, color="gray")
-        print(S)
-        print(memo)
-        print()
+    yaru("alg01", 1, "gray")
+    
 
     plt.xscale("log")
     plt.yscale("log")
@@ -132,7 +129,8 @@ def epm0232():
 
 
 
-# test SOR-like kasoku param motto kuwasiku
+
+# motto kuwasiku
 def epm0233():
     b,chi = 10,8
     n = b*b
@@ -143,33 +141,27 @@ def epm0233():
 
     plt.figure()
 
-    for algname in ["alg04"]:
-        print(algname)
+    memo = {}
+    M,S,N = ENV.optimal_truncate(A, maxiter=1000, conv_atol=1e-14, conv_rtol=1e-14, chi=chi, memo=memo, algname="alg04")
+    trueError = memo["sq_diff"]*(1-1e-10)
+
+    def yaru(algname, kasoku, color):
+        print(f"{algname}({kasoku:4.2f})")
         memo = {}
-        M,S,N = ENV.optimal_truncate(A, maxiter=1000, conv_atol=1e-14, conv_rtol=1e-14, chi=chi, memo=memo, algname=algname)
-        trueError = memo["sq_diff"]*(1-1e-7)
-        plt.plot(np.array(memo.pop("fxs"))-trueError, label=algname, color="black")
+        M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname=algname, kasoku=kasoku)
+        y_X = np.array(memo.pop("fxs"))
+        plt.plot(y_X-trueError, label=f"{algname}({kasoku:4.2f})", color=color)
         print(S)
         print(memo)
         print()
+
+    yaru("alg04", 1, "black")
 
     for kasoku in np.linspace(1.65,1.95,11):
-        print(kasoku)
-        memo = {}
-        M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname="alg08", kasoku=kasoku)
-        plt.plot(np.array(memo.pop("fxs"))-trueError, label=kasoku, color=cm.gist_rainbow(float(kasoku-1.65)*3))
-        print(S)
-        print(memo)
-        print()
+        yaru("alg08", kasoku, cm.gist_rainbow(float(kasoku-1.65)*3))
 
-    for algname in ["alg01"]:
-        print(algname)
-        memo = {}
-        M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname=algname)
-        plt.plot(np.array(memo.pop("fxs"))-trueError, label=algname, color="gray")
-        print(S)
-        print(memo)
-        print()
+    yaru("alg01", 1, "gray")
+    
 
     plt.xscale("log")
     plt.yscale("log")
