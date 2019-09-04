@@ -8,7 +8,7 @@ import random
 from colorama import Fore, Back, Style
 import math
 from matplotlib import pyplot as plt
-
+import matplotlib.cm as cm
 
 
 # test koukahou katamukikeisannnashi
@@ -89,4 +89,92 @@ def epm0231():
 
 
 
-epm0231()
+# test SOR-like kasoku param
+def epm0232():
+    b,chi = 10,8
+    n = b*b
+    H = random_tensor((b,b,n),["kl","kr","extraction"])
+    V = H * H.adjoint(["kl","kr"],style="aster")
+    A = random_tensor((b,b),["kl","kr"])
+    ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
+
+    plt.figure()
+
+    for algname in ["alg04"]:
+        print(algname)
+        memo = {}
+        M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname=algname)
+        trueError = memo["sq_diff"]*(1-1e-7)
+        plt.plot(np.array(memo.pop("fxs"))-trueError, label=algname, color="black")
+
+    for kasoku in np.linspace(1.0,1.9,10):
+        print(kasoku)
+        memo = {}
+        M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname="alg08", kasoku=kasoku)
+        plt.plot(np.array(memo.pop("fxs"))-trueError, label=kasoku, color=cm.gist_rainbow(float(kasoku-1)))
+        print(S)
+        print(memo)
+        print()
+
+    for algname in ["alg01"]:
+        print(algname)
+        memo = {}
+        M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname=algname)
+        plt.plot(np.array(memo.pop("fxs"))-trueError, label=algname, color="gray")
+        print(S)
+        print(memo)
+        print()
+
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.legend()
+    plt.show()
+
+
+
+# test SOR-like kasoku param motto kuwasiku
+def epm0233():
+    b,chi = 10,8
+    n = b*b
+    H = random_tensor((b,b,n),["kl","kr","extraction"])
+    V = H * H.adjoint(["kl","kr"],style="aster")
+    A = random_tensor((b,b),["kl","kr"])
+    ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
+
+    plt.figure()
+
+    for algname in ["alg04"]:
+        print(algname)
+        memo = {}
+        M,S,N = ENV.optimal_truncate(A, maxiter=1000, conv_atol=1e-14, conv_rtol=1e-14, chi=chi, memo=memo, algname=algname)
+        trueError = memo["sq_diff"]*(1-1e-7)
+        plt.plot(np.array(memo.pop("fxs"))-trueError, label=algname, color="black")
+        print(S)
+        print(memo)
+        print()
+
+    for kasoku in np.linspace(1.65,1.95,11):
+        print(kasoku)
+        memo = {}
+        M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname="alg08", kasoku=kasoku)
+        plt.plot(np.array(memo.pop("fxs"))-trueError, label=kasoku, color=cm.gist_rainbow(float(kasoku-1.65)*3))
+        print(S)
+        print(memo)
+        print()
+
+    for algname in ["alg01"]:
+        print(algname)
+        memo = {}
+        M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname=algname)
+        plt.plot(np.array(memo.pop("fxs"))-trueError, label=algname, color="gray")
+        print(S)
+        print(memo)
+        print()
+
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.legend()
+    plt.show()
+
+
+epm0233()

@@ -59,7 +59,7 @@ class UnbridgeBondEnv:
         self.bra_right_labels = aster_labels(ket_right_labels)
 
 
-    def optimal_truncate(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, memo=None, algname="alg01"):
+    def optimal_truncate(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, memo=None, algname="alg01", **kwargs):
         if memo is None:
             memo = {}
         memo["algname"] = algname
@@ -423,7 +423,10 @@ class UnbridgeBondEnv:
                     oldFx = fx
 
             elif algname == "alg08": # SOR ppoku kasoku # soukantannni ikuwake naine~
-                kasoku = 1.618
+                if "kasoku" in kwargs:
+                    kasoku = kwargs["kasoku"]
+                else:
+                    kasoku = 1.618
                 oldFx = 1.0
                 for iteri in range(maxiter):
                     oldM = M
@@ -437,7 +440,10 @@ class UnbridgeBondEnv:
                     oldFx = fx
 
             elif algname == "alg09": # SOR ppoku kasoku # maa alg02 tokaiu gomi yoriha masideha aru
-                kasoku = 0.618
+                if "kasoku" in kwargs:
+                    kasoku = kwargs["kasoku"]
+                else:
+                    kasoku = 0.618
                 oldFx = 1.0
                 for iteri in range(maxiter):
                     oldM = M
