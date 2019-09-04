@@ -47,7 +47,7 @@ def epm0231():
     for algname in algnames:
         print(algname)
         memo = {}
-        M,S,N = ENV.optimal_truncate(A, maxiter=100, chi=chi, memo=memo, algname=algname)
+        M,S,N = ENV.optimal_truncate(A, maxiter=1000, chi=chi, memo=memo, algname=algname)
         print(S)
         print(memo)
         #print("\n\n\n\n\n")

@@ -421,12 +421,12 @@ class UnbridgeBondEnv:
                         break
                 fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
 
-            elif algname == "alg09": # SOR ppoku kasoku
-                kasoku = 1.618
+            elif algname == "alg09": # SOR ppoku kasoku # maa alg02 tokaiu gomi yoriha masideha aru
+                kasoku = 0.618
                 for iteri in range(maxiter):
                     oldM = M
                     oldN = N
-                    M = (optimize_M_from_N(N)-M)*kasoku+M
+                    M = (optimize_M_from_N(oldN)-M)*kasoku+M
                     N = (optimize_N_from_M(oldM)-N)*kasoku+N
                     if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
                         break
@@ -493,7 +493,7 @@ class UnbridgeBondEnv:
                 N = S*N
 
 
-            memo["abssub"] = fx
+            memo["sq_diff"] = fx
             memo["iter_times"] = iteri
 
 
