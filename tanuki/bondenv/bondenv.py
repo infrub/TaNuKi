@@ -153,7 +153,7 @@ class UnbridgeBondEnv:
                         fx = fxkouho
                         x = xkouho
                 print(f"  {x:.10f},  {fx:.10e}")
-                return x
+                return x,fx
 
             def solve_argmin_xxyy_equation(css):
                 # x,y = argmin( \sum_{i,j=0..2} x^i*y^j css[i][j] ) # css is real, x,y is real.
@@ -190,11 +190,11 @@ class UnbridgeBondEnv:
                                 re[1][1] += x**i*j*(j-1)*y**(j-2)*css[i][j]
                     return np.array(re)
 
-                result = scipy.optimize.minimize(f, np.array([0.5,0.5]), jac=jac, hess=hess, method="Newton-CG")
+                result = scipy.optimize.minimize(f, np.array([1.5,1.5]), jac=jac, hess=hess, method="Newton-CG")
                 xy = result["x"]
                 fxy = result["fun"]
                 print(f"  {xy[0]:.10f},  {xy[1]:.10f},  {fxy:.10e}")
-                return xy
+                return xy,fxy
 
             def css_to_cs(css):
                 cs = [0,0,0,0,0]
@@ -302,127 +302,141 @@ class UnbridgeBondEnv:
                         break
 
             elif algname == "alg03": # musiro osoi.
+                oldFx = 1.0
                 for iteri in range(maxiter):
                     kariNewM = optimize_M_from_N(N)
                     kariNewN = optimize_N_from_M(M)
-                    if M.__eq__(kariNewM, atol=conv_atol, rtol=conv_rtol):
-                        break
                     dM = kariNewM - M
                     dN = kariNewN - N
-                    x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
-                    if x==0:
-                        break
+                    x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                     M = M + x*dM
                     N = N + x*dN
+                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
+                        break
+                    oldFx = fx
             
             elif algname == "alg04": # hayame
+                oldFx = 1.0
                 for iteri in range(maxiter):
                     kariNewM = optimize_M_from_N(N)
                     kariNewN = optimize_N_from_M(kariNewM)
-                    if M.__eq__(kariNewM, atol=conv_atol, rtol=conv_rtol):
-                        break
                     dM = kariNewM - M
                     dN = kariNewN - N
-                    x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
-                    if x==0:
-                        break
+                    x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                     M = M + x*dM
                     N = N + x*dN
+                    print( abs(fx-oldFx) , oldFx*conv_rtol+conv_atol)
+                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
+                        break
+                    oldFx = fx
 
             elif algname == "alg04'": # hayame
+                oldFx = 1.0
                 for iteri in range(maxiter):
                     kariNewN = optimize_N_from_M(M)
                     kariNewM = optimize_M_from_N(kariNewN)
-                    if N.__eq__(kariNewN, atol=conv_atol, rtol=conv_rtol):
-                        break
                     dM = kariNewM - M
                     dN = kariNewN - N
-                    x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
-                    if x==0:
-                        break
+                    x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                     M = M + x*dM
                     N = N + x*dN
+                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
+                        break
+                    oldFx = fx
 
             elif algname == "alg05": # gomikasu. alg02 de sindou surunoni ataru toki, dM,dN majide kankei nai houkou ni ikou to suru
+                oldFx = 1.0
                 for iteri in range(maxiter):
                     kariNewM = optimize_M_from_N(optimize_N_from_M(M))
                     kariNewN = optimize_N_from_M(optimize_M_from_N(N))
-                    if M.__eq__(optimize_M_from_N(N), atol=conv_atol, rtol=conv_rtol):
-                        break
                     dM = kariNewM - M
                     dN = kariNewN - N
-                    x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
-                    #if x==0:
-                    #    break
+                    x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                     M = M + x*dM
                     N = N + x*dN
+                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
+                        break
+                    oldFx = fx
 
             elif algname == "alg06": # opt N no atoni opt N siteru wakedakara musiro osoi. alg03 yoriha tyoimasi?
+                oldFx = 1.0
                 for iteri in range(maxiter):
                     if iteri % 2 == 0:
                         kariNewM = optimize_M_from_N(N)
                         kariNewN = optimize_N_from_M(kariNewM)
-                        if M.__eq__(kariNewM, atol=conv_atol, rtol=conv_rtol):
-                            break
                         dM = kariNewM - M
                         dN = kariNewN - N
-                        x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
-                        if x==0:
-                            break
+                        x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                         M = M + x*dM
                         N = N + x*dN
                     else:
                         kariNewN = optimize_N_from_M(M)
                         kariNewM = optimize_M_from_N(kariNewN)
-                        if N.__eq__(kariNewN, atol=conv_atol, rtol=conv_rtol):
-                            break
                         dM = kariNewM - M
                         dN = kariNewN - N
-                        x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
-                        if x==0:
-                            break
+                        x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                         M = M + x*dM
                         N = N + x*dN
+                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
+                        break
+                    oldFx = fx
 
             elif algname == "alg07": # hayamenohou dakedo alg04 no hou ga ii
+                oldFx = 1.0
                 for iteri in range(maxiter):
                     if iteri % 2 == 0:
                         kariNewM = optimize_M_from_N(N)
                         kariNewN = optimize_N_from_M(kariNewM)
-                        if M.__eq__(kariNewM, atol=conv_atol, rtol=conv_rtol):
-                            break
                         dM = kariNewM - M
                         dN = kariNewN - N
-                        x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
+                        x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                         if x==0:
                             break
                         M = M + x*dM
                     else:
                         kariNewN = optimize_N_from_M(M)
                         kariNewM = optimize_M_from_N(kariNewN)
-                        if N.__eq__(kariNewN, atol=conv_atol, rtol=conv_rtol):
-                            break
                         dM = kariNewM - M
                         dN = kariNewN - N
-                        x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
+                        x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                         if x==0:
                             break
                         N = N + x*dN
+                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
+                        break
+                    oldFx = fx
 
-            elif algname == "alg14": # nanka scipy kusomiteena teisi suru...
+            elif algname == "alg14": # nanka scipy seido matomojanee..
+                oldFx = 1.0
                 for iteri in range(maxiter):
                     kariNewM = optimize_M_from_N(N)
                     kariNewN = optimize_N_from_M(kariNewM)
-                    if M.__eq__(kariNewM, atol=conv_atol, rtol=conv_rtol):
-                        break
                     dM = kariNewM - M
                     dN = kariNewN - N
-                    x,y = solve_argmin_xxyy_equation(get_equation_coeffs(M,N,dM,dN))
-                    if x==0 and y==0:
-                        break
+                    (x,y),fx = solve_argmin_xxyy_equation(get_equation_coeffs(M,N,dM,dN))
                     M = M + x*dM
                     N = N + y*dN
+                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
+                        break
+                    oldFx = fx
 
+            elif algname == "alg15": # dakaratoitte kousitemo css mada taishou janaikaranaa
+                oldFx = 1.0
+                for iteri in range(maxiter):
+                    kariNewM = optimize_M_from_N(N)
+                    kariNewN = optimize_N_from_M(kariNewM)
+                    dM = kariNewM - M
+                    dN = kariNewN - N
+                    css = get_equation_coeffs(M,N,dM,dN)
+                    (x,y),fx = solve_argmin_xxyy_equation(css)
+                    if True:# x==1.5 and y==1.5:
+                        x,fx = solve_argmin_xxxx_equation(css_to_cs(css))
+                        y = x
+                    M = M + x*dM
+                    N = N + y*dN
+                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
+                        break
+                    oldFx = fx
 
             elif algname == "msn01":
                 M,S,N = tnd.truncated_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
@@ -453,7 +467,7 @@ class UnbridgeBondEnv:
                 N = S*N
 
 
-
+            memo["abssub"] = fx
             memo["iter_times"] = iteri
 
 
