@@ -273,4 +273,72 @@ def epm0235():
     plt.legend()
     plt.show()
 
-epm0235()
+
+
+
+# ippai mitemiyo-
+def epm0236():
+    def ikuze(seed):
+        np.random.seed(seed=seed)
+
+        b,chi = 10,8
+        n = b*b
+        H = random_tensor((b,b,n),["kl","kr","extraction"])
+        V = H * H.adjoint(["kl","kr"],style="aster")
+        A = random_tensor((b,b),["kl","kr"])
+        ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
+
+        plt.figure()
+
+        memo = {}
+        M,S,N = ENV.optimal_truncate(A, maxiter=1000, conv_atol=1e-14, conv_rtol=1e-14, chi=chi, memo=memo, algname="alg04")
+        trueError = memo["sq_diff"]*(1-1e-10)
+
+        def yaru(algname, kasoku, color):
+            if type(kasoku) == str:
+                title = f"{algname}({kasoku})"
+            else:
+                title = f"{algname}({kasoku:4.2f})"
+            print(title)
+            memo = {}
+            M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname=algname, kasoku=kasoku)
+            df = pd.DataFrame({"y": memo.pop("fxs"), "x":np.arange(1,memo["iter_times"]+1)})
+            df["my"] = df.y - trueError
+            df["logx"] = np.log(df.x)
+            df["logmy"] = np.log(df.my)
+            df["dlogx"] = df.logx.shift(-1) - df.logx
+            df["dlogmy"] = df.logmy.shift(-1) - df.logmy
+            df["-dlogx__dlogmy"] = -df["dlogx"]/df["dlogmy"] #== logmy wo herasunoni kakaru logx. tiisai houga ii!
+            df["tadasing_cost"] = df["-dlogx__dlogmy"]
+            df["smoothed_tadasing_cost"] = df.tadasing_cost.rolling(5).mean()
+
+
+            #plt.plot(df.logx, df.logmy, label=f"{algname}({kasoku:4.2f})", color=color)
+            plt.plot(df.logmy, df.smoothed_tadasing_cost, label=title, color=color) #migikara hidarini jikanha susumuyo
+            print(S)
+            print(memo)
+            print()
+
+        yaru("alg04", "", "black")
+
+        for kasoku in np.linspace(1.65,1.95,11):
+            yaru("alg08", kasoku, cm.gist_rainbow(float(kasoku-1.65)*3.3))
+
+        yaru("alg01", 1, "gray")
+        
+
+        plt.xscale("linear")
+        plt.yscale("log")
+        plt.ylabel("times spent for getting over the err")
+        plt.xlabel("err")
+        plt.legend()
+        plt.title(f"epm0236[b={b},chi={chi},seed={seed}]")
+        plt.savefig(f"epm0236_oups/[b={b}, chi={chi}, seed={seed}].png", dpi=600)
+
+    for seed in range(100):
+        ikuze(seed)
+
+
+
+
+epm0236()
