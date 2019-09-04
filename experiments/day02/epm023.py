@@ -7,6 +7,7 @@ import scipy.optimize as spo
 import random
 from colorama import Fore, Back, Style
 import math
+from matplotlib import pyplot as plt
 
 
 
@@ -34,7 +35,7 @@ def epm0230():
 
 # test katamuki keisan!
 def epm0231():
-    b,chi = 4,3
+    b,chi = 20,10
     n = b*b
     H = random_tensor((b,b,n),["kl","kr","extraction"])
     V = H * H.adjoint(["kl","kr"],style="aster")
@@ -43,7 +44,7 @@ def epm0231():
 
     #algnames = ["alg01", "alg07", "alg04", "alg04'", "alg14"]
     #algnames = ["alg04", "alg14", "alg15"]
-    algnames = ["alg04", "alg01", "alg02","alg08", "alg09"]
+    algnames = ["alg01", "alg08", "alg04"]
     for algname in algnames:
         print(algname)
         memo = {}
@@ -53,6 +54,39 @@ def epm0231():
         #print("\n\n\n\n\n")
         print()
         lastM = M
+
+
+# test katamuki keisan!
+def epm0231():
+    b,chi = 10,8
+    n = b*b
+    H = random_tensor((b,b,n),["kl","kr","extraction"])
+    V = H * H.adjoint(["kl","kr"],style="aster")
+    A = random_tensor((b,b),["kl","kr"])
+    ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
+
+    plt.figure()
+    #algnames = ["alg01", "alg07", "alg04", "alg04'", "alg14"]
+    #algnames = ["alg04", "alg14", "alg15"]
+    algnames = ["alg08", "alg01", "alg04"]
+    trueError = None
+    for algname in algnames:
+        print(algname)
+        memo = {}
+        M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname=algname)
+        if trueError is None:
+            trueError = memo["sq_diff"]*(1-1e-7)
+        plt.plot(np.array(memo.pop("fxs"))-trueError, label=algname)
+        print(S)
+        print(memo)
+        print()
+
+    plt.xscale("log")
+    plt.yscale("log")
+    plt.legend()
+    plt.show()
+
+
 
 
 epm0231()

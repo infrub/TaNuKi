@@ -288,23 +288,29 @@ class UnbridgeBondEnv:
                 return cs
 
 
+            fxs = []
+            oldFx = 1.0
             if algname == "alg01":
                 for iteri in range(maxiter):
                     oldM = M
                     M = optimize_M_from_N(N)
                     N = optimize_N_from_M(M)
-                    if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
+                    fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
+                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
-                fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
+                    fxs.append(fx)
+                    oldFx = fx
 
             elif algname == "alg02": # sindou suru. kuso osoi.
                 for iteri in range(maxiter):
                     oldM = M
                     M = optimize_M_from_N(N)
                     N = optimize_N_from_M(oldM)
-                    if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
+                    fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
+                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
-                fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
+                    fxs.append(fx)
+                    oldFx = fx
 
             elif algname == "alg03": # musiro osoi.
                 oldFx = 1.0
@@ -318,6 +324,7 @@ class UnbridgeBondEnv:
                     N = N + x*dN
                     if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
+                    fxs.append(fx)
                     oldFx = fx
             
             elif algname == "alg04": # hayame
@@ -332,6 +339,7 @@ class UnbridgeBondEnv:
                     N = N + x*dN
                     if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
+                    fxs.append(fx)
                     oldFx = fx
 
             elif algname == "alg04'": # hayame
@@ -346,6 +354,7 @@ class UnbridgeBondEnv:
                     N = N + x*dN
                     if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
+                    fxs.append(fx)
                     oldFx = fx
 
             elif algname == "alg05": # gomikasu. alg02 de sindou surunoni ataru toki, dM,dN majide kankei nai houkou ni ikou to suru
@@ -360,6 +369,7 @@ class UnbridgeBondEnv:
                     N = N + x*dN
                     if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
+                    fxs.append(fx)
                     oldFx = fx
 
             elif algname == "alg06": # opt N no atoni opt N siteru wakedakara musiro osoi. alg03 yoriha tyoimasi?
@@ -383,6 +393,7 @@ class UnbridgeBondEnv:
                         N = N + x*dN
                     if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
+                    fxs.append(fx)
                     oldFx = fx
 
             elif algname == "alg07": # hayamenohou dakedo alg04 no hou ga ii
@@ -408,29 +419,35 @@ class UnbridgeBondEnv:
                         N = N + x*dN
                     if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
+                    fxs.append(fx)
                     oldFx = fx
 
             elif algname == "alg08": # SOR ppoku kasoku # soukantannni ikuwake naine~
                 kasoku = 1.618
+                oldFx = 1.0
                 for iteri in range(maxiter):
                     oldM = M
                     oldN = N
                     M = (optimize_M_from_N(N)-M)*kasoku+M
                     N = (optimize_N_from_M(M)-N)*kasoku+N
-                    if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
+                    fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
+                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
-                fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
+                    fxs.append(fx)
+                    oldFx = fx
 
             elif algname == "alg09": # SOR ppoku kasoku # maa alg02 tokaiu gomi yoriha masideha aru
                 kasoku = 0.618
+                oldFx = 1.0
                 for iteri in range(maxiter):
                     oldM = M
                     oldN = N
                     M = (optimize_M_from_N(oldN)-M)*kasoku+M
                     N = (optimize_N_from_M(oldM)-N)*kasoku+N
-                    if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
+                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
-                fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
+                    fxs.append(fx)
+                    oldFx = fx
 
             elif algname == "alg14": # nanka scipy seido matomojanee..
                 oldFx = 1.0
@@ -444,6 +461,7 @@ class UnbridgeBondEnv:
                     N = N + y*dN
                     if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
+                    fxs.append(fx)
                     oldFx = fx
 
             elif algname == "alg15": # dakaratoitte kousitemo css mada taishou janaikaranaa
@@ -462,6 +480,7 @@ class UnbridgeBondEnv:
                     N = N + y*dN
                     if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
+                    fxs.append(fx)
                     oldFx = fx
 
             elif algname == "msn01":
@@ -493,6 +512,7 @@ class UnbridgeBondEnv:
                 N = S*N
 
 
+            memo["fxs"] = fxs
             memo["sq_diff"] = fx
             memo["iter_times"] = iteri
 
