@@ -9,6 +9,7 @@ import warnings
 import time
 import math
 import numpy,scipy
+import random
 
 
 
@@ -489,6 +490,27 @@ class UnbridgeBondEnv:
                     fxs.append(fx)
                     oldFx = fx
 
+            elif algname == "alg21":
+                if "kasokus" in kwargs:
+                    kasokus = kwargs["kasokus"]
+                else:
+                    kasokus = [1.6,1.65,1.7,1.75,1.8,1.85,1.9,1.94]
+                oldFx = 1.0
+                for iteri in range(maxiter):
+                    kasoku = random.choice(kasokus)
+                    oldM = M
+                    oldN = N
+                    M = (optimize_M_from_N(N)-M)*kasoku+M
+                    N = (optimize_N_from_M(M)-N)*kasoku+N
+                    fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
+                    fxs.append(fx)
+                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
+                        break
+                    oldFx = fx
+
+
+
+
             elif algname == "msn01":
                 M,S,N = tnd.truncated_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
                 for iteri in range(maxiter):
@@ -516,6 +538,9 @@ class UnbridgeBondEnv:
                     N = N + x*dN
                     M,S,N = tnd.truncated_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
                 N = S*N
+
+            else:
+                raise Exception(f"no such algname == {algname}")
 
 
             memo["fxs"] = fxs

@@ -479,7 +479,7 @@ def epm0238():
         plt.savefig(f"epm0238_oups/[b={b}, chi={chi}, seed={seed}].png", dpi=400)
         #plt.show()
 
-    for seed in range(100):
+    for seed in [100]:
         print(f"seed={seed}")
         ikuze(seed)
         print("\n")
