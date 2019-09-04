@@ -8,7 +8,7 @@ from tanuki.onedim.models import *
 import warnings
 import time
 import math
-import numpy
+import numpy,scipy
 
 
 # A bond in TN is a bridge :<=> when remove the bond, the TN is disconnected into left and right
@@ -147,12 +147,54 @@ class UnbridgeBondEnv:
                 fx = cs[0]
                 for xkouho in xkouhos: #TODO totsu nanjanaika? dattara for iranaiyone
                     if np.iscomplex(xkouho): continue
+                    xkouho = np.real(xkouho)
                     fxkouho = cs[0] + cs[1] * xkouho + cs[2] * xkouho**2 + cs[3] * xkouho**3 + cs[4] * xkouho**4
                     if fxkouho < fx:
                         fx = fxkouho
                         x = xkouho
-                print(f"   {np.real(x):.6f}")
+                print(f"  {x:.10f},  {fx:.10e}")
                 return x
+
+            def solve_argmin_xxyy_equation(css):
+                # x,y = argmin( \sum_{i,j=0..2} x^i*y^j css[i][j] ) # css is real, x,y is real.
+                def f(xy):
+                    x,y = tuple(xy)
+                    re = 0.0
+                    for i in range(3):
+                        for j in range(3):
+                            re += x**i*y**j*css[i][j]
+                    return re
+
+                def jac(xy):
+                    x,y = tuple(xy)
+                    re = [0.0,0.0]
+                    for i in range(3):
+                        for j in range(3):
+                            if i>=1:
+                                re[0] += i*x**(i-1)*y**j*css[i][j]
+                            if j>=1:
+                                re[1] += x**i*j*y**(j-1)*css[i][j]
+                    return np.array(re)
+
+                def hess(xy):
+                    x,y = tuple(xy)
+                    re = [[0.0,0.0],[0.0,0.0]]
+                    for i in range(3):
+                        for j in range(3):
+                            if i>=2:
+                                re[0][0] += i*(i-1)*x**(i-2)*y**j*css[i][j]
+                            if i>=1 and j>=1:
+                                re[0][1] += i*x**(i-1)*j*y**(j-1)*css[i][j]
+                                re[1][0] += i*x**(i-1)*j*y**(j-1)*css[i][j]
+                            if j>=2:
+                                re[1][1] += x**i*j*(j-1)*y**(j-2)*css[i][j]
+                    return np.array(re)
+
+                result = scipy.optimize.minimize(f, np.array([0.5,0.5]), jac=jac, hess=hess, method="Newton-CG")
+                xy = result["x"]
+                fxy = result["fun"]
+                print(f"  {xy[0]:.10f},  {xy[1]:.10f},  {fxy:.10e}")
+                return xy
 
             def css_to_cs(css):
                 cs = [0,0,0,0,0]
@@ -366,6 +408,21 @@ class UnbridgeBondEnv:
                         if x==0:
                             break
                         N = N + x*dN
+
+            elif algname == "alg14": # nanka scipy kusomiteena teisi suru...
+                for iteri in range(maxiter):
+                    kariNewM = optimize_M_from_N(N)
+                    kariNewN = optimize_N_from_M(kariNewM)
+                    if M.__eq__(kariNewM, atol=conv_atol, rtol=conv_rtol):
+                        break
+                    dM = kariNewM - M
+                    dN = kariNewN - N
+                    x,y = solve_argmin_xxyy_equation(get_equation_coeffs(M,N,dM,dN))
+                    if x==0 and y==0:
+                        break
+                    M = M + x*dM
+                    N = N + y*dN
+
 
             elif algname == "msn01":
                 M,S,N = tnd.truncated_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
