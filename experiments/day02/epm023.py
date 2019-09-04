@@ -173,7 +173,7 @@ def epm0233():
 
 
 
-# katamuki mitemiyou
+# fitting dekinaikana-
 def epm0234():
     b,chi = 10,8
     n = b*b
@@ -196,8 +196,12 @@ def epm0234():
         xs = np.arange(1,ys.size+1)
         c1xs = np.log10(xs)
         c1ys = 1/ys
+        c2xs = xs**0.1
+        c2ys = np.log(ys)
+        c3ys = np.log(5+1*c2ys)
+        c3xs = np.log(xs)
 
-        plt.plot(c1xs, c1ys, label=f"{algname}({kasoku:4.2f})", color=color)
+        plt.plot(c3xs, c3ys, label=f"{algname}({kasoku:4.2f})", color=color)
         print(S)
         print(memo)
         print()
