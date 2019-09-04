@@ -296,9 +296,9 @@ class UnbridgeBondEnv:
                     M = optimize_M_from_N(N)
                     N = optimize_N_from_M(M)
                     fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
+                    fxs.append(fx)
                     if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
-                    fxs.append(fx)
                     oldFx = fx
 
             elif algname == "alg02": # sindou suru. kuso osoi.
@@ -307,9 +307,9 @@ class UnbridgeBondEnv:
                     M = optimize_M_from_N(N)
                     N = optimize_N_from_M(oldM)
                     fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
+                    fxs.append(fx)
                     if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
-                    fxs.append(fx)
                     oldFx = fx
 
             elif algname == "alg03": # musiro osoi.
@@ -322,9 +322,9 @@ class UnbridgeBondEnv:
                     x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                     M = M + x*dM
                     N = N + x*dN
+                    fxs.append(fx)
                     if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
-                    fxs.append(fx)
                     oldFx = fx
             
             elif algname == "alg04": # hayame
@@ -337,9 +337,9 @@ class UnbridgeBondEnv:
                     x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                     M = M + x*dM
                     N = N + x*dN
+                    fxs.append(fx)
                     if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
-                    fxs.append(fx)
                     oldFx = fx
 
             elif algname == "alg04'": # hayame
@@ -352,9 +352,9 @@ class UnbridgeBondEnv:
                     x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                     M = M + x*dM
                     N = N + x*dN
+                    fxs.append(fx)
                     if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
-                    fxs.append(fx)
                     oldFx = fx
 
             elif algname == "alg05": # gomikasu. alg02 de sindou surunoni ataru toki, dM,dN majide kankei nai houkou ni ikou to suru
@@ -434,9 +434,9 @@ class UnbridgeBondEnv:
                     M = (optimize_M_from_N(N)-M)*kasoku+M
                     N = (optimize_N_from_M(M)-N)*kasoku+N
                     fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
+                    fxs.append(fx)
                     if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
-                    fxs.append(fx)
                     oldFx = fx
 
             elif algname == "alg09": # SOR ppoku kasoku # maa alg02 tokaiu gomi yoriha masideha aru
@@ -450,9 +450,9 @@ class UnbridgeBondEnv:
                     oldN = N
                     M = (optimize_M_from_N(oldN)-M)*kasoku+M
                     N = (optimize_N_from_M(oldM)-N)*kasoku+N
+                    fxs.append(fx)
                     if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
                         break
-                    fxs.append(fx)
                     oldFx = fx
 
             elif algname == "alg14": # nanka scipy seido matomojanee..
@@ -520,7 +520,7 @@ class UnbridgeBondEnv:
 
             memo["fxs"] = fxs
             memo["sq_diff"] = fx
-            memo["iter_times"] = iteri
+            memo["iter_times"] = iteri+1
 
 
         M,S,N = tnd.truncated_svd(M*N, self.ket_left_labels, self.ket_right_labels, chi=chi)

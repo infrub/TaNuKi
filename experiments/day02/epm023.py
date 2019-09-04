@@ -9,6 +9,7 @@ from colorama import Fore, Back, Style
 import math
 from matplotlib import pyplot as plt
 import matplotlib.cm as cm
+import pandas as pd
 
 
 # test koukahou katamukikeisannnashi
@@ -194,14 +195,16 @@ def epm0234():
         M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname=algname, kasoku=kasoku)
         ys = np.array(memo.pop("fxs"))
         xs = np.arange(1,ys.size+1)
-        c1xs = np.log10(xs)
+        c1xs = np.log(xs)
         c1ys = 1/ys
         c2xs = xs**0.1
         c2ys = np.log(ys)
         c3ys = np.log(5+1*c2ys)
         c3xs = np.log(xs)
+        c4xs = np.log(xs)
+        c4ys = np.log(ys-trueError)
 
-        plt.plot(c3xs, c3ys, label=f"{algname}({kasoku:4.2f})", color=color)
+        plt.plot(c4xs, c4ys, label=f"{algname}({kasoku:4.2f})", color=color)
         print(S)
         print(memo)
         print()
@@ -220,4 +223,54 @@ def epm0234():
     plt.show()
 
 
-epm0234()
+
+# katamuki mitemiyo-
+def epm0235():
+    b,chi = 10,8
+    n = b*b
+    H = random_tensor((b,b,n),["kl","kr","extraction"])
+    V = H * H.adjoint(["kl","kr"],style="aster")
+    A = random_tensor((b,b),["kl","kr"])
+    ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
+
+    plt.figure()
+
+    memo = {}
+    M,S,N = ENV.optimal_truncate(A, maxiter=1000, conv_atol=1e-14, conv_rtol=1e-14, chi=chi, memo=memo, algname="alg04")
+    trueError = memo["sq_diff"]*(1-1e-10)
+
+    def yaru(algname, kasoku, color):
+        print(f"{algname}({kasoku:4.2f})")
+        memo = {}
+        M,S,N = ENV.optimal_truncate(A, maxiter=400, chi=chi, memo=memo, algname=algname, kasoku=kasoku)
+        df = pd.DataFrame({"y": memo.pop("fxs"), "x":np.arange(1,memo["iter_times"]+1)})
+        df["my"] = df.y - trueError
+        df["logx"] = np.log(df.x)
+        df["logmy"] = np.log(df.my)
+        df["dlogx"] = df.logx.shift(-1) - df.logx
+        df["dlogmy"] = df.logmy.shift(-1) - df.logmy
+        df["-dlogx__dlogmy"] = -df["dlogx"]/df["dlogmy"] #== logmy wo herasunoni kakaru logx. tiisai houga ii!
+        df["tadasing_cost"] = df["-dlogx__dlogmy"]
+        df["smoothed_tadasing_cost"] = df.tadasing_cost.rolling(5).mean()
+
+
+        #plt.plot(df.logx, df.logmy, label=f"{algname}({kasoku:4.2f})", color=color)
+        plt.plot(df.logmy, df.smoothed_tadasing_cost, label=f"{algname}({kasoku:4.2f})", color=color) #migikara hidarini jikanha susumuyo
+        print(S)
+        print(memo)
+        print()
+
+    yaru("alg04", 1, "black")
+
+    for kasoku in np.linspace(1.65,1.95,11):
+        yaru("alg08", kasoku, cm.gist_rainbow(float(kasoku-1.65)*3.3))
+
+    yaru("alg01", 1, "gray")
+    
+
+    plt.xscale("linear")
+    plt.yscale("log")
+    plt.legend()
+    plt.show()
+
+epm0235()
