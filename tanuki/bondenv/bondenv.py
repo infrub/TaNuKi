@@ -60,7 +60,7 @@ class UnbridgeBondEnv:
         self.bra_right_labels = aster_labels(ket_right_labels)
 
 
-    def optimal_truncate(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, memo=None, algname="alg01", **kwargs):
+    def optimal_truncate(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, memo=None, algname="", **kwargs):
         if memo is None:
             memo = {}
         memo["algname"] = algname
@@ -159,54 +159,12 @@ class UnbridgeBondEnv:
                 if loglevel>=20: print(f"  {x:.10f},  {fx:.10e}")
                 return x,fx
 
-            def solve_argmin_xxyy_equation(css):
-                # x,y = argmin( \sum_{i,j=0..2} x^i*y^j css[i][j] ) # css is real, x,y is real.
-                def f(xy):
-                    x,y = tuple(xy)
-                    re = 0.0
-                    for i in range(3):
-                        for j in range(3):
-                            re += x**i*y**j*css[i][j]
-                    return re
-
-                def jac(xy):
-                    x,y = tuple(xy)
-                    re = [0.0,0.0]
-                    for i in range(3):
-                        for j in range(3):
-                            if i>=1:
-                                re[0] += i*x**(i-1)*y**j*css[i][j]
-                            if j>=1:
-                                re[1] += x**i*j*y**(j-1)*css[i][j]
-                    return np.array(re)
-
-                def hess(xy):
-                    x,y = tuple(xy)
-                    re = [[0.0,0.0],[0.0,0.0]]
-                    for i in range(3):
-                        for j in range(3):
-                            if i>=2:
-                                re[0][0] += i*(i-1)*x**(i-2)*y**j*css[i][j]
-                            if i>=1 and j>=1:
-                                re[0][1] += i*x**(i-1)*j*y**(j-1)*css[i][j]
-                                re[1][0] += i*x**(i-1)*j*y**(j-1)*css[i][j]
-                            if j>=2:
-                                re[1][1] += x**i*j*(j-1)*y**(j-2)*css[i][j]
-                    return np.array(re)
-
-                result = scipy.optimize.minimize(f, np.array([1.5,1.5]), jac=jac, hess=hess, method="Newton-CG")
-                xy = result["x"]
-                fxy = result["fun"]
-                if loglevel>=20: print(f"  {xy[0]:.10f},  {xy[1]:.10f},  {fxy:.10e}")
-                return xy,fxy
-
             def css_to_cs(css):
                 cs = [0,0,0,0,0]
                 for i in range(3):
                     for k in range(3):
                         cs[i+k] += css[i][k]
                 return cs
-
 
             def get_equation_coeffs(M,N,dM,dN):
                 Tss = [[0,0],[0,0]]
@@ -240,311 +198,74 @@ class UnbridgeBondEnv:
                 return css
 
 
-            ket_ms_label, ket_sn_label = ket_mn_label, ket_mn_label
-            bra_ms_label, bra_sn_label = bra_mn_label, bra_mn_label
-            def optimize_M_from_S_N(S,N):
-                Sh = S.adjoint(ket_ms_label, ket_sn_label, style="aster")
-                Nh = N.adjoint(ket_sn_label, self.ket_right_labels, style="aster")
-                B = S * N * ETA * Nh * Sh
-                C = Cbase * Nh * Sh
-                Mshape = B.dims(self.ket_left_labels+[ket_ms_label])
-                B = B.to_matrix(self.bra_left_labels+[bra_ms_label], self.ket_left_labels+[ket_ms_label])
-                C = C.to_vector(self.bra_left_labels+[bra_ms_label])
-                M = xp.linalg.solve(B, C, assume_a="pos")
-
-                M = tnc.vector_to_tensor(M, Mshape, self.ket_left_labels+[ket_ms_label])
-                return M
-
-            def optimize_N_from_M_S(M,S):
-                Mh = M.adjoint(self.ket_left_labels, ket_ms_label, style="aster")
-                Sh = S.adjoint(ket_ms_label, ket_sn_label, style="aster")
-                B = Sh * Mh * ETA * M * S
-                C = Sh * Mh * Cbase
-                Nshape = B.dims([ket_sn_label]+self.ket_right_labels)
-                B = B.to_matrix([bra_sn_label]+self.bra_right_labels, [ket_sn_label]+self.ket_right_labels)
-                C = C.to_vector([bra_sn_label]+self.bra_right_labels)
-                N = xp.linalg.solve(B, C, assume_a="pos")
-                N = tnc.vector_to_tensor(N, Nshape, [ket_sn_label]+self.ket_right_labels)
-                return N
-
-            def get_equation_coeffs_msn(S,M,N,dM,dN):
-                Tss = [[0,0],[0,0]]
-                Tss[0][0] = M*S*N-sigma0
-                Tss[1][0] = dM*S*N
-                Tss[0][1] = M*S*dN
-                Tss[1][1] = dM*S*dN
-                Thss = [[0,0],[0,0]]
-                for i in range(2):
-                    for j in range(2):
-                        Thss[i][j] = Tss[i][j].adjoint()
-                # minimize_x,y || \sum_{i=0,1}{j=0,1} x^i y^j T[i,j] * HETA ||^2
-
-                cs = [0,0,0,0,0]
-                for i in range(2):
-                    for j in range(2):
-                        for k in range(2):
-                            for l in range(2):
-                                cs[i+j+k+l] += (Tss[i][k] * ETA * Thss[j][l]).real().to_scalar()
-
-                return cs
-
-
-            fxs = []
+            sqdiff_history = []
             oldFx = 1.0
-            if algname == "alg01":
+
+            if algname == "NOR": # no over-relaxation
                 for iteri in range(maxiter):
                     oldM = M
                     M = optimize_M_from_N(N)
                     N = optimize_N_from_M(M)
                     fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
-                    fxs.append(fx)
-                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
+                    sqdiff_history.append(fx)
+                    if abs(fx-oldFx) <= oldFx*conv_rtol + conv_atol:
                         break
                     oldFx = fx
 
-            elif algname == "alg02": # sindou suru. kuso osoi.
+            elif algname == "COR": # constant over-relaxation
+                omega = kwargs.get("omega", 1.7)
                 for iteri in range(maxiter):
                     oldM = M
-                    M = optimize_M_from_N(N)
-                    N = optimize_N_from_M(oldM)
-                    fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
-                    fxs.append(fx)
-                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
+                    stM = optimize_M_from_N(N)
+                    M = stM*omega - (omega-1)*M
+                    stN = optimize_N_from_M(M)
+                    N = stN*omega - (omega-1)*N
+                    #fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
+                    fx = ((stM*stN-sigma0)*ETA*(stM*stN-sigma0).adjoint()).real().to_scalar()
+                    sqdiff_history.append(fx)
+                    if abs(fx-oldFx) <= oldFx*conv_rtol + conv_atol:
                         break
                     oldFx = fx
 
-            elif algname == "alg03": # musiro osoi.
-                oldFx = 1.0
+            elif algname == "LBOR": # local best over-relaxation
                 for iteri in range(maxiter):
-                    kariNewM = optimize_M_from_N(N)
-                    kariNewN = optimize_N_from_M(M)
-                    dM = kariNewM - M
-                    dN = kariNewN - N
+                    oldM = M
+                    stM = optimize_M_from_N(N)
+                    stN = optimize_N_from_M(stM)
+                    dM = stM - M
+                    dN = stN - N
                     x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                     M = M + x*dM
                     N = N + x*dN
-                    fxs.append(fx)
-                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
-                        break
-                    oldFx = fx
-            
-            elif algname == "alg04": # hayame
-                oldFx = 1.0
-                for iteri in range(maxiter):
-                    kariNewM = optimize_M_from_N(N)
-                    kariNewN = optimize_N_from_M(kariNewM)
-                    dM = kariNewM - M
-                    dN = kariNewN - N
-                    x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
-                    M = M + x*dM
-                    N = N + x*dN
-                    fxs.append(fx)
-                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
+                    #fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
+                    fx = ((stM*stN-sigma0)*ETA*(stM*stN-sigma0).adjoint()).real().to_scalar()
+                    sqdiff_history.append(fx)
+                    if abs(fx-oldFx) <= oldFx*conv_rtol + conv_atol:
                         break
                     oldFx = fx
 
-            elif algname == "alg04'": # hayame
-                oldFx = 1.0
+            elif algname == "ROR": # randomized over-relaxation
+                omega_cands = kwargs.get("omega_cands",[1.6,1.65,1.7,1.72,1.74,1.76,1.78,1.8,1.85,1.94,1.95])
                 for iteri in range(maxiter):
-                    kariNewN = optimize_N_from_M(M)
-                    kariNewM = optimize_M_from_N(kariNewN)
-                    dM = kariNewM - M
-                    dN = kariNewN - N
-                    x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
-                    M = M + x*dM
-                    N = N + x*dN
-                    fxs.append(fx)
-                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
-                        break
-                    oldFx = fx
-
-            elif algname == "alg05": # gomikasu. alg02 de sindou surunoni ataru toki, dM,dN majide kankei nai houkou ni ikou to suru
-                oldFx = 1.0
-                for iteri in range(maxiter):
-                    kariNewM = optimize_M_from_N(optimize_N_from_M(M))
-                    kariNewN = optimize_N_from_M(optimize_M_from_N(N))
-                    dM = kariNewM - M
-                    dN = kariNewN - N
-                    x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
-                    M = M + x*dM
-                    N = N + x*dN
-                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
-                        break
-                    fxs.append(fx)
-                    oldFx = fx
-
-            elif algname == "alg06": # opt N no atoni opt N siteru wakedakara musiro osoi. alg03 yoriha tyoimasi?
-                oldFx = 1.0
-                for iteri in range(maxiter):
-                    if iteri % 2 == 0:
-                        kariNewM = optimize_M_from_N(N)
-                        kariNewN = optimize_N_from_M(kariNewM)
-                        dM = kariNewM - M
-                        dN = kariNewN - N
-                        x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
-                        M = M + x*dM
-                        N = N + x*dN
-                    else:
-                        kariNewN = optimize_N_from_M(M)
-                        kariNewM = optimize_M_from_N(kariNewN)
-                        dM = kariNewM - M
-                        dN = kariNewN - N
-                        x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
-                        M = M + x*dM
-                        N = N + x*dN
-                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
-                        break
-                    fxs.append(fx)
-                    oldFx = fx
-
-            elif algname == "alg07": # hayamenohou dakedo alg04 no hou ga ii
-                oldFx = 1.0
-                for iteri in range(maxiter):
-                    if iteri % 2 == 0:
-                        kariNewM = optimize_M_from_N(N)
-                        kariNewN = optimize_N_from_M(kariNewM)
-                        dM = kariNewM - M
-                        dN = kariNewN - N
-                        x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
-                        if x==0:
-                            break
-                        M = M + x*dM
-                    else:
-                        kariNewN = optimize_N_from_M(M)
-                        kariNewM = optimize_M_from_N(kariNewN)
-                        dM = kariNewM - M
-                        dN = kariNewN - N
-                        x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
-                        if x==0:
-                            break
-                        N = N + x*dN
-                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
-                        break
-                    fxs.append(fx)
-                    oldFx = fx
-
-            elif algname == "alg08": # SOR ppoku kasoku # soukantannni ikuwake naine~
-                if "kasoku" in kwargs:
-                    kasoku = kwargs["kasoku"]
-                else:
-                    kasoku = 1.618
-                oldFx = 1.0
-                for iteri in range(maxiter):
+                    omega = random.choice(omega_cands)
                     oldM = M
-                    oldN = N
-                    M = (optimize_M_from_N(N)-M)*kasoku+M
-                    N = (optimize_N_from_M(M)-N)*kasoku+N
-                    fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
-                    fxs.append(fx)
-                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
+                    stM = optimize_M_from_N(N)
+                    M = stM*omega - (omega-1)*M
+                    stN = optimize_N_from_M(M)
+                    N = stN*omega - (omega-1)*N
+                    #fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
+                    fx = ((stM*stN-sigma0)*ETA*(stM*stN-sigma0).adjoint()).real().to_scalar()
+                    sqdiff_history.append(fx)
+                    if abs(fx-oldFx) <= oldFx*conv_rtol + conv_atol:
                         break
                     oldFx = fx
-
-            elif algname == "alg09": # SOR ppoku kasoku # maa alg02 tokaiu gomi yoriha masideha aru
-                if "kasoku" in kwargs:
-                    kasoku = kwargs["kasoku"]
-                else:
-                    kasoku = 0.618
-                oldFx = 1.0
-                for iteri in range(maxiter):
-                    oldM = M
-                    oldN = N
-                    M = (optimize_M_from_N(oldN)-M)*kasoku+M
-                    N = (optimize_N_from_M(oldM)-N)*kasoku+N
-                    fxs.append(fx)
-                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
-                        break
-                    oldFx = fx
-
-            elif algname == "alg14": # nanka scipy seido matomojanee..
-                oldFx = 1.0
-                for iteri in range(maxiter):
-                    kariNewM = optimize_M_from_N(N)
-                    kariNewN = optimize_N_from_M(kariNewM)
-                    dM = kariNewM - M
-                    dN = kariNewN - N
-                    (x,y),fx = solve_argmin_xxyy_equation(get_equation_coeffs(M,N,dM,dN))
-                    M = M + x*dM
-                    N = N + y*dN
-                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
-                        break
-                    fxs.append(fx)
-                    oldFx = fx
-
-            elif algname == "alg15": # dakaratoitte kousitemo css mada taishou janaikaranaa
-                oldFx = 1.0
-                for iteri in range(maxiter):
-                    kariNewM = optimize_M_from_N(N)
-                    kariNewN = optimize_N_from_M(kariNewM)
-                    dM = kariNewM - M
-                    dN = kariNewN - N
-                    css = get_equation_coeffs(M,N,dM,dN)
-                    (x,y),fx = solve_argmin_xxyy_equation(css)
-                    if True:# x==1.5 and y==1.5:
-                        x,fx = solve_argmin_xxxx_equation(css_to_cs(css))
-                        y = x
-                    M = M + x*dM
-                    N = N + y*dN
-                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
-                        break
-                    fxs.append(fx)
-                    oldFx = fx
-
-            elif algname == "alg21":
-                if "kasokus" in kwargs:
-                    kasokus = kwargs["kasokus"]
-                else:
-                    kasokus = [1.6,1.65,1.7,1.75,1.8,1.85,1.9,1.94]
-                oldFx = 1.0
-                for iteri in range(maxiter):
-                    kasoku = random.choice(kasokus)
-                    oldM = M
-                    oldN = N
-                    M = (optimize_M_from_N(N)-M)*kasoku+M
-                    N = (optimize_N_from_M(M)-N)*kasoku+N
-                    fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
-                    fxs.append(fx)
-                    if abs(fx-oldFx) < oldFx*conv_rtol+conv_atol:
-                        break
-                    oldFx = fx
-
-
-
-
-            elif algname == "msn01":
-                M,S,N = tnd.truncated_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
-                for iteri in range(maxiter):
-                    oldM = M
-                    M = optimize_M_from_S_N(S,N)
-                    N = optimize_N_from_M_S(M,S)
-                    M,S,N = tnd.truncated_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
-                    if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
-                        break
-                N = S*N
-
-            elif algname == "msn04":
-                M,S,N = tnd.truncated_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
-                for iteri in range(maxiter):
-                    kariNewM = optimize_M_from_S_N(S,N)
-                    kariNewN = optimize_N_from_M_S(kariNewM,S)
-                    if M.__eq__(kariNewM, atol=conv_atol, rtol=conv_rtol):
-                        break
-                    dM = kariNewM - M
-                    dN = kariNewN - N
-                    x = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs_msn(S,M,N,dM,dN)))
-                    if x==0:
-                        break
-                    M = M + x*dM
-                    N = N + x*dN
-                    M,S,N = tnd.truncated_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
-                N = S*N
 
             else:
                 raise Exception(f"no such algname == {algname}")
 
 
-            memo["fxs"] = fxs
-            memo["sq_diff"] = fx
+            memo["sqdiff_history"] = sqdiff_history
+            memo["sqdiff"] = fx
             memo["iter_times"] = iteri+1
 
 

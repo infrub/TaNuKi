@@ -179,9 +179,10 @@ def epm0241():
         ax2.set_xlim(0,min(100,ax2.get_xlim()[1]))
         plt.legend()
         plt.suptitle(f"epm0241[b={b},chi={chi},seed={seed}]")
-        plt.savefig(f"epm0241_oups/[b={b}, chi={chi}, seed={seed}].png", dpi=400)
+        #plt.savefig(f"epm0241_oups/[b={b}, chi={chi}, seed={seed}].png", dpi=400)
         plt.show()
 
+    ikuze(10,5,1)
     ikuze(20,10,8)
     #ikuze(30,15,11)
     #ikuze(20,1,9)
@@ -278,4 +279,4 @@ def epm0242():
 
 
 
-epm0242()
+epm0241()
