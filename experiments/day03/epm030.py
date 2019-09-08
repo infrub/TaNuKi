@@ -415,8 +415,8 @@ def epm0307():
 
 def epm0308():
     plt.figure()
-    plt.xlabel("chi")
-    plt.ylabel("bestOmega")
+    plt.xlabel("x")
+    plt.ylabel("y")
     for (b,epmName) in [(6,"epm0306"),(10,"epm0302"),(18,"epm0304")]:
         big_df = pd.read_csv(f"{epmName}_oups/{epmName}_meta.csv", index_col=False)
         chis = list(range(1,b))
@@ -429,7 +429,16 @@ def epm0308():
             bestOmegas.append(bestOmega)
             print(f"{b}, {chi}: {bestOmega}")
         print()
-        plt.plot(chis, bestOmegas, label=f"b={b}")
+        chis = np.array(chis)
+        bestOmegas = np.array(bestOmegas)
+        bo_c1s = 1/(2-bestOmegas)
+        #plt.plot(chis*b, bo_c1s, label=f"b={b}")
+        plt.plot(1/(chis*b), 2-bestOmegas, label=f"b={b}")
+        #plt.plot(np.log(chis)+np.log(b), bestOmegas, label=f"b={b}")
+    def f(x):
+        return 0.125*np.log(x)+0.8
+    plt.plot(np.linspace(0.002,0.2,1000), f(np.linspace(0.002,0.2,1000)), label=f"f")
+    plt.xscale("log")
     plt.legend()
     plt.show()
 

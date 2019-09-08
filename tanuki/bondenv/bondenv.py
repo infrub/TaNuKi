@@ -60,7 +60,7 @@ class UnbridgeBondEnv:
         self.bra_right_labels = aster_labels(ket_right_labels)
 
 
-    def optimal_truncate(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, memo=None, algname="", **kwargs):
+    def optimal_truncate(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, conv_sqdiff=0, memo=None, algname="", **kwargs):
         if memo is None:
             memo = {}
         memo["algname"] = algname
@@ -210,6 +210,8 @@ class UnbridgeBondEnv:
                     sqdiff_history.append(fx)
                     if abs(fx-oldFx) <= oldFx*conv_rtol + conv_atol:
                         break
+                    if fx <= conv_sqdiff:
+                        break
                     oldFx = fx
 
             elif algname == "COR": # constant over-relaxation
@@ -224,6 +226,8 @@ class UnbridgeBondEnv:
                     fx = ((stM*stN-sigma0)*ETA*(stM*stN-sigma0).adjoint()).real().to_scalar()
                     sqdiff_history.append(fx)
                     if abs(fx-oldFx) <= oldFx*conv_rtol + conv_atol:
+                        break
+                    if fx <= conv_sqdiff:
                         break
                     oldFx = fx
 
@@ -242,6 +246,8 @@ class UnbridgeBondEnv:
                     sqdiff_history.append(fx)
                     if abs(fx-oldFx) <= oldFx*conv_rtol + conv_atol:
                         break
+                    if fx <= conv_sqdiff:
+                        break
                     oldFx = fx
 
             elif algname == "ROR": # randomized over-relaxation
@@ -257,6 +263,8 @@ class UnbridgeBondEnv:
                     fx = ((stM*stN-sigma0)*ETA*(stM*stN-sigma0).adjoint()).real().to_scalar()
                     sqdiff_history.append(fx)
                     if abs(fx-oldFx) <= oldFx*conv_rtol + conv_atol:
+                        break
+                    if fx <= conv_sqdiff:
                         break
                     oldFx = fx
 
