@@ -60,7 +60,7 @@ class UnbridgeBondEnv:
         self.bra_right_labels = aster_labels(ket_right_labels)
 
 
-    def optimal_truncate(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, conv_sqdiff=0, memo=None, algname="NOR", **kwargs):
+    def optimal_truncate(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, conv_sqdiff=0, memo=None, algname="NOR", linalg_algname="solve", **kwargs):
         if memo is None:
             memo = {}
         start_time = time.time()
@@ -119,28 +119,29 @@ class UnbridgeBondEnv:
 
         else: # chi < n/b  ==>  chi*b<n  ==>  B is not singular
             assert chi <= max_chi_can_use_iterating_method # proven in test0167
-            memo["used_algorithm"] = "iterating_method"
 
-            def optimize_M_from_N(N):
+            def optimize_M_from_N(M,N):
                 Nh = N.adjoint(ket_mn_label, self.ket_right_labels, style="aster")
                 B = N * ETA * Nh
                 C = Cbase * Nh
-                Mshape = B.dims(self.ket_left_labels+[ket_mn_label])
+                Mshape = M.dims(self.ket_left_labels+[ket_mn_label])
                 B = B.to_matrix(self.bra_left_labels+[bra_mn_label], self.ket_left_labels+[ket_mn_label])
                 C = C.to_vector(self.bra_left_labels+[bra_mn_label])
-                M = xp.linalg.solve(B, C, assume_a="pos")
+                if linalg_algname == "solve":
+                    M = xp.linalg.solve(B, C, assume_a="pos")
 
                 M = tnc.vector_to_tensor(M, Mshape, self.ket_left_labels+[ket_mn_label])
                 return M
 
-            def optimize_N_from_M(M):
+            def optimize_N_from_M(M,N):
                 Mh = M.adjoint(self.ket_left_labels, ket_mn_label, style="aster")
                 B = Mh * ETA * M
                 C = Mh * Cbase
-                Nshape = B.dims([ket_mn_label]+self.ket_right_labels)
+                Nshape = N.dims([ket_mn_label]+self.ket_right_labels)
                 B = B.to_matrix([bra_mn_label]+self.bra_right_labels, [ket_mn_label]+self.ket_right_labels)
                 C = C.to_vector([bra_mn_label]+self.bra_right_labels)
-                N = xp.linalg.solve(B, C, assume_a="pos")
+                if linalg_algname == "solve":
+                    N = xp.linalg.solve(B, C, assume_a="pos")
                 N = tnc.vector_to_tensor(N, Nshape, [ket_mn_label]+self.ket_right_labels)
                 return N
 
@@ -198,14 +199,14 @@ class UnbridgeBondEnv:
                 return css
 
 
-            sqdiff_history = []
-            oldFx = 1.0
+            oldFx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
+            sqdiff_history = [oldFx]
 
             if algname == "NOR": # no over-relaxation
                 for iteri in range(maxiter):
                     oldM = M
-                    M = optimize_M_from_N(N)
-                    N = optimize_N_from_M(M)
+                    M = optimize_M_from_N(M,N)
+                    N = optimize_N_from_M(M,N)
                     fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
                     sqdiff_history.append(fx)
                     if abs(fx-oldFx) <= oldFx*conv_rtol + conv_atol:
@@ -218,9 +219,9 @@ class UnbridgeBondEnv:
                 omega = kwargs.get("omega", min(1.95,1.2+0.125*np.log(b*chi)))
                 for iteri in range(maxiter):
                     oldM = M
-                    stM = optimize_M_from_N(N)
+                    stM = optimize_M_from_N(M,N)
                     M = stM*omega - (omega-1)*M
-                    stN = optimize_N_from_M(M)
+                    stN = optimize_N_from_M(M,N)
                     N = stN*omega - (omega-1)*N
                     #fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
                     fx = ((stM*stN-sigma0)*ETA*(stM*stN-sigma0).adjoint()).real().to_scalar()
@@ -234,8 +235,8 @@ class UnbridgeBondEnv:
             elif algname == "LBOR": # local best over-relaxation
                 for iteri in range(maxiter):
                     oldM = M
-                    stM = optimize_M_from_N(N)
-                    stN = optimize_N_from_M(stM)
+                    stM = optimize_M_from_N(M,N)
+                    stN = optimize_N_from_M(stM,N)
                     dM = stM - M
                     dN = stN - N
                     x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
@@ -255,9 +256,9 @@ class UnbridgeBondEnv:
                 for iteri in range(maxiter):
                     omega = random.choice(omega_cands)
                     oldM = M
-                    stM = optimize_M_from_N(N)
+                    stM = optimize_M_from_N(M,N)
                     M = stM*omega - (omega-1)*M
-                    stN = optimize_N_from_M(M)
+                    stN = optimize_N_from_M(M,N)
                     N = stN*omega - (omega-1)*N
                     #fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
                     fx = ((stM*stN-sigma0)*ETA*(stM*stN-sigma0).adjoint()).real().to_scalar()
