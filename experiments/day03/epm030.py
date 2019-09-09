@@ -439,8 +439,11 @@ def epm0308():
         return 0.125*np.log(x)+0.8
     plt.plot(np.linspace(0.002,0.2,1000), f(np.linspace(0.002,0.2,1000)), label=f"f")
     plt.xscale("log")
+    plt.xlabel("1/(b*chi)")
+    plt.ylabel("2-omega")
     plt.legend()
     plt.show()
+    plt.savefig("epm0308_plot.png",dpi=400)
 
     # tanjun ni chi ni izon?
 

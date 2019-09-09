@@ -60,10 +60,9 @@ class UnbridgeBondEnv:
         self.bra_right_labels = aster_labels(ket_right_labels)
 
 
-    def optimal_truncate(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, conv_sqdiff=0, memo=None, algname="", **kwargs):
+    def optimal_truncate(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, conv_sqdiff=0, memo=None, algname="NOR", **kwargs):
         if memo is None:
             memo = {}
-        memo["algname"] = algname
         start_time = time.time()
 
         chi = max(1,chi)
@@ -78,10 +77,11 @@ class UnbridgeBondEnv:
         if chi >= min_chi_can_use_exact_solving:
             chi = min_chi_can_use_exact_solving
             #assert memo["has_enough_degree_of_freedom_to_solve_exactly"] #proven
-            memo["used_algorithm"] = "exact_solving"
+            algname = "exact_solving"
         else:
             #assert chi <= max_chi_can_use_iterating_method #proven
-            memo["used_algorithm"] = "iterating_method"
+            pass
+        memo["algname"] = algname
         memo["chi"] = chi
         memo["has_enough_degree_of_freedom_to_solve_exactly"] = (4*b*chi - 2*chi*chi) >= 2*n
 
@@ -98,7 +98,7 @@ class UnbridgeBondEnv:
         del S
 
 
-        if memo["used_algorithm"] == "exact_solving":
+        if algname == "exact_solving":
             # solve exactly
             # this case includes max_chi_can_use_iterating_method==0 case. (Because if n<b: exactly_solvable_chi==1).
 
@@ -215,7 +215,7 @@ class UnbridgeBondEnv:
                     oldFx = fx
 
             elif algname == "COR": # constant over-relaxation
-                omega = kwargs.get("omega", 1.7)
+                omega = kwargs.get("omega", min(1.95,1.2+0.125*np.log(b*chi)))
                 for iteri in range(maxiter):
                     oldM = M
                     stM = optimize_M_from_N(N)

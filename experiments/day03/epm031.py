@@ -117,13 +117,11 @@ def epm0310():
 
     
     #for b in [2,3,4,6,8,10,13,16,20,24,30]:
-    for b in [24,30]:
         if b <= 8:
             chis = np.linspace(1,b-1,b-1)
         else:
             chis = np.linspace(1,b-1,8)
         for chi in chis:
-            if b==24 and chi<16: continue
             chi = int(chi)
             for _ in range(10):
                 seed = int(datetime.now().timestamp()*100) % 1000
@@ -132,4 +130,51 @@ def epm0310():
 
 
 
-epm0310()
+
+
+
+def epm0311():
+    plt.figure()
+    
+    big_df = pd.read_csv(f"epm0310_oups/epm0310_meta.csv", index_col=False)
+    group_df = big_df.groupby(["b","chi"]).mean()
+    print(group_df)
+
+    bs = []
+    chis = []
+    omegas = []
+    for (b,chi),sr in group_df.iterrows():
+        sr = sr.drop(["seed","trueError"])
+        bestOmega = sr.idxmin()
+        bestOmega = float(bestOmega[4:-1])
+        bs.append(b)
+        chis.append(chi)
+        omegas.append(bestOmega)
+
+    df = pd.DataFrame({"b":bs, "chi":chis, "omega":omegas})
+    df["bc_c1"] = 1/(df.b*df.chi)
+    df["o_c1"] = 2-df.omega
+    df["o_c2"] = 1/df.o_c1
+
+    #df = df[df.bc_c1 < 0.05]
+    colors = cm.gist_ncar(df.b * 0.03)
+
+    plt.scatter(df.bc_c1, df.o_c1, color=colors)
+
+    def f(x):
+        return 0.125*np.log(x)+0.8
+    plt.plot(np.linspace(0.002,0.2,1000), f(np.linspace(0.002,0.2,1000)), label=f"f")
+
+    #plt.xlim(0,0.2)
+    plt.ylim(0,0.6)
+    plt.xscale("log")
+    plt.xlabel("1/(b*chi)")
+    plt.ylabel("2-omega")
+    plt.show()
+
+    plt.savefig("epm0311_plot.png",dpi=400)
+
+
+
+
+epm0311()
