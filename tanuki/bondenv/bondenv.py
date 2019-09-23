@@ -129,7 +129,9 @@ class UnbridgeBondEnv:
                 C = C.to_vector(self.bra_left_labels+[bra_mn_label])
                 if linalg_algname == "solve":
                     M = xp.linalg.solve(B, C, assume_a="pos")
-
+                elif linalg_algname == "cg":
+                    M = M.to_vector(self.ket_left_labels+[ket_mn_label])
+                    M,_ = xp.sparse.linalg.cg(B,C,M,tol=0,maxiter=kwargs.get("linalg_maxiter",b*chi))
                 M = tnc.vector_to_tensor(M, Mshape, self.ket_left_labels+[ket_mn_label])
                 return M
 
@@ -142,6 +144,9 @@ class UnbridgeBondEnv:
                 C = C.to_vector([bra_mn_label]+self.bra_right_labels)
                 if linalg_algname == "solve":
                     N = xp.linalg.solve(B, C, assume_a="pos")
+                elif linalg_algname == "cg":
+                    N = N.to_vector([ket_mn_label]+self.ket_right_labels)
+                    N,_ = xp.sparse.linalg.cg(B,C,N,tol=0,maxiter=kwargs.get("linalg_maxiter",b*chi))
                 N = tnc.vector_to_tensor(N, Nshape, [ket_mn_label]+self.ket_right_labels)
                 return N
 
@@ -258,6 +263,25 @@ class UnbridgeBondEnv:
                     oldM = M
                     stM = optimize_M_from_N(M,N)
                     M = stM*omega - (omega-1)*M
+                    stN = optimize_N_from_M(M,N)
+                    N = stN*omega - (omega-1)*N
+                    #fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
+                    fx = ((stM*stN-sigma0)*ETA*(stM*stN-sigma0).adjoint()).real().to_scalar()
+                    sqdiff_history.append(fx)
+                    if abs(fx-oldFx) <= oldFx*conv_rtol + conv_atol:
+                        break
+                    if fx <= conv_sqdiff:
+                        break
+                    oldFx = fx
+
+            elif algname == "IROR": # individually randomized over-relaxation
+                omega_cands = kwargs.get("omega_cands",[1.6,1.65,1.7,1.72,1.74,1.76,1.78,1.8,1.85,1.94,1.95])
+                for iteri in range(maxiter):
+                    oldM = M
+                    omega = random.choice(omega_cands)
+                    stM = optimize_M_from_N(M,N)
+                    M = stM*omega - (omega-1)*M
+                    omega = random.choice(omega_cands)
                     stN = optimize_N_from_M(M,N)
                     N = stN*omega - (omega-1)*N
                     #fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
