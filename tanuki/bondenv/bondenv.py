@@ -213,6 +213,10 @@ class UnbridgeBondEnv:
                 omega_cands = kwargs.get("omega_cands",[1.6,1.65,1.7,1.72,1.74,1.76,1.78,1.8,1.85,1.94,1.95])
             elif algname == "IROR":
                 omega_cands = kwargs.get("omega_cands",[1.6,1.65,1.7,1.72,1.74,1.76,1.78,1.8,1.85,1.94,1.95])
+            elif algname == "MSGDoid":
+                emamu = kwargs.get("emamu", 0.9)
+                lastDM = None
+                lastDN = None
                 
 
             for iteri in range(maxiter):
@@ -220,7 +224,6 @@ class UnbridgeBondEnv:
                     oldM = M
                     M = optimize_M_from_N(M,N)
                     N = optimize_N_from_M(M,N)
-                    fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
 
                 elif algname == "COR": # constant over-relaxation
                     oldM = M
@@ -228,7 +231,6 @@ class UnbridgeBondEnv:
                     M = stM*omega - (omega-1)*M
                     stN = optimize_N_from_M(M,N)
                     N = stN*omega - (omega-1)*N
-                    fx = ((stM*stN-sigma0)*ETA*(stM*stN-sigma0).adjoint()).real().to_scalar()
 
                 elif algname == "LBOR": # local best over-relaxation
                     oldM = M
@@ -239,7 +241,6 @@ class UnbridgeBondEnv:
                     x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                     M = M + x*dM
                     N = N + x*dN
-                    fx = ((stM*stN-sigma0)*ETA*(stM*stN-sigma0).adjoint()).real().to_scalar()
 
                 elif algname == "ROR": # randomized over-relaxation
                     omega = random.choice(omega_cands)
@@ -248,7 +249,6 @@ class UnbridgeBondEnv:
                     M = stM*omega - (omega-1)*M
                     stN = optimize_N_from_M(M,N)
                     N = stN*omega - (omega-1)*N
-                    fx = ((stM*stN-sigma0)*ETA*(stM*stN-sigma0).adjoint()).real().to_scalar()
 
                 elif algname == "IROR": # individually randomized over-relaxation
                     oldM = M
@@ -258,11 +258,27 @@ class UnbridgeBondEnv:
                     omega = random.choice(omega_cands)
                     stN = optimize_N_from_M(M,N)
                     N = stN*omega - (omega-1)*N
-                    fx = ((stM*stN-sigma0)*ETA*(stM*stN-sigma0).adjoint()).real().to_scalar()
+
+                elif algname == "MSGDoid": # momentum
+                    stM = optimize_M_from_N(M,N)
+                    if lastDM is None:
+                        dM = (stM - M)
+                    else:
+                        dM = emamu * lastDM + (1-emamu)*(stM - M)
+                    M = stM + dM
+                    lastDM = dM
+                    stN = optimize_N_from_M(M,N)
+                    if lastDN is None:
+                        dN = (stN - N)
+                    else:
+                        dN = emamu * lastDN + (1-emamu)*(stN - N)
+                    N = stN + dN
+                    lastDN = dN
 
                 else:
                     raise Exception(f"no such algname == {algname}")
 
+                fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
                 sqdiff_history.append(fx)
                 if abs(fx-oldFx) <= oldFx*conv_rtol + conv_atol:
                     print("tol conved",fx,oldFx,conv_rtol,conv_atol)
