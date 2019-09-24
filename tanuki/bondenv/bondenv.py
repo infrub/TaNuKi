@@ -60,7 +60,7 @@ class UnbridgeBondEnv:
         self.bra_right_labels = aster_labels(ket_right_labels)
 
 
-    def optimal_truncate(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, conv_sqdiff=0, memo=None, algname="NOR", linalg_algname="solve", **kwargs):
+    def optimal_truncate(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, conv_sqdiff=-float("inf"), memo=None, algname="NOR", linalg_algname="solve", **kwargs):
         if memo is None:
             memo = {}
         start_time = time.time()
@@ -207,38 +207,30 @@ class UnbridgeBondEnv:
             oldFx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
             sqdiff_history = [oldFx]
 
-            if algname == "NOR": # no over-relaxation
-                for iteri in range(maxiter):
+            if algname == "COR":
+                omega = kwargs.get("omega", min(1.95,1.2+0.125*np.log(b*chi)))
+            elif algname == "ROR":
+                omega_cands = kwargs.get("omega_cands",[1.6,1.65,1.7,1.72,1.74,1.76,1.78,1.8,1.85,1.94,1.95])
+            elif algname == "IROR":
+                omega_cands = kwargs.get("omega_cands",[1.6,1.65,1.7,1.72,1.74,1.76,1.78,1.8,1.85,1.94,1.95])
+                
+
+            for iteri in range(maxiter):
+                if algname == "NOR": # no over-relaxation
                     oldM = M
                     M = optimize_M_from_N(M,N)
                     N = optimize_N_from_M(M,N)
                     fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
-                    sqdiff_history.append(fx)
-                    if abs(fx-oldFx) <= oldFx*conv_rtol + conv_atol:
-                        break
-                    if fx <= conv_sqdiff:
-                        break
-                    oldFx = fx
 
-            elif algname == "COR": # constant over-relaxation
-                omega = kwargs.get("omega", min(1.95,1.2+0.125*np.log(b*chi)))
-                for iteri in range(maxiter):
+                elif algname == "COR": # constant over-relaxation
                     oldM = M
                     stM = optimize_M_from_N(M,N)
                     M = stM*omega - (omega-1)*M
                     stN = optimize_N_from_M(M,N)
                     N = stN*omega - (omega-1)*N
-                    #fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
                     fx = ((stM*stN-sigma0)*ETA*(stM*stN-sigma0).adjoint()).real().to_scalar()
-                    sqdiff_history.append(fx)
-                    if abs(fx-oldFx) <= oldFx*conv_rtol + conv_atol:
-                        break
-                    if fx <= conv_sqdiff:
-                        break
-                    oldFx = fx
 
-            elif algname == "LBOR": # local best over-relaxation
-                for iteri in range(maxiter):
+                elif algname == "LBOR": # local best over-relaxation
                     oldM = M
                     stM = optimize_M_from_N(M,N)
                     stN = optimize_N_from_M(stM,N)
@@ -247,36 +239,18 @@ class UnbridgeBondEnv:
                     x,fx = solve_argmin_xxxx_equation(css_to_cs(get_equation_coeffs(M,N,dM,dN)))
                     M = M + x*dM
                     N = N + x*dN
-                    #fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
                     fx = ((stM*stN-sigma0)*ETA*(stM*stN-sigma0).adjoint()).real().to_scalar()
-                    sqdiff_history.append(fx)
-                    if abs(fx-oldFx) <= oldFx*conv_rtol + conv_atol:
-                        break
-                    if fx <= conv_sqdiff:
-                        break
-                    oldFx = fx
 
-            elif algname == "ROR": # randomized over-relaxation
-                omega_cands = kwargs.get("omega_cands",[1.6,1.65,1.7,1.72,1.74,1.76,1.78,1.8,1.85,1.94,1.95])
-                for iteri in range(maxiter):
+                elif algname == "ROR": # randomized over-relaxation
                     omega = random.choice(omega_cands)
                     oldM = M
                     stM = optimize_M_from_N(M,N)
                     M = stM*omega - (omega-1)*M
                     stN = optimize_N_from_M(M,N)
                     N = stN*omega - (omega-1)*N
-                    #fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
                     fx = ((stM*stN-sigma0)*ETA*(stM*stN-sigma0).adjoint()).real().to_scalar()
-                    sqdiff_history.append(fx)
-                    if abs(fx-oldFx) <= oldFx*conv_rtol + conv_atol:
-                        break
-                    if fx <= conv_sqdiff:
-                        break
-                    oldFx = fx
 
-            elif algname == "IROR": # individually randomized over-relaxation
-                omega_cands = kwargs.get("omega_cands",[1.6,1.65,1.7,1.72,1.74,1.76,1.78,1.8,1.85,1.94,1.95])
-                for iteri in range(maxiter):
+                elif algname == "IROR": # individually randomized over-relaxation
                     oldM = M
                     omega = random.choice(omega_cands)
                     stM = optimize_M_from_N(M,N)
@@ -284,17 +258,20 @@ class UnbridgeBondEnv:
                     omega = random.choice(omega_cands)
                     stN = optimize_N_from_M(M,N)
                     N = stN*omega - (omega-1)*N
-                    #fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
                     fx = ((stM*stN-sigma0)*ETA*(stM*stN-sigma0).adjoint()).real().to_scalar()
-                    sqdiff_history.append(fx)
-                    if abs(fx-oldFx) <= oldFx*conv_rtol + conv_atol:
-                        break
-                    if fx <= conv_sqdiff:
-                        break
-                    oldFx = fx
 
-            else:
-                raise Exception(f"no such algname == {algname}")
+                else:
+                    raise Exception(f"no such algname == {algname}")
+
+                sqdiff_history.append(fx)
+                if abs(fx-oldFx) <= oldFx*conv_rtol + conv_atol:
+                    print("tol conved",fx,oldFx,conv_rtol,conv_atol)
+                    break
+                if fx <= conv_sqdiff:
+                    print("border conved")
+                    break
+                oldFx = fx
+
 
 
             memo["sqdiff_history"] = sqdiff_history

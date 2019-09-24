@@ -63,7 +63,7 @@ def epm0400():
     def ikuze(b,chi,seed):
         metaf = open(f"{epmName}_oups/{epmName}_meta.csv","a")
 
-        print(f"b={b}, chi={chi}, seed={seed}, ", end="")
+        print(f"b={b}, chi={chi}, seed={seed}, ")
         metaf.write(f"{b},{chi},{seed},")
         np.random.seed(seed=seed)
         random.seed(seed)
@@ -81,21 +81,30 @@ def epm0400():
         ax1.set_xlabel("iteration times")
         ax2.set_xlabel("times spent for getting over the precision range (lefter is better)")
 
-        memo = {}
-        M,S,N = ENV.optimal_truncate(A, maxiter=max(300,b*150), conv_atol=1e-14, conv_rtol=1e-14, chi=chi, memo=memo, algname="LBOR")
-        trueError = memo["sqdiff"]
-        print(f"trueError={trueError}")
-        metaf.write(f"{trueError},")
-
+        trueError = float("inf")
+        dfd = {}
         for (algname, kwargs, color, title) in registereds:
             np.random.seed(seed=seed)
             random.seed(seed)
             print(title, end=": ")
             try:
                 memo = {}
-                M,S,N = ENV.optimal_truncate(A, maxiter=max(300,b*50), chi=chi, memo=memo, algname=algname, conv_atol=-1, conv_rtol=-1, conv_sqdiff=trueError*(1+1e-10), **kwargs)
+                M,S,N = ENV.optimal_truncate(A, maxiter=max(300,b*50), chi=chi, memo=memo, algname=algname, conv_atol=-1, conv_rtol=-1, **kwargs)
                 
                 df = pd.DataFrame({"y": memo.pop("sqdiff_history"), "x":np.arange(1,memo["iter_times"]+2)})
+                dfd[title] = df
+                print(f'{memo["iter_times"]}, {memo["elapsed_time"]}, {memo["sqdiff"]}')
+                metaf.write(str(memo["iter_times"])+",")
+                if trueError > memo["sqdiff"]:
+                    trueError = memo["sqdiff"]
+            except Exception as e:
+                print(e)
+                metaf.write("nan,")
+
+        trueError = trueError - trueError * 1e-20
+        for (algname, kwargs, color, title) in registereds:
+            try:
+                df = dfd[title]
                 df["my"] = df.y - trueError
                 df["logx"] = np.log(df.x)
                 df["logmy"] = np.log(df.my)
@@ -106,12 +115,8 @@ def epm0400():
                 df["smoothed_tadasing_cost2"] = df.tadasing_cost2.rolling(5, win_type="triang").mean().shift(-2)
                 ax1.plot(df.x, df.logmy, label=title, color=color)
                 ax2.plot(df.smoothed_tadasing_cost2, df.logmy, label=title, color=color) #migikara hidarini jikanha susumuyo
-                
-                print(f'{memo["iter_times"]}, {memo["elapsed_time"]}, {memo["sqdiff"]}')
-                metaf.write(str(memo["iter_times"])+",")
             except Exception as e:
                 print(e)
-                metaf.write("nan,")
 
         metaf.write("\n")
         metaf.close()
