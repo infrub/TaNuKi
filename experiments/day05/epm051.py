@@ -55,8 +55,7 @@ def epm051_base(epmName, b, chi, epmlen):
         n = b*b
         H = random_tensor((b,b,n),["kl","kr","extraction"])
         V = H * H.adjoint(["kl","kr"],style="aster")
-        A = random_tensor((b,b),["kl","kr"])
-        ENV = bondenv.UnbridgeBondEnv(V, ["kl"], ["kr"])
+        A0 = random_tensor((b,b),["kl","kr"])
 
         fig, axs = plt.subplots(1, 2, sharey=True, figsize=(13,8))
         ax1,ax2 = tuple(axs)
@@ -73,17 +72,18 @@ def epm051_base(epmName, b, chi, epmlen):
             random.seed(seed)
             print(title, end=": ")
             try:
-                memo = {}
-                M,S,N = ENV.optimal_truncate(A, maxiter=max(300,b*50), chi=chi, memo=memo, algname=algname, conv_atol=-1, conv_rtol=-1, **kwargs)
-                
-                df = pd.DataFrame({"y": memo.pop("sqdiff_history"), "x":np.arange(1,memo["iter_times"]+2)})
+                ENV = bondenv.UnbridgeBondOptimalTruncator(V, ["kl"], ["kr"], A0)
+                ENV.set_params(max_iter=max(300,b*50), chi=chi, algname=algname, conv_atol=-1, conv_rtol=-1, **kwargs)
+                ENV.initialize()
+                M,S,N = ENV.run()
+                df = pd.DataFrame({"y": ENV.sqdiff_history, "x":np.arange(1,ENV.iter_times+2)})
                 dfd[title] = df
-                print(f'{memo["iter_times"]}, {memo["elapsed_time"]}, {memo["sqdiff"]}')
-                metaf.write(str(memo["sqdiff"])+",")
-                if minError > memo["sqdiff"]:
-                    minError = memo["sqdiff"]
-                if maxError < memo["sqdiff"]:
-                    maxError = memo["sqdiff"]
+                print(f'{ENV.iter_times}, {ENV.elapsed_time}, {ENV.sqdiff}')
+                metaf.write(str(ENV.sqdiff)+",")
+                if minError > ENV.sqdiff:
+                    minError = ENV.sqdiff
+                if maxError < ENV.sqdiff:
+                    maxError = ENV.sqdiff
             except Exception as e:
                 print(e)
                 metaf.write("nan,")
@@ -124,105 +124,6 @@ def epm051_base(epmName, b, chi, epmlen):
 
 
 def epm0510():
-    i = 0
-    for algname in ["NOR","COR","ROR","IROR","LBOR"]:
-        register(algname, {}, cm.Paired(i/12))
-        i += 2
-    epm051_base("epm0510", 12, 6, 10)
-
-def epm0511():
-    i = 0
-    for algname in ["NOR","COR","ROR","IROR","LBOR"]:
-        register(algname, {}, cm.Paired(i/12))
-        i += 2
-    i = 1
-    for algname in ["MSGDoid"]:
-        register(algname, {}, cm.Paired(i/12))
-        i += 2
-    epm051_base("epm0511", 12, 6, 10)
-
-def epm0512():
-    i = 0
-    for algname in ["NOR","COR","ROR","IROR","LBOR"]:
-        register(algname, {}, cm.Paired(i/12))
-        i += 2
-    i = 1
-    for algname in ["MSGDoid"]:
-        for emamu in [0.1,0.3,0.5,0.7,0.9]:
-            register(algname, {"emamu":emamu}, cm.Paired(i/12))
-            i += 2
-    epm051_base("epm0512", 12, 6, 10)
-
-def epm0513():
-    i = 0
-    for algname in ["NOR","COR","ROR","IROR","LBOR"]:
-        register(algname, {}, cm.Paired(i/12))
-        i += 2
-    i = 1
-    for algname in ["MSGDoid"]:
-        for emamu in [0.86,0.88,0.90,0.92,0.94]:
-            register(algname, {"emamu":emamu}, cm.Paired(i/12))
-            i += 2
-    epm051_base("epm0513_kari", 12, 6, 10)
-
-def epm0514():
-    i = 0
-    for algname in ["NOR","COR","ROR","IROR","LBOR","MSGDoid"]:
-        register(algname, {}, cm.Paired(i/12))
-        i += 2
-    i = 1
-    for algname in ["NAGoid"]:
-        for emamu in [0.86,0.88,0.90,0.92,0.94]:
-            register(algname, {"emamu":emamu}, cm.Paired(i/12))
-            i += 2
-    epm051_base("epm0514", 12, 6, 100)
-
-def epm0515():
-    for algname in ["NOR"]:
-        register(algname, {}, "black")
-
-    i = 0
-    for algname in ["WCOR","WROR","IWROR","WLBOR","WMSGD","WNAG"]:
-        register(algname, {}, cm.Paired(i/12))
-        i += 2
-    i = 1
-    for algname in ["SCOR","SROR","","","SMSGD","SNAG"]:
-        if algname != "":
-            register(algname, {}, cm.Paired(i/12))
-        i += 2
-    epm051_base("epm0515", 12, 6, 1)
-
-def epm0516():
-    for algname in ["NOR"]:
-        register(algname, {}, "black")
-
-    i = 0
-    for algname in ["WCOR","WROR","IWROR","WLBOR","WMSGD","WNAG"]:
-        register(algname, {}, cm.Paired(i/12))
-        i += 2
-    i = 1
-    for algname in ["SCOR","SROR","SSpiral","","SMSGD","SNAG"]:
-        if algname != "":
-            register(algname, {}, cm.Paired(i/12))
-        i += 2
-    epm051_base("epm0516", 12, 6, 10)
-
-def epm0517():
-    for algname in ["NOR"]:
-        register(algname, {}, "black")
-
-    i = 0
-    for algname in ["WCOR","WROR","IWROR","WLBOR","WNAG","SNAG"]:
-        register(algname, {}, cm.Paired(i/12))
-        i += 2
-    i = 1
-    for algname in ["SSpiral"]:
-        for spiral_turn_max in [3,6,10,18,30]:
-            register(algname, {"spiral_turn_max":spiral_turn_max}, cm.gist_ncar(i/12))
-            i += 2
-    epm051_base("epm0517", 12, 6, 10)
-
-def epm0518():
     for algname in ["NOR"]:
         register(algname, {}, "black")
 
@@ -235,7 +136,7 @@ def epm0518():
         for spiral_turn_max in [8,11,14,17,20]:
             register(algname, {"spiral_turn_max":spiral_turn_max}, cm.gist_ncar(i/12))
             i += 2
-    epm051_base("epm0518", 12, 6, 10)
+    epm051_base("epm0510", 12, 6, 10)
 
 
 
@@ -245,4 +146,4 @@ def epm0518():
 
 
 
-epm0518()
+epm0510()
