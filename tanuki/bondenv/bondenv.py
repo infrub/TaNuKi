@@ -207,13 +207,11 @@ class UnbridgeBondEnv:
             oldFx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
             sqdiff_history = [oldFx]
 
-            if algname == "COR":
+            if algname in ["WCOR","SCOR"]:
                 omega = kwargs.get("omega", min(1.95,1.2+0.125*np.log(b*chi)))
-            elif algname == "ROR":
+            elif algname in ["WROR","SROR","IWROR"]:
                 omega_cands = kwargs.get("omega_cands",[1.6,1.65,1.7,1.72,1.74,1.76,1.78,1.8,1.85,1.94,1.95])
-            elif algname == "IROR":
-                omega_cands = kwargs.get("omega_cands",[1.6,1.65,1.7,1.72,1.74,1.76,1.78,1.8,1.85,1.94,1.95])
-            elif algname == "MSGDoid":
+            elif algname in ["WMSGD", "WNAG", "SMSGD", "SNAG"]:
                 emamu = kwargs.get("emamu", 0.9)
                 lastDM = None
                 lastDN = None
@@ -225,14 +223,14 @@ class UnbridgeBondEnv:
                     M = optimize_M_from_N(M,N)
                     N = optimize_N_from_M(M,N)
 
-                elif algname == "COR": # constant over-relaxation
+                elif algname == "WCOR": # constant over-relaxation
                     oldM = M
                     stM = optimize_M_from_N(M,N)
                     M = stM*omega - (omega-1)*M
                     stN = optimize_N_from_M(M,N)
                     N = stN*omega - (omega-1)*N
 
-                elif algname == "LBOR": # local best over-relaxation
+                elif algname == "WLBOR": # local best over-relaxation
                     oldM = M
                     stM = optimize_M_from_N(M,N)
                     stN = optimize_N_from_M(stM,N)
@@ -242,7 +240,7 @@ class UnbridgeBondEnv:
                     M = M + x*dM
                     N = N + x*dN
 
-                elif algname == "ROR": # randomized over-relaxation
+                elif algname == "WROR": # randomized over-relaxation
                     omega = random.choice(omega_cands)
                     oldM = M
                     stM = optimize_M_from_N(M,N)
@@ -250,7 +248,7 @@ class UnbridgeBondEnv:
                     stN = optimize_N_from_M(M,N)
                     N = stN*omega - (omega-1)*N
 
-                elif algname == "IROR": # individually randomized over-relaxation
+                elif algname == "IWROR": # individually randomized over-relaxation
                     oldM = M
                     omega = random.choice(omega_cands)
                     stM = optimize_M_from_N(M,N)
@@ -259,7 +257,7 @@ class UnbridgeBondEnv:
                     stN = optimize_N_from_M(M,N)
                     N = stN*omega - (omega-1)*N
 
-                elif algname == "MSGDoid": # momentum
+                elif algname == "WMSGD": # momentum
                     stM = optimize_M_from_N(M,N)
                     if lastDM is None:
                         dM = (stM - M)
@@ -267,6 +265,7 @@ class UnbridgeBondEnv:
                         dM = emamu * lastDM + (1-emamu)*(stM - M)
                     M = stM + dM
                     lastDM = dM
+
                     stN = optimize_N_from_M(M,N)
                     if lastDN is None:
                         dN = (stN - N)
@@ -274,6 +273,61 @@ class UnbridgeBondEnv:
                         dN = emamu * lastDN + (1-emamu)*(stN - N)
                     N = stN + dN
                     lastDN = dN
+
+                elif algname == "WNAG":
+                    if lastDM is None:
+                        stM = optimize_M_from_N(M,N)
+                        dM = (stM - M)
+                    else:
+                        stM = optimize_M_from_N(M+emamu*lastDM, N)
+                        dM = emamu * lastDM + (1-emamu)*(stM - M)
+                    M = stM + dM
+                    lastDM = dM
+
+                    if lastDN is None:
+                        stN = optimize_N_from_M(M,N)
+                        dN = (stN - N)
+                    else:
+                        stN = optimize_N_from_M(M, N+emamu*lastDN)
+                        dN = emamu * lastDN + (1-emamu)*(stN - N)
+                    N = stN + dN
+                    lastDN = dN
+
+                elif algname == "SCOR": # constant over-relaxation
+                    oldM = M
+                    stM = optimize_M_from_N(M,N)
+                    M = stM*omega - (omega-1)*M
+                    N = optimize_N_from_M(M,N)
+
+                elif algname == "SROR": # randomized over-relaxation
+                    omega = random.choice(omega_cands)
+                    oldM = M
+                    stM = optimize_M_from_N(M,N)
+                    M = stM*omega - (omega-1)*M
+                    N = optimize_N_from_M(M,N)
+
+                elif algname == "SMSGD": # momentum
+                    stM = optimize_M_from_N(M,N)
+                    if lastDM is None:
+                        dM = (stM - M)
+                    else:
+                        dM = emamu * lastDM + (1-emamu)*(stM - M)
+                    M = stM + dM
+                    lastDM = dM
+
+                    N = optimize_N_from_M(M,N)
+
+                elif algname == "SNAG":
+                    if lastDM is None:
+                        stM = optimize_M_from_N(M,N)
+                        dM = (stM - M)
+                    else:
+                        stM = optimize_M_from_N(M+emamu*lastDM, N)
+                        dM = emamu * lastDM + (1-emamu)*(stM - M)
+                    M = stM + dM
+                    lastDM = dM
+
+                    N = optimize_N_from_M(M,N)
 
                 else:
                     raise Exception(f"no such algname == {algname}")

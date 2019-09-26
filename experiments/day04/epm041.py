@@ -38,7 +38,7 @@ def register(algname, kwargs, color):
 def epm041_base(epmName, b, chi, epmlen):
     os.makedirs(f"{epmName}_oups/", exist_ok=True)
     metaf = open(f"{epmName}_oups/{epmName}_meta.csv","a")
-    metaf.write("b,chi,seed,trueError,")
+    metaf.write("b,chi,seed,minError,")
     for (_,_,_,title) in registereds:
         metaf.write(title+",")
     metaf.write("\n")
@@ -65,7 +65,8 @@ def epm041_base(epmName, b, chi, epmlen):
         ax1.set_xlabel("iteration times")
         ax2.set_xlabel("times spent for getting over the precision range (lefter is better)")
 
-        trueError = float("inf")
+        minError = float("inf")
+        maxError = float("-inf")
         dfd = {}
         for (algname, kwargs, color, title) in registereds:
             np.random.seed(seed=seed)
@@ -79,8 +80,10 @@ def epm041_base(epmName, b, chi, epmlen):
                 dfd[title] = df
                 print(f'{memo["iter_times"]}, {memo["elapsed_time"]}, {memo["sqdiff"]}')
                 metaf.write(str(memo["iter_times"])+",")
-                if trueError > memo["sqdiff"]:
-                    trueError = memo["sqdiff"]
+                if minError > memo["sqdiff"]:
+                    minError = memo["sqdiff"]
+                if maxError < memo["sqdiff"]:
+                    maxError = memo["sqdiff"]
             except Exception as e:
                 print(e)
                 metaf.write("nan,")
@@ -88,7 +91,7 @@ def epm041_base(epmName, b, chi, epmlen):
         for (algname, kwargs, color, title) in registereds:
             try:
                 df = dfd[title]
-                df["my"] = df.y - trueError + 1e-15
+                df["my"] = df.y - minError + 1e-15
                 df["logx"] = np.log10(df.x)
                 df["logmy"] = np.log10(df.my)
                 df["dlogx"] = df.logx.shift(-1) - df.logx
@@ -104,6 +107,7 @@ def epm041_base(epmName, b, chi, epmlen):
         metaf.write("\n")
         metaf.close()
         ax2.set_xlim(0,min(100,ax2.get_xlim()[1]))
+        #ax1.set_ylim(minError,maxError)
         plt.legend()
         plt.suptitle(f"{epmName}[b={b},chi={chi},seed={seed}]")
         plt.savefig(f"{epmName}_oups/[b={b}, chi={chi}, seed={seed}].png", dpi=400)
@@ -157,6 +161,33 @@ def epm0413():
         for emamu in [0.86,0.88,0.90,0.92,0.94]:
             register(algname, {"emamu":emamu}, cm.Paired(i/12))
             i += 2
-    epm041_base("epm0413", 12, 6, 10)
+    epm041_base("epm0413_kari", 12, 6, 10)
 
-epm0413()
+def epm0414():
+    i = 0
+    for algname in ["NOR","COR","ROR","IROR","LBOR","MSGDoid"]:
+        register(algname, {}, cm.Paired(i/12))
+        i += 2
+    i = 1
+    for algname in ["NAGoid"]:
+        for emamu in [0.86,0.88,0.90,0.92,0.94]:
+            register(algname, {"emamu":emamu}, cm.Paired(i/12))
+            i += 2
+    epm041_base("epm0414", 12, 6, 100)
+
+def epm0415():
+    for algname in ["NOR"]:
+        register(algname, {}, "black")
+
+    i = 0
+    for algname in ["WCOR","WROR","IWROR","WLBOR","WMSGD","WNAG"]:
+        register(algname, {}, cm.Paired(i/12))
+        i += 2
+    i = 1
+    for algname in ["SCOR","SROR","","","SMSGD","SNAG"]:
+        if algname != "":
+            register(algname, {}, cm.Paired(i/12))
+        i += 2
+    epm041_base("epm0415", 12, 6, 1)
+
+epm0415()
