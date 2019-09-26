@@ -38,10 +38,10 @@ def register(algname, kwargs, color):
 def epm041_base(epmName, b, chi, epmlen):
     os.makedirs(f"{epmName}_oups/", exist_ok=True)
     metaf = open(f"{epmName}_oups/{epmName}_meta.csv","a")
-    metaf.write("b,chi,seed,minError,")
+    metaf.write("b,chi,seed,")
     for (_,_,_,title) in registereds:
         metaf.write(title+",")
-    metaf.write("\n")
+    metaf.write("minError\n")
     metaf.close()
 
     def ikuze(b,chi,seed):
@@ -87,6 +87,8 @@ def epm041_base(epmName, b, chi, epmlen):
             except Exception as e:
                 print(e)
                 metaf.write("nan,")
+        
+        metaf.write("minError")
 
         for (algname, kwargs, color, title) in registereds:
             try:
@@ -238,7 +240,7 @@ def epm0418():
 
 
 
-
+#TODO hessian miyou!
 
 
 
