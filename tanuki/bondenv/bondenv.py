@@ -215,7 +215,8 @@ class UnbridgeBondEnv:
                 emamu = kwargs.get("emamu", 0.9)
                 lastDM = None
                 lastDN = None
-                
+            elif algname in ["SSpiral"]:
+                spiral_turn_max = kwargs.get("spiral_turn_max", 10)
 
             for iteri in range(maxiter):
                 if algname == "NOR": # no over-relaxation
@@ -327,6 +328,24 @@ class UnbridgeBondEnv:
                     M = stM + dM
                     lastDM = dM
 
+                    N = optimize_N_from_M(M,N)
+
+                elif algname == "SSpiral":
+                    M0 = M
+                    M = optimize_M_from_N(M,N)
+                    N = optimize_N_from_M(M,N)
+                    M1 = M
+                    dM1 = (M1 - M0).data
+                    M = optimize_M_from_N(M,N)
+                    N = optimize_N_from_M(M,N)
+                    M2 = M
+                    dM2 = (M2 - M1).data
+                    # [abs(dM2/dM1) < 1] dM1*dM1/(dM1-dM2) = dM1 * 1/(1-dM2/dM1)
+                    # [else] dM1 * 10 = dM1 * 1/(1-0.9)
+                    temp = dM2 / dM1
+                    temp[abs(temp) >= 1] = 1-(1/spiral_turn_max)
+                    sdMfin = dM1 / (1 - temp)
+                    M.data = M0.data + sdMfin
                     N = optimize_N_from_M(M,N)
 
                 else:

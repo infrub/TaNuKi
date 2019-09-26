@@ -79,7 +79,7 @@ def epm041_base(epmName, b, chi, epmlen):
                 df = pd.DataFrame({"y": memo.pop("sqdiff_history"), "x":np.arange(1,memo["iter_times"]+2)})
                 dfd[title] = df
                 print(f'{memo["iter_times"]}, {memo["elapsed_time"]}, {memo["sqdiff"]}')
-                metaf.write(str(memo["iter_times"])+",")
+                metaf.write(str(memo["sqdiff"])+",")
                 if minError > memo["sqdiff"]:
                     minError = memo["sqdiff"]
                 if maxError < memo["sqdiff"]:
@@ -190,4 +190,57 @@ def epm0415():
         i += 2
     epm041_base("epm0415", 12, 6, 1)
 
-epm0415()
+def epm0416():
+    for algname in ["NOR"]:
+        register(algname, {}, "black")
+
+    i = 0
+    for algname in ["WCOR","WROR","IWROR","WLBOR","WMSGD","WNAG"]:
+        register(algname, {}, cm.Paired(i/12))
+        i += 2
+    i = 1
+    for algname in ["SCOR","SROR","SSpiral","","SMSGD","SNAG"]:
+        if algname != "":
+            register(algname, {}, cm.Paired(i/12))
+        i += 2
+    epm041_base("epm0416", 12, 6, 10)
+
+def epm0417():
+    for algname in ["NOR"]:
+        register(algname, {}, "black")
+
+    i = 0
+    for algname in ["WCOR","WROR","IWROR","WLBOR","WNAG","SNAG"]:
+        register(algname, {}, cm.Paired(i/12))
+        i += 2
+    i = 1
+    for algname in ["SSpiral"]:
+        for spiral_turn_max in [3,6,10,18,30]:
+            register(algname, {"spiral_turn_max":spiral_turn_max}, cm.gist_ncar(i/12))
+            i += 2
+    epm041_base("epm0417", 12, 6, 10)
+
+def epm0418():
+    for algname in ["NOR"]:
+        register(algname, {}, "black")
+
+    i = 0
+    for algname in ["WCOR","WROR","IWROR","WLBOR","WNAG","SNAG"]:
+        register(algname, {}, cm.Paired(i/12))
+        i += 2
+    i = 1
+    for algname in ["SSpiral"]:
+        for spiral_turn_max in [8,11,14,17,20]:
+            register(algname, {"spiral_turn_max":spiral_turn_max}, cm.gist_ncar(i/12))
+            i += 2
+    epm041_base("epm0418", 12, 6, 10)
+
+
+
+
+
+
+
+
+
+epm0418()
