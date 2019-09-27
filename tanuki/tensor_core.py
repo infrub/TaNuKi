@@ -9,6 +9,8 @@ import uuid
 import random
 from math import sqrt
 
+display_max_size = 100
+
 
 
 #decorators
@@ -639,7 +641,7 @@ class Tensor(TensorMixin):
         return f"Tensor(data={self.data}, labels={self.labels})"
 
     def __str__(self):
-        if self.size > 100:
+        if self.size > display_max_size:
             dataStr = \
             "["*self.ndim + str(self.data.item(0)) + " ... " + "]"*self.ndim
         else:
@@ -974,7 +976,7 @@ class DiagonalTensor(TensorMixin):
         return f"DiagonalTensor(data={self.data}, labels={self.labels})"
 
     def __str__(self):
-        if self.halfsize > 100:
+        if self.halfsize > display_max_size:
             dataStr = \
             "["*self.halfndim + str(self.data.item(0)) + " ... " + "]"*self.halfndim
         else:

@@ -16,7 +16,8 @@ import textwrap
 
 pd.options.display.max_columns = 30
 pd.options.display.width = 160
-np.set_printoptions(linewidth=200)
+np.set_printoptions(linewidth=500)
+tnc.display_max_size = float("inf")
 
 
 
@@ -101,29 +102,36 @@ def epm052_base(epmName, b, chi, epmlen):
                     M,S,N = ENV.run()
                     df = pd.DataFrame({"y": ENV.sqdiff_history, "x":np.arange(1,ENV.iter_times+2)})
                     dfd[title] = df
-                    oupf.write(f"iter_times, elapsed_time, sqdiff: {ENV.iter_times}, {ENV.elapsed_time}, {ENV.sqdiff}")
-                    oupf.write("grad_by_real_M:",ENV.grad_by_real_M)
-                    hessian = ENV.hessian_by_real_M
-                    #oupf.write("hessian_by_real_M:",hessian)
-                    hessianUSV = tensor_eigh(hessian, hessian.labels[0])
-                    #oupf.write("U of eigh of hessian_by_real_M:", hessianUSV[0])
-                    oupf.write("S of eigh of hessian_by_real_M:", hessianUSV[1])
-                    #oupf.write("V of eigh of hessian_by_real_M:", hessianUSV[2])
                     metaf.write(str(ENV.sqdiff)+",")
+                    oupf.write(f"iter_times, elapsed_time, sqdiff: {ENV.iter_times}, {ENV.elapsed_time}, {ENV.sqdiff}")
+                    oupf.write("MSN:",M*S*N)
+                    oupf.write("grad_by_M:",ENV.grad_by_M)
+                    oupf.write("grad:",ENV.grad)
+                    hessian_M_M = ENV.hessian_by_M_M
+                    #oupf.write("hessian_by_M_M:", hessian_M_M)
+                    oupf.write("eigvals of hessian_by_M_M:", xp.linalg.eigvalsh(hessian_M_M))
+                    hessian = ENV.hessian
+                    #oupf.write("hessian:", hessian)
+                    oupf.write("eigvals of hessian:", xp.linalg.eigvalsh(hessian))
                     if minError > ENV.sqdiff:
                         minError = ENV.sqdiff
                     if maxError < ENV.sqdiff:
                         maxError = ENV.sqdiff
-                except Exception as e:
+                except:
+                    raise
+                """
+                except ValueError as e:
                     oupf.write(e)
-                    metaf.write("nan,")
+                    metaf.write("nan,")"""
                 oupf.dedent()
             
             metaf.write("minError")
 
             for (algname, kwargs, color, title) in registereds:
                 try:
-                    df = dfd[title]
+                    df = dfd.get(title,None)
+                    if df is None:
+                        continue
                     df["my"] = df.y - minError + 1e-15
                     df["logx"] = np.log10(df.x)
                     df["logmy"] = np.log10(df.my)
@@ -134,7 +142,7 @@ def epm052_base(epmName, b, chi, epmlen):
                     df["smoothed_tadasing_cost2"] = df.tadasing_cost2.rolling(5, win_type="triang").mean().shift(-2)
                     ax1.plot(df.x, df.logmy, label=title, color=color)
                     ax2.plot(df.smoothed_tadasing_cost2, df.logmy, label=title, color=color) #migikara hidarini jikanha susumuyo
-                except Exception as e:
+                except ValueError as e:
                     oupf.write(e)
 
             metaf.write("\n")
@@ -166,7 +174,7 @@ def epm0520():
         for spiral_turn_max in [8,11,14,17,20]:
             register(algname, {"spiral_turn_max":spiral_turn_max}, cm.gist_ncar(i/12))
             i += 2
-    epm052_base("epm0520", 4, 2, 10)
+    epm052_base("epm0520_test", 4, 2, 10)
 
 
 

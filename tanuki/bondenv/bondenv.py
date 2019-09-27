@@ -472,29 +472,189 @@ class UnbridgeBondOptimalTruncator:
         return self._V
 
     @property
-    def grad_by_real_M(self):
+    def grad_by_reM(self):
         M = self.M
         N = self.N
         A0 = self.A0
         Mh = M.adjoint(self.ket_left_labels, self.ket_mn_label, style="aster")
         Nh = N.adjoint(self.ket_mn_label, self.ket_right_labels, style="aster")
         A0h = A0.adjoint(self.ket_left_labels, self.ket_right_labels, style="aster")
-        re = N * (self.ETA * (Mh * Nh - A0h))
-        re = re.real()*2
-        re = re.fuse_indices(self.ket_left_labels+[self.ket_mn_label])
-        return re
+        re1 = N * (self.ETA * (Mh * Nh - A0h))
+        re1 = re1.to_vector(self.ket_left_labels+[self.ket_mn_label])
+        re2 = (M*N - A0) * self.ETA * Nh
+        re2 = re2.to_vector(self.bra_left_labels+[self.bra_mn_label])
+        return xp.real(re1 + re2)
     
     @property
-    def hessian_by_real_M(self):
+    def grad_by_imM(self):
         M = self.M
         N = self.N
         A0 = self.A0
         Mh = M.adjoint(self.ket_left_labels, self.ket_mn_label, style="aster")
         Nh = N.adjoint(self.ket_mn_label, self.ket_right_labels, style="aster")
         A0h = A0.adjoint(self.ket_left_labels, self.ket_right_labels, style="aster")
-        re = N * self.ETA * Nh
-        re = re.real()*2
-        re = re.fuse_indices(self.ket_left_labels+[self.ket_mn_label])
-        re = re.fuse_indices(self.bra_left_labels+[self.bra_mn_label])
-        return re
+        re1 = 1.0j * N * (self.ETA * (Mh * Nh - A0h))
+        re1 = re1.to_vector(self.ket_left_labels+[self.ket_mn_label])
+        re2 = -1.0j * (M*N - A0) * self.ETA * Nh
+        re2 = re2.to_vector(self.bra_left_labels+[self.bra_mn_label])
+        return xp.real(re1 + re2)
+
+    @property
+    def grad_by_M(self):
+        return xp.concatenate([self.grad_by_reM, self.grad_by_imM])
+
+    @property
+    def grad(self):
+        M = self.M
+        N = self.N
+        A0 = self.A0
+        Mh = M.adjoint(self.ket_left_labels, self.ket_mn_label, style="aster")
+        Nh = N.adjoint(self.ket_mn_label, self.ket_right_labels, style="aster")
+        A0h = A0.adjoint(self.ket_left_labels, self.ket_right_labels, style="aster")
+
+        K_dM = N * (self.ETA * (Mh * Nh - A0h))
+        K_dN = M * (self.ETA * (Mh * Nh - A0h))
+        K_dMh = (M * N - A0) * self.ETA * Nh
+        K_dNh = (M * N - A0) * self.ETA * Mh
+
+        G_dReM = K_dM.to_vector(self.ket_left_labels+[self.ket_mn_label]) + K_dMh.to_vector(self.bra_left_labels+[self.bra_mn_label])
+        G_dImM = 1.0j * K_dM.to_vector(self.ket_left_labels+[self.ket_mn_label]) - 1.0j * K_dMh.to_vector(self.bra_left_labels+[self.bra_mn_label])
+        G_dReN = K_dN.to_vector(self.ket_right_labels+[self.ket_mn_label]) + K_dNh.to_vector(self.bra_right_labels+[self.bra_mn_label])
+        G_dImN = 1.0j * K_dN.to_vector(self.ket_right_labels+[self.ket_mn_label]) - 1.0j * K_dNh.to_vector(self.bra_right_labels+[self.bra_mn_label])
+
+        parts = [xp.real(G_dReM), xp.real(G_dImM), xp.real(G_dReN), xp.real(G_dImN)]
+        return xp.concatenate(parts)
+
+
+    @property
+    def hessian_by_reM_reM(self):
+        M = self.M
+        N = self.N
+        A0 = self.A0
+        Mh = M.adjoint(self.ket_left_labels, self.ket_mn_label, style="aster")
+        Nh = N.adjoint(self.ket_mn_label, self.ket_right_labels, style="aster")
+        A0h = A0.adjoint(self.ket_left_labels, self.ket_right_labels, style="aster")
+        retemp = N * self.ETA * Nh
+        re1 = retemp.to_matrix(self.ket_left_labels+[self.ket_mn_label], self.bra_left_labels+[self.bra_mn_label])
+        re2 = retemp.to_matrix(self.bra_left_labels+[self.bra_mn_label], self.ket_left_labels+[self.ket_mn_label])
+        return xp.real(re1 + re2) # motomoto real
     
+    @property
+    def hessian_by_imM_imM(self):
+        M = self.M
+        N = self.N
+        A0 = self.A0
+        Mh = M.adjoint(self.ket_left_labels, self.ket_mn_label, style="aster")
+        Nh = N.adjoint(self.ket_mn_label, self.ket_right_labels, style="aster")
+        A0h = A0.adjoint(self.ket_left_labels, self.ket_right_labels, style="aster")
+        retemp = N * self.ETA * Nh
+        re1 = retemp.to_matrix(self.ket_left_labels+[self.ket_mn_label], self.bra_left_labels+[self.bra_mn_label])
+        re2 = retemp.to_matrix(self.bra_left_labels+[self.bra_mn_label], self.ket_left_labels+[self.ket_mn_label])
+        return xp.real(re1 + re2) # motomoto real
+    
+    @property
+    def hessian_by_reM_imM(self):
+        M = self.M
+        N = self.N
+        A0 = self.A0
+        Mh = M.adjoint(self.ket_left_labels, self.ket_mn_label, style="aster")
+        Nh = N.adjoint(self.ket_mn_label, self.ket_right_labels, style="aster")
+        A0h = A0.adjoint(self.ket_left_labels, self.ket_right_labels, style="aster")
+        re1 = N * self.ETA * (-1.0j*Nh)
+        re1 = re1.to_matrix(self.ket_left_labels+[self.ket_mn_label], self.bra_left_labels+[self.bra_mn_label])
+        re2 = (1.0j*N) * self.ETA * Nh
+        re2 = re2.to_matrix(self.bra_left_labels+[self.bra_mn_label], self.ket_left_labels+[self.ket_mn_label])
+        return xp.real(re1 + re2) # motomoto real
+    
+    @property
+    def hessian_by_imM_reM(self):
+        M = self.M
+        N = self.N
+        A0 = self.A0
+        Mh = M.adjoint(self.ket_left_labels, self.ket_mn_label, style="aster")
+        Nh = N.adjoint(self.ket_mn_label, self.ket_right_labels, style="aster")
+        A0h = A0.adjoint(self.ket_left_labels, self.ket_right_labels, style="aster")
+        re1 = (1.0j*N) * self.ETA * Nh
+        re1 = re1.to_matrix(self.ket_left_labels+[self.ket_mn_label], self.bra_left_labels+[self.bra_mn_label])
+        re2 = N * self.ETA * (-1.0j*Nh)
+        re2 = re2.to_matrix(self.bra_left_labels+[self.bra_mn_label], self.ket_left_labels+[self.ket_mn_label])
+        return xp.real(re1 + re2) # motomoto real
+
+    @property
+    def hessian_by_M_M(self):
+        return xp.block([[self.hessian_by_reM_reM, self.hessian_by_reM_imM],[self.hessian_by_imM_reM, self.hessian_by_imM_imM]])
+
+    @property
+    def hessian(self):
+        M = self.M
+        N = self.N
+        A0 = self.A0
+        Mh = M.adjoint(self.ket_left_labels, self.ket_mn_label, style="aster")
+        Nh = N.adjoint(self.ket_mn_label, self.ket_right_labels, style="aster")
+        A0h = A0.adjoint(self.ket_left_labels, self.ket_right_labels, style="aster")
+
+        K_dM_dN = self.ETA * (Mh*Nh - A0h) * tni.identity_diagonalTensor(M.dims(self.ket_mn_label), [self.ket_mn_label, self.ket_mn_label])
+        K_dMh_dNh = (M*N - A0) * self.ETA * tni.identity_diagonalTensor(Mh.dims(self.bra_mn_label), [self.bra_mn_label, self.bra_mn_label])
+        K_dM_dMh = N * self.ETA * Nh
+        K_dM_dNh = N * self.ETA * Mh
+        K_dN_dMh = M * self.ETA * Nh
+        K_dN_dNh = M * self.ETA * Mh
+
+        H = {"dReM":{},"dReN":{},"dImM":{},"dImN":{}}
+        # H["dReM"]["dReN"][i,j] = \del_{ReM_i}\del_{ReN_j} f
+        H["dReM"]["dReM"] = K_dM_dMh.to_matrix(self.ket_left_labels+[self.ket_mn_label], self.bra_left_labels+[self.bra_mn_label]) + K_dM_dMh.to_matrix(self.bra_left_labels+[self.bra_mn_label], self.ket_left_labels+[self.ket_mn_label])
+        H["dImM"]["dImM"] = K_dM_dMh.to_matrix(self.ket_left_labels+[self.ket_mn_label], self.bra_left_labels+[self.bra_mn_label]) + K_dM_dMh.to_matrix(self.bra_left_labels+[self.bra_mn_label], self.ket_left_labels+[self.ket_mn_label])
+        H["dReM"]["dImM"] = -1.0j * K_dM_dMh.to_matrix(self.ket_left_labels+[self.ket_mn_label], self.bra_left_labels+[self.bra_mn_label]) + 1.0j *  K_dM_dMh.to_matrix(self.bra_left_labels+[self.bra_mn_label], self.ket_left_labels+[self.ket_mn_label])
+        H["dImM"]["dReM"] = 1.0j * K_dM_dMh.to_matrix(self.ket_left_labels+[self.ket_mn_label], self.bra_left_labels+[self.bra_mn_label]) - 1.0j *  K_dM_dMh.to_matrix(self.bra_left_labels+[self.bra_mn_label], self.ket_left_labels+[self.ket_mn_label])
+
+        H["dReN"]["dReN"] = K_dN_dNh.to_matrix(self.ket_right_labels+[self.ket_mn_label], self.bra_right_labels+[self.bra_mn_label]) + K_dN_dNh.to_matrix(self.bra_right_labels+[self.bra_mn_label], self.ket_right_labels+[self.ket_mn_label])
+        H["dImN"]["dImN"] = K_dN_dNh.to_matrix(self.ket_right_labels+[self.ket_mn_label], self.bra_right_labels+[self.bra_mn_label]) + K_dN_dNh.to_matrix(self.bra_right_labels+[self.bra_mn_label], self.ket_right_labels+[self.ket_mn_label])
+        H["dReN"]["dImN"] = -1.0j * K_dN_dNh.to_matrix(self.ket_right_labels+[self.ket_mn_label], self.bra_right_labels+[self.bra_mn_label]) + 1.0j *  K_dN_dNh.to_matrix(self.bra_right_labels+[self.bra_mn_label], self.ket_right_labels+[self.ket_mn_label])
+        H["dImN"]["dReN"] = 1.0j * K_dN_dNh.to_matrix(self.ket_right_labels+[self.ket_mn_label], self.bra_right_labels+[self.bra_mn_label]) - 1.0j *  K_dN_dNh.to_matrix(self.bra_right_labels+[self.bra_mn_label], self.ket_right_labels+[self.ket_mn_label])
+
+        H["dReM"]["dReN"] = \
+            + K_dM_dN.to_matrix(self.ket_left_labels+[self.ket_mn_label], self.ket_right_labels+[self.ket_mn_label]) \
+            + K_dMh_dNh.to_matrix(self.bra_left_labels+[self.bra_mn_label], self.bra_right_labels+[self.bra_mn_label]) \
+            + K_dM_dNh.to_matrix(self.ket_left_labels+[self.ket_mn_label], self.bra_right_labels+[self.bra_mn_label]) \
+            + K_dN_dMh.to_matrix(self.bra_left_labels+[self.bra_mn_label], self.ket_right_labels+[self.ket_mn_label])
+        H["dReM"]["dImN"] = \
+            + 1.0j * K_dM_dN.to_matrix(self.ket_left_labels+[self.ket_mn_label], self.ket_right_labels+[self.ket_mn_label]) \
+            - 1.0j * K_dMh_dNh.to_matrix(self.bra_left_labels+[self.bra_mn_label], self.bra_right_labels+[self.bra_mn_label]) \
+            - 1.0j * K_dM_dNh.to_matrix(self.ket_left_labels+[self.ket_mn_label], self.bra_right_labels+[self.bra_mn_label]) \
+            + 1.0j * K_dN_dMh.to_matrix(self.bra_left_labels+[self.bra_mn_label], self.ket_right_labels+[self.ket_mn_label])
+        H["dImM"]["dReN"] = \
+            + 1.0j * K_dM_dN.to_matrix(self.ket_left_labels+[self.ket_mn_label], self.ket_right_labels+[self.ket_mn_label]) \
+            - 1.0j * K_dMh_dNh.to_matrix(self.bra_left_labels+[self.bra_mn_label], self.bra_right_labels+[self.bra_mn_label]) \
+            + 1.0j * K_dM_dNh.to_matrix(self.ket_left_labels+[self.ket_mn_label], self.bra_right_labels+[self.bra_mn_label]) \
+            - 1.0j * K_dN_dMh.to_matrix(self.bra_left_labels+[self.bra_mn_label], self.ket_right_labels+[self.ket_mn_label])
+        H["dImM"]["dImN"] = \
+            - K_dM_dN.to_matrix(self.ket_left_labels+[self.ket_mn_label], self.ket_right_labels+[self.ket_mn_label]) \
+            - K_dMh_dNh.to_matrix(self.bra_left_labels+[self.bra_mn_label], self.bra_right_labels+[self.bra_mn_label]) \
+            + K_dM_dNh.to_matrix(self.ket_left_labels+[self.ket_mn_label], self.bra_right_labels+[self.bra_mn_label]) \
+            + K_dN_dMh.to_matrix(self.bra_left_labels+[self.bra_mn_label], self.ket_right_labels+[self.ket_mn_label])
+
+        H["dReN"]["dReM"] = \
+            + K_dM_dN.to_matrix(self.ket_right_labels+[self.ket_mn_label], self.ket_left_labels+[self.ket_mn_label]) \
+            + K_dMh_dNh.to_matrix(self.bra_right_labels+[self.bra_mn_label], self.bra_left_labels+[self.bra_mn_label]) \
+            + K_dM_dNh.to_matrix(self.bra_right_labels+[self.bra_mn_label], self.ket_left_labels+[self.ket_mn_label]) \
+            + K_dN_dMh.to_matrix(self.ket_right_labels+[self.ket_mn_label], self.bra_left_labels+[self.bra_mn_label])
+        H["dImN"]["dReM"] = \
+            + 1.0j * K_dM_dN.to_matrix(self.ket_right_labels+[self.ket_mn_label], self.ket_left_labels+[self.ket_mn_label]) \
+            - 1.0j * K_dMh_dNh.to_matrix(self.bra_right_labels+[self.bra_mn_label], self.bra_left_labels+[self.bra_mn_label]) \
+            - 1.0j * K_dM_dNh.to_matrix(self.bra_right_labels+[self.bra_mn_label], self.ket_left_labels+[self.ket_mn_label]) \
+            + 1.0j * K_dN_dMh.to_matrix(self.ket_right_labels+[self.ket_mn_label], self.bra_left_labels+[self.bra_mn_label])
+        H["dReN"]["dImM"] = \
+            + 1.0j * K_dM_dN.to_matrix(self.ket_right_labels+[self.ket_mn_label], self.ket_left_labels+[self.ket_mn_label]) \
+            - 1.0j * K_dMh_dNh.to_matrix(self.bra_right_labels+[self.bra_mn_label], self.bra_left_labels+[self.bra_mn_label]) \
+            + 1.0j * K_dM_dNh.to_matrix(self.bra_right_labels+[self.bra_mn_label], self.ket_left_labels+[self.ket_mn_label]) \
+            - 1.0j * K_dN_dMh.to_matrix(self.ket_right_labels+[self.ket_mn_label], self.bra_left_labels+[self.bra_mn_label])
+        H["dImN"]["dImM"] = \
+            - K_dM_dN.to_matrix(self.ket_right_labels+[self.ket_mn_label], self.ket_left_labels+[self.ket_mn_label]) \
+            - K_dMh_dNh.to_matrix(self.bra_right_labels+[self.bra_mn_label], self.bra_left_labels+[self.bra_mn_label]) \
+            + K_dM_dNh.to_matrix(self.bra_right_labels+[self.bra_mn_label], self.ket_left_labels+[self.ket_mn_label]) \
+            + K_dN_dMh.to_matrix(self.ket_right_labels+[self.ket_mn_label], self.bra_left_labels+[self.bra_mn_label])
+
+        partss = [[xp.real(H[a][b]) for b in ["dReM","dImM","dReN","dImN"]] for a in ["dReM","dImM","dReN","dImN"]] #douse real
+        return xp.block(partss)
+
+
