@@ -498,17 +498,3 @@ class UnbridgeBondOptimalTruncator:
         re = re.fuse_indices(self.bra_left_labels+[self.bra_mn_label])
         return re
     
-    @property
-    def hessian_by_real_M_ver2(self):
-        M = self.M
-        N = self.N
-        A0 = self.A0
-        Mh = M.adjoint(self.ket_left_labels, self.ket_mn_label, style="aster")
-        Nh = N.adjoint(self.ket_mn_label, self.ket_right_labels, style="aster")
-        A0h = A0.adjoint(self.ket_left_labels, self.ket_right_labels, style="aster")
-        re = N * self.ETA * Nh
-        re = re + re.transpose(self.ket_left_labels+[self.ket_mn_label], self.bra_left_labels+[self.bra_mn_label])
-        re = re.fuse_indices(self.ket_left_labels+[self.ket_mn_label])
-        re = re.fuse_indices(self.bra_left_labels+[self.bra_mn_label])
-        return re
-    

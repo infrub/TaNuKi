@@ -104,8 +104,7 @@ def epm052_base(epmName, b, chi, epmlen):
                     oupf.write(f"iter_times, elapsed_time, sqdiff: {ENV.iter_times}, {ENV.elapsed_time}, {ENV.sqdiff}")
                     oupf.write("grad_by_real_M:",ENV.grad_by_real_M)
                     hessian = ENV.hessian_by_real_M
-                    oupf.write("hessian_by_real_M:",hessian)
-                    oupf.write("hessian_by_real_M_ver2:",ENV.hessian_by_real_M_ver2)
+                    #oupf.write("hessian_by_real_M:",hessian)
                     hessianUSV = tensor_eigh(hessian, hessian.labels[0])
                     #oupf.write("U of eigh of hessian_by_real_M:", hessianUSV[0])
                     oupf.write("S of eigh of hessian_by_real_M:", hessianUSV[1])
@@ -167,7 +166,7 @@ def epm0520():
         for spiral_turn_max in [8,11,14,17,20]:
             register(algname, {"spiral_turn_max":spiral_turn_max}, cm.gist_ncar(i/12))
             i += 2
-    epm052_base("epm0520", 4, 2, 1)
+    epm052_base("epm0520", 4, 2, 10)
 
 
 
