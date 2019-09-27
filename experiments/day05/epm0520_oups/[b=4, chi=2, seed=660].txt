@@ -1,0 +1,136 @@
+b=4, chi=2, seed=660, 
+NOR:
+    iter_times, elapsed_time, sqdiff: 300, 0.4076259136199951, 4.31380063995984
+    grad_by_real_M: Tensor(
+        [ 3.55271368e-15 -7.88258347e-15  1.34892097e-14  5.66213743e-15 -4.44089210e-15  3.10862447e-15 -1.03805853e-14 -6.82787160e-15]
+        labels=[('kl', 'VbyPKGRW')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [17.78568608 26.55040204 32.08881354 39.35656381 60.57495386 74.15861275 83.60410783 91.67138474]
+        labels=['fdiTWJtN', 'fdiTWJtN'],
+        shape=(8, 8),
+    )
+WCOR:
+    iter_times, elapsed_time, sqdiff: 300, 0.549091100692749, 4.31380063995984
+    grad_by_real_M: Tensor(
+        [-1.42108547e-14 -6.05071548e-15  2.77555756e-14  5.21804822e-15  1.66533454e-14  1.27120536e-14  6.99440506e-15 -1.11022302e-16]
+        labels=[('kl', 'VbyPKGRW')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [15.11397169 20.10843685 25.32940329 30.13323546 50.68187412 63.42199671 71.08005735 81.33128096]
+        labels=['fdiTWJtN', 'fdiTWJtN'],
+        shape=(8, 8),
+    )
+WROR:
+    iter_times, elapsed_time, sqdiff: 300, 0.4479098320007324, 4.313800639959841
+    grad_by_real_M: Tensor(
+        [ 3.55271368e-15 -1.13242749e-14  2.66453526e-15  3.99680289e-15 -5.10702591e-15 -4.19716345e-15  2.14273044e-14 -1.59872116e-14]
+        labels=[('kl', 'VbyPKGRW')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [12.63386742 15.38907115 19.90894035 24.06278786 43.22407004 52.22982665 62.14438377 70.88307165]
+        labels=['DUOVmfPH', 'DUOVmfPH'],
+        shape=(8, 8),
+    )
+IWROR:
+    iter_times, elapsed_time, sqdiff: 300, 0.4271280765533447, 4.313800639959842
+    grad_by_real_M: Tensor(
+        [-1.07691633e-14  1.94844141e-14 -1.86517468e-14 -3.50830476e-14  1.77635684e-15 -4.89538965e-15  2.15938378e-14 -7.77156117e-15]
+        labels=[('kl', 'VbyPKGRW')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [12.91224447 15.5729238  19.95444537 24.44690373 43.22634577 52.47037141 61.14733961 69.52395597]
+        labels=['BTsedFur', 'BTsedFur'],
+        shape=(8, 8),
+    )
+WLBOR:
+    iter_times, elapsed_time, sqdiff: 300, 1.446533203125, 4.31380063995984
+    grad_by_real_M: Tensor(
+        [ 9.21141252e-09  7.39684858e-09 -1.41389989e-08 -2.31572259e-08  1.39478553e-08 -2.28280612e-08  2.40290138e-08  1.14780823e-08]
+        labels=[('kl', 'VbyPKGRW')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [17.83177605 26.70962457 32.2207616  39.52713481 60.61587268 74.18451335 83.65842676 91.72924394]
+        labels=['fdiTWJtN', 'fdiTWJtN'],
+        shape=(8, 8),
+    )
+WNAG:
+    iter_times, elapsed_time, sqdiff: 300, 0.6432063579559326, 4.05475505347874
+    grad_by_real_M: Tensor(
+        [-0.52103426 -1.0345522   0.40499056 -0.78521034  0.21203313 -0.00252184  0.24963007  0.83907224]
+        labels=[('kl', 'VbyPKGRW')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [ 15.05380702  22.1298064   34.79583612  40.25821915  59.00718332  88.97076429  97.99543576 135.63429376]
+        labels=['fdiTWJtN', 'fdiTWJtN'],
+        shape=(8, 8),
+    )
+SNAG:
+    iter_times, elapsed_time, sqdiff: 300, 0.4888269901275635, 4.313800639959842
+    grad_by_real_M: Tensor(
+        [ 7.21644966e-15 -1.98452366e-15  7.21644966e-15 -2.05391260e-15 -5.55111512e-15  1.94289029e-16 -2.55351296e-15  1.17961196e-15]
+        labels=[('kl', 'VbyPKGRW')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [ 2.04165224  2.75555897  3.36702757  4.47100047 14.0904515  14.31926763 21.84724398 24.28011502]
+        labels=['fdiTWJtN', 'fdiTWJtN'],
+        shape=(8, 8),
+    )
+SSpiral(8):
+    iter_times, elapsed_time, sqdiff: 300, 0.780707836151123, 6.047870925618888
+    grad_by_real_M: Tensor(
+        [ 7.47665818e-16 -4.38538095e-15 -1.47104551e-15  8.32667268e-16 -1.38777878e-15  2.77555756e-15 -3.33066907e-16  2.70616862e-16]
+        labels=[('kl', 'VbyPKGRW')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [0.54000529 0.72608047 1.03322518 1.35070846 4.25774928 4.71311958 5.31562405 7.79155083]
+        labels=['fdiTWJtN', 'fdiTWJtN'],
+        shape=(8, 8),
+    )
+SSpiral(11):
+    iter_times, elapsed_time, sqdiff: 300, 0.7835121154785156, 4.31380063995984
+    grad_by_real_M: Tensor(
+        [ 2.84217094e-14 -1.25455202e-14  3.51940699e-14  1.21014310e-14  3.57491814e-14  3.26266791e-14  6.60582700e-14  5.22915045e-14]
+        labels=[('kl', 'VbyPKGRW')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [17.38523874 26.07315683 31.68570331 38.04694425 60.1539299  74.88340792 82.47684442 92.96728418]
+        labels=['fdiTWJtN', 'fdiTWJtN'],
+        shape=(8, 8),
+    )
+SSpiral(14):
+    iter_times, elapsed_time, sqdiff: 300, 0.7913179397583008, 4.313800639959841
+    grad_by_real_M: Tensor(
+        [ 3.77475828e-15 -4.99600361e-15  4.87387908e-14  7.21644966e-15  2.33146835e-14  3.18356452e-14 -4.27990976e-14  6.21724894e-15]
+        labels=[('kl', 'VbyPKGRW')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [17.3467955  26.26462933 31.83765118 38.47907754 60.38562488 74.68169606 82.73035104 92.3988649 ]
+        labels=['fdiTWJtN', 'fdiTWJtN'],
+        shape=(8, 8),
+    )
+SSpiral(17):
+    iter_times, elapsed_time, sqdiff: 300, 0.7756690979003906, 4.3138006399598385
+    grad_by_real_M: Tensor(
+        [ 2.66453526e-14 -1.76525461e-14  5.93414207e-14  3.74145159e-14  9.10382880e-14 -5.98132655e-15  2.16715534e-13  3.06976666e-14]
+        labels=[('kl', 'VbyPKGRW')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [17.30445274 26.16749985 31.7294695  38.47724519 60.30719773 74.33607127 82.62816343 91.90648691]
+        labels=['fdiTWJtN', 'fdiTWJtN'],
+        shape=(8, 8),
+    )
+SSpiral(20):
+    array must not contain infs or NaNs
+'SSpiral(20)'

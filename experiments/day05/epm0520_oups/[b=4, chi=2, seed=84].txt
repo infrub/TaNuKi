@@ -1,0 +1,145 @@
+b=4, chi=2, seed=84, 
+NOR:
+    iter_times, elapsed_time, sqdiff: 300, 0.5554599761962891, 1.8361274515285029
+    grad_by_real_M: Tensor(
+        [-7.32747196e-15  9.15933995e-15 -2.77555756e-15  8.62157568e-16  2.32036612e-14  6.55031585e-15  2.22044605e-15 -1.02973186e-14]
+        labels=[('kl', 'CMFCNnyU')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [13.94346573 20.40869253 30.80192755 44.2437594  52.1765238  71.0635665  86.8553472  93.35220618]
+        labels=['LFgWcQhz', 'LFgWcQhz'],
+        shape=(8, 8),
+    )
+WCOR:
+    iter_times, elapsed_time, sqdiff: 300, 0.5183091163635254, 1.8361274515285018
+    grad_by_real_M: Tensor(
+        [-4.77395901e-15 -1.14352972e-14  2.89768209e-14  1.95052308e-14 -7.10542736e-15 -8.43769499e-15 -7.54951657e-15 -1.07414078e-14]
+        labels=[('kl', 'CMFCNnyU')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [ 13.63394473  21.01014357  35.41776065  43.44786327  57.3136442   83.72720144  92.54754671 108.97134455]
+        labels=['LFgWcQhz', 'LFgWcQhz'],
+        shape=(8, 8),
+    )
+WROR:
+    iter_times, elapsed_time, sqdiff: 300, 0.4663219451904297, 1.8361274515285015
+    grad_by_real_M: Tensor(
+        [ 9.85878046e-14  2.60902411e-15  5.01820807e-14  2.07334150e-14  6.43929354e-15 -1.77635684e-15  4.88498131e-15  2.49800181e-16]
+        labels=[('kl', 'CMFCNnyU')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [  9.5192074   16.05556491  30.51936406  37.49106368  93.76000239 170.16224911 206.63853813 248.29581501]
+        labels=['HhdAAXab', 'HhdAAXab'],
+        shape=(8, 8),
+    )
+IWROR:
+    iter_times, elapsed_time, sqdiff: 300, 0.43673205375671387, 1.8361274515284998
+    grad_by_real_M: Tensor(
+        [-3.50830476e-14 -8.10462808e-15  1.02140518e-13  7.03603842e-15 -5.26245714e-14  9.99200722e-15 -4.97379915e-14  1.24900090e-15]
+        labels=[('kl', 'CMFCNnyU')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [ 10.87490546  18.34457047  34.40639572  44.42835632  86.61784861 163.6386002  190.53432561 234.09815304]
+        labels=['lXljtNZQ', 'lXljtNZQ'],
+        shape=(8, 8),
+    )
+WLBOR:
+    iter_times, elapsed_time, sqdiff: 300, 1.5090370178222656, 1.8361274515285029
+    grad_by_real_M: Tensor(
+        [-2.46592291e-09 -1.65370917e-09 -5.72754322e-09 -2.04833335e-09 -5.01967412e-09 -4.74460937e-09  9.44383460e-09 -1.88431631e-09]
+        labels=[('kl', 'CMFCNnyU')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [13.99272009 20.46007867 30.96623116 44.2612912  52.38077936 71.38439658 86.92686083 93.81356326]
+        labels=['LFgWcQhz', 'LFgWcQhz'],
+        shape=(8, 8),
+    )
+WNAG:
+    iter_times, elapsed_time, sqdiff: 300, 0.4709351062774658, 1.8429723647510854
+    grad_by_real_M: Tensor(
+        [ 0.33509679  0.68091641 -0.58925762 -0.26912383 -0.76808135  0.39451299  1.2924777  -1.19377179]
+        labels=[('kl', 'CMFCNnyU')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [  60.35875269   79.50754666  104.92316952  208.97642626  314.36498881  583.18256688  952.76159733 1118.8504503 ]
+        labels=['LFgWcQhz', 'LFgWcQhz'],
+        shape=(8, 8),
+    )
+SNAG:
+    iter_times, elapsed_time, sqdiff: 300, 0.43629026412963867, 1.8361274515285007
+    grad_by_real_M: Tensor(
+        [ 3.99680289e-15 -9.71445147e-16  1.92068583e-14 -3.01841885e-16  1.99840144e-14 -2.35922393e-15  3.41948692e-14  5.55111512e-17]
+        labels=[('kl', 'CMFCNnyU')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [  2.90860947   4.50538688   7.68766455  13.62362418  58.25469545  78.99367225  93.3258762  137.89413903]
+        labels=['LFgWcQhz', 'LFgWcQhz'],
+        shape=(8, 8),
+    )
+SSpiral(8):
+    iter_times, elapsed_time, sqdiff: 300, 0.7884831428527832, 1.836127451528501
+    grad_by_real_M: Tensor(
+        [-9.88098492e-15  4.99600361e-15 -3.48610030e-14  2.02754480e-14 -4.32986980e-14 -2.58681965e-14  2.48689958e-14 -4.28546088e-14]
+        labels=[('kl', 'CMFCNnyU')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [12.78933168 19.74777136 29.09711167 44.43956122 50.61795384 68.65106228 85.2788591  88.90585333]
+        labels=['LFgWcQhz', 'LFgWcQhz'],
+        shape=(8, 8),
+    )
+SSpiral(11):
+    iter_times, elapsed_time, sqdiff: 300, 0.7935128211975098, 1.8361274515285015
+    grad_by_real_M: Tensor(
+        [ 3.23074900e-14 -3.36952688e-14 -8.10462808e-15  5.32837663e-14  1.52100554e-14 -1.44328993e-14 -1.53210777e-14 -1.01141318e-13]
+        labels=[('kl', 'CMFCNnyU')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [12.69900095 19.72766566 28.29310448 45.06117418 50.30182999 67.08425619 85.29849499 86.59304034]
+        labels=['LFgWcQhz', 'LFgWcQhz'],
+        shape=(8, 8),
+    )
+SSpiral(14):
+    iter_times, elapsed_time, sqdiff: 300, 0.7903003692626953, 1.8361274515285033
+    grad_by_real_M: Tensor(
+        [ 4.77395901e-15 -1.69864123e-14 -2.63122857e-14  1.52586277e-14 -8.32667268e-15  3.33066907e-16 -3.97459843e-14 -2.22599716e-14]
+        labels=[('kl', 'CMFCNnyU')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [12.30310341 18.68411467 29.34162381 42.7438899  50.07357769 69.42878056 84.12456683 90.61608144]
+        labels=['LFgWcQhz', 'LFgWcQhz'],
+        shape=(8, 8),
+    )
+SSpiral(17):
+    iter_times, elapsed_time, sqdiff: 300, 0.7900021076202393, 1.8361274515284993
+    grad_by_real_M: Tensor(
+        [-2.44249065e-15 -6.18394225e-14 -3.33066907e-16  8.91647867e-14 -3.67483821e-14 -2.34257058e-14 -2.08721929e-14 -8.26561042e-14]
+        labels=[('kl', 'CMFCNnyU')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [12.18142969 18.96310821 27.84438445 43.65166303 49.25547799 66.13663784 82.83514021 85.5678307 ]
+        labels=['LFgWcQhz', 'LFgWcQhz'],
+        shape=(8, 8),
+    )
+SSpiral(20):
+    iter_times, elapsed_time, sqdiff: 300, 0.8003668785095215, 1.8361274515285024
+    grad_by_real_M: Tensor(
+        [ 1.60982339e-14 -2.72004641e-15 -3.10862447e-15 -2.23016050e-14  2.29816166e-14  2.19824159e-14  1.04360964e-14  1.02695630e-14]
+        labels=[('kl', 'CMFCNnyU')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [11.9477808  18.89572425 27.68381249 43.98063824 49.42615802 66.1145236  82.38902218 85.33700997]
+        labels=['LFgWcQhz', 'LFgWcQhz'],
+        shape=(8, 8),
+    )

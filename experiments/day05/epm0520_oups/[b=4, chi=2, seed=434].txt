@@ -1,0 +1,145 @@
+b=4, chi=2, seed=434, 
+NOR:
+    iter_times, elapsed_time, sqdiff: 300, 0.5771069526672363, 2.632335908352235
+    grad_by_real_M: Tensor(
+        [ 3.49720253e-15 -1.49880108e-14  1.71529457e-14 -4.66293670e-15 -2.88657986e-15 -7.43849426e-15 -1.31006317e-14 -1.21985755e-14]
+        labels=[('kl', 'CObdJfAy')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [ 13.88082381  17.30963356  38.91498752  40.61481119  46.06341373  67.87894808  88.06283998 143.66550263]
+        labels=['JQcCnbIe', 'JQcCnbIe'],
+        shape=(8, 8),
+    )
+WCOR:
+    iter_times, elapsed_time, sqdiff: 300, 0.611220121383667, 2.6323359083522333
+    grad_by_real_M: Tensor(
+        [-1.38777878e-14  8.43769499e-15  3.55271368e-15  2.66453526e-15 -8.88178420e-15  9.65894031e-15 -7.77156117e-15 -3.88578059e-15]
+        labels=[('kl', 'CObdJfAy')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [ 16.06384865  18.39795078  31.44460815  42.00094988  53.84819244  67.39447649  92.93152943 180.74562731]
+        labels=['JQcCnbIe', 'JQcCnbIe'],
+        shape=(8, 8),
+    )
+WROR:
+    iter_times, elapsed_time, sqdiff: 300, 0.5854167938232422, 2.632335908352235
+    grad_by_real_M: Tensor(
+        [ 2.59792188e-14 -2.23154828e-14 -3.77475828e-15  2.44249065e-15 -2.86992652e-14  1.88737914e-15  1.64313008e-14  4.99600361e-15]
+        labels=[('kl', 'CObdJfAy')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [  7.37995057  10.55471136  16.51736416  23.71923824  31.28061188  49.17367814  60.32524586 124.2498112 ]
+        labels=['JOrVaVli', 'JOrVaVli'],
+        shape=(8, 8),
+    )
+IWROR:
+    iter_times, elapsed_time, sqdiff: 300, 0.567847728729248, 2.6323359083522355
+    grad_by_real_M: Tensor(
+        [ 4.88498131e-15  1.94289029e-14 -4.88498131e-15 -3.18634008e-14 -4.22994972e-14  1.68753900e-14 -1.79856130e-14 -2.19269047e-14]
+        labels=[('kl', 'CObdJfAy')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [  6.43040515   9.58102286  17.90123307  24.64508764  31.09819158  61.20214156  81.37725326 180.63909721]
+        labels=['hBRpHqlc', 'hBRpHqlc'],
+        shape=(8, 8),
+    )
+WLBOR:
+    iter_times, elapsed_time, sqdiff: 300, 1.5030200481414795, 2.632335908352238
+    grad_by_real_M: Tensor(
+        [-4.32656300e-10  3.27897033e-08 -1.92069426e-09 -4.30993934e-08 -7.47196327e-09  5.49793511e-09 -1.22029664e-08 -8.23126529e-09]
+        labels=[('kl', 'CObdJfAy')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [ 13.74687328  17.18585669  38.69725207  40.41631919  45.71389303  67.22923999  87.70105946 142.0585998 ]
+        labels=['JQcCnbIe', 'JQcCnbIe'],
+        shape=(8, 8),
+    )
+WNAG:
+    iter_times, elapsed_time, sqdiff: 300, 0.645679235458374, 2.6381222043876145
+    grad_by_real_M: Tensor(
+        [-0.11173336 -0.68808771  0.11357697 -0.07006238 -0.17291885 -0.82378323 -0.04751363  0.18618833]
+        labels=[('kl', 'CObdJfAy')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [  7.12273608  19.18966802  27.34076536  33.18265731  86.12771885 139.50014781 179.62215774 290.53127742]
+        labels=['JQcCnbIe', 'JQcCnbIe'],
+        shape=(8, 8),
+    )
+SNAG:
+    iter_times, elapsed_time, sqdiff: 300, 0.6344499588012695, 2.6323359083522337
+    grad_by_real_M: Tensor(
+        [ 1.16573418e-15 -1.36557432e-14  8.32667268e-16 -2.22044605e-16 -2.49800181e-15 -4.44089210e-16 -1.05471187e-15 -2.44249065e-15]
+        labels=[('kl', 'CObdJfAy')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [ 1.76274175  3.08238044  4.29609927  6.29212724 30.68271959 46.19925322 72.6336638  96.82201487]
+        labels=['JQcCnbIe', 'JQcCnbIe'],
+        shape=(8, 8),
+    )
+SSpiral(8):
+    iter_times, elapsed_time, sqdiff: 300, 1.212015151977539, 2.6323359083522364
+    grad_by_real_M: Tensor(
+        [-3.10862447e-15 -1.71251902e-14  3.35287353e-14  5.81479309e-15 -5.71764858e-14  2.64233080e-14 -3.99680289e-14  1.32116540e-14]
+        labels=[('kl', 'CObdJfAy')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [ 3.8312794   4.92587243  6.5701555  12.21357243 15.31994271 21.00995236 32.50212828 64.11081858]
+        labels=['JQcCnbIe', 'JQcCnbIe'],
+        shape=(8, 8),
+    )
+SSpiral(11):
+    iter_times, elapsed_time, sqdiff: 300, 1.3272969722747803, 2.632335908352233
+    grad_by_real_M: Tensor(
+        [ 5.66028127e-13 -4.37032355e-13 -2.60569344e-13  1.92845739e-13 -4.95714580e-13  3.28403971e-13 -2.83550960e-13  9.53126467e-14]
+        labels=[('kl', 'CObdJfAy')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [ 1.6440753   2.38793152  3.24290381  5.38000756 17.30753131 22.84560525 39.03172957 73.29416082]
+        labels=['JQcCnbIe', 'JQcCnbIe'],
+        shape=(8, 8),
+    )
+SSpiral(14):
+    iter_times, elapsed_time, sqdiff: 300, 1.0288128852844238, 4.607115882588076
+    grad_by_real_M: Tensor(
+        [ 2.67563749e-14 -1.31977762e-14  0.00000000e+00 -6.27276009e-15 -4.68236561e-14 -1.91513472e-15  4.60742555e-14 -3.47638585e-15]
+        labels=[('kl', 'CObdJfAy')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [ 0.43694982  0.61433712  0.69417251  0.90477945 11.28820986 17.29970955 26.68687161 41.84203568]
+        labels=['JQcCnbIe', 'JQcCnbIe'],
+        shape=(8, 8),
+    )
+SSpiral(17):
+    iter_times, elapsed_time, sqdiff: 300, 1.0368728637695312, 4.607115882588078
+    grad_by_real_M: Tensor(
+        [-6.81676937e-14 -4.74620343e-15  1.07913678e-13  1.38777878e-16 -9.99200722e-16 -7.77156117e-16  1.07969189e-13 -3.05311332e-15]
+        labels=[('kl', 'CObdJfAy')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [  0.43528512   0.47978743   0.60899488   0.80405317  24.76685048  44.60876708  67.03418344 112.49689633]
+        labels=['JQcCnbIe', 'JQcCnbIe'],
+        shape=(8, 8),
+    )
+SSpiral(20):
+    iter_times, elapsed_time, sqdiff: 300, 1.0276610851287842, 4.6071158825880705
+    grad_by_real_M: Tensor(
+        [-2.73649159e-12  4.20052881e-13 -1.38999923e-13 -1.02418074e-13  9.87654403e-13  1.30812028e-13 -5.85892446e-13 -2.18991492e-13]
+        labels=[('kl', 'CObdJfAy')],
+        shape=(8,),
+    )
+    S of eigh of hessian_by_real_M: DiagonalTensor(
+        [  0.55414796   0.68805506   0.82630957   1.14737311  44.7446334   60.06488746 109.51635421 165.36209496]
+        labels=['JQcCnbIe', 'JQcCnbIe'],
+        shape=(8, 8),
+    )
