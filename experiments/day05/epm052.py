@@ -16,7 +16,7 @@ import textwrap
 
 pd.options.display.max_columns = 30
 pd.options.display.width = 160
-np.set_printoptions(linewidth=500)
+np.set_printoptions(linewidth=float("inf"))
 tnc.display_max_size = float("inf")
 
 
@@ -70,8 +70,8 @@ def epm052_base(epmName, b, chi, epmlen):
         metaf = open(f"{epmName}_oups/{epmName}_meta.csv","a")
         with open_and_stdout(f"{epmName}_oups/[b={b}, chi={chi}, seed={seed}].txt") as oupf:
 
-            oupf.write(f"b={b}, chi={chi}, seed={seed}, ")
             metaf.write(f"{b},{chi},{seed},")
+            oupf.write(f"b={b}, chi={chi}, seed={seed}, ")
             np.random.seed(seed=seed)
             random.seed(seed)
 
@@ -79,6 +79,7 @@ def epm052_base(epmName, b, chi, epmlen):
             H = random_tensor((b,b,n),["kl","kr","extraction"])
             V = H * H.adjoint(["kl","kr"],style="aster")
             A0 = random_tensor((b,b),["kl","kr"])
+            oupf.write("A0:",A0)
 
             fig, axs = plt.subplots(1, 2, sharey=True, figsize=(13,8))
             ax1,ax2 = tuple(axs)
@@ -90,6 +91,7 @@ def epm052_base(epmName, b, chi, epmlen):
             minError = float("inf")
             maxError = float("-inf")
             dfd = {}
+            oupf.indent()
             for (algname, kwargs, color, title) in registereds:
                 np.random.seed(seed=seed)
                 random.seed(seed)
@@ -105,11 +107,7 @@ def epm052_base(epmName, b, chi, epmlen):
                     metaf.write(str(ENV.sqdiff)+",")
                     oupf.write(f"iter_times, elapsed_time, sqdiff: {ENV.iter_times}, {ENV.elapsed_time}, {ENV.sqdiff}")
                     oupf.write("MSN:",M*S*N)
-                    oupf.write("grad_by_M:",ENV.grad_by_M)
                     oupf.write("grad:",ENV.grad)
-                    hessian_M_M = ENV.hessian_by_M_M
-                    #oupf.write("hessian_by_M_M:", hessian_M_M)
-                    oupf.write("eigvals of hessian_by_M_M:", xp.linalg.eigvalsh(hessian_M_M))
                     hessian = ENV.hessian
                     #oupf.write("hessian:", hessian)
                     oupf.write("eigvals of hessian:", xp.linalg.eigvalsh(hessian))
@@ -117,14 +115,12 @@ def epm052_base(epmName, b, chi, epmlen):
                         minError = ENV.sqdiff
                     if maxError < ENV.sqdiff:
                         maxError = ENV.sqdiff
-                except:
-                    raise
-                """
                 except ValueError as e:
-                    oupf.write(e)
-                    metaf.write("nan,")"""
+                    oupf.write("failed because",e)
+                    metaf.write("nan,")
                 oupf.dedent()
             
+            oupf.dedent()
             metaf.write("minError")
 
             for (algname, kwargs, color, title) in registereds:
@@ -174,7 +170,7 @@ def epm0520():
         for spiral_turn_max in [8,11,14,17,20]:
             register(algname, {"spiral_turn_max":spiral_turn_max}, cm.gist_ncar(i/12))
             i += 2
-    epm052_base("epm0520_test", 4, 2, 10)
+    epm052_base("epm0520", 4, 2, 10)
 
 
 
