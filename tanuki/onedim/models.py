@@ -98,7 +98,7 @@ class _1DSimBTPSMixin:
 
 
 
-class Fin1DSimTP_Mixin:
+class Obc1DTP_Mixin:
     def get_left_labels_site(self, site):
         if site==0:
             return []
@@ -114,7 +114,7 @@ class Fin1DSimTP_Mixin:
 
 
 
-class Fin1DSimBTP_Mixin:
+class Obc1DBTP_Mixin:
     def get_left_labels_site(self, site):
         return tnc.intersection_list(self.bdts[site].labels, self.tensors[site].labels)
     def get_right_labels_site(self, site):
@@ -130,7 +130,7 @@ class Fin1DSimBTP_Mixin:
 
 
 
-class Inf1DSimTP_Mixin:
+class Inf1DTP_Mixin:
     def get_left_labels_site(self, site):
         return tnc.intersection_list(self.tensors[site-1].labels, self.tensors[site].labels)
     def get_right_labels_site(self, site):
@@ -138,7 +138,7 @@ class Inf1DSimTP_Mixin:
 
 
 
-class Inf1DSimBTP_Mixin:
+class Inf1DBTP_Mixin:
     def get_left_labels_site(self, site):
         return tnc.intersection_list(self.bdts[site].labels, self.tensors[site].labels)
     def get_right_labels_site(self, site):
@@ -159,25 +159,25 @@ class Inf1DSimBTP_Mixin:
 
 
 
-# ███████ ████████ ███    ███ ███████ 
-# ██         ██    ████  ████ ██      
-# █████      ██    ██ ████ ██ ███████ 
-# ██         ██    ██  ██  ██      ██ 
-# ██         ██    ██      ██ ███████ 
-class Fin1DSimTMS: #Tensor Mass State
+#  ██████  ████████ ███    ███ ███████ 
+# ██    ██    ██    ████  ████ ██      
+# ██    ██    ██    ██ ████ ██ ███████ 
+# ██    ██    ██    ██  ██  ██      ██ 
+#  ██████     ██    ██      ██ ███████ 
+class Obc1DTMS: #Open boundary Tensor Mass State
     def __init__(self, tensor, phys_labelss):
         self.tensor = tensor
         self.phys_labelss = list(phys_labelss)
 
     def __repr__(self):
-        return f"Fin1DSimTMS(tensor={self.tensor}, phys_labelss={self.physout_labelss})"
+        return f"Obc1DTMS(tensor={self.tensor}, phys_labelss={self.physout_labelss})"
 
     def __str__(self):
         dataStr = f"{self.tensor},\n"
         dataStr += f"phys_labelss={self.phys_labelss},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Fin1DSimTMS(\n" + dataStr + f")"
+        dataStr = f"Obc1DTMS(\n" + dataStr + f")"
 
         return dataStr
 
@@ -204,7 +204,7 @@ class Fin1DSimTMS: #Tensor Mass State
         rev_tensors.append(G)
         rev_tensors.reverse()
         rev_bdts.reverse()
-        return Fin1DSimBTPS(rev_tensors, rev_bdts, self.phys_labelss)
+        return Obc1DBTPS(rev_tensors, rev_bdts, self.phys_labelss)
 
     def __eq__(self, other):
         return self.tensor.move_all_indices(sum(self.phys_labelss,[])) == other.tensor.move_all_indices(sum(other.phys_labelss,[]))
@@ -216,7 +216,7 @@ class Fin1DSimTMS: #Tensor Mass State
 # ██         ██    ██           ██ 
 # ██         ██    ██      ███████ 
 # tensors[0] -- tensors[1] -- ... -- tensors[len-1]
-class Fin1DSimTPS(_1DSim_PSMixin, Fin1DSimTP_Mixin):
+class Obc1DTPS(_1DSim_PSMixin, Obc1DTP_Mixin):
     def __init__(self, tensors, phys_labelss=None):
         self.tensors = list(tensors)
         if phys_labelss is None:
@@ -225,7 +225,7 @@ class Fin1DSimTPS(_1DSim_PSMixin, Fin1DSimTP_Mixin):
             self.phys_labelss = list(phys_labelss)
 
     def __repr__(self):
-        return f"Fin1DSimTPS(tensors={self.tensors}, phys_labelss={self.phys_labelss})"
+        return f"Obc1DTPS(tensors={self.tensors}, phys_labelss={self.phys_labelss})"
 
     def __str__(self):
         if len(self) > 20:
@@ -242,7 +242,7 @@ class Fin1DSimTPS(_1DSim_PSMixin, Fin1DSimTP_Mixin):
         dataStr += f"phys_labelss={self.phys_labelss},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Fin1DSimTPS(\n" + dataStr + f")"
+        dataStr = f"Obc1DTPS(\n" + dataStr + f")"
 
         return dataStr
 
@@ -251,7 +251,7 @@ class Fin1DSimTPS(_1DSim_PSMixin, Fin1DSimTP_Mixin):
 
     def adjoint(self):
         tensors = [self.get_bra_site(site) for site in range(len(self))]
-        return Fin1DSimTPS(tensors, self.phys_labelss)
+        return Obc1DTPS(tensors, self.phys_labelss)
 
     def to_tensor(self):
         return self.to_TMS().to_tensor()
@@ -260,7 +260,7 @@ class Fin1DSimTPS(_1DSim_PSMixin, Fin1DSimTP_Mixin):
         t = 1
         for i in range(len(self)):
             t *= self.tensors[i]
-        return Fin1DSimTMS(t, self.phys_labelss)
+        return Obc1DTMS(t, self.phys_labelss)
 
     def to_TPS(self):
         return self
@@ -273,17 +273,17 @@ class Fin1DSimTPS(_1DSim_PSMixin, Fin1DSimTP_Mixin):
             bdt = tni.identity_diagonalTensor(shape, labels)
             bdts.append(bdt)
         bdts.append(tni.dummy_diagonalTensor())
-        return Fin1DSimBTPS(self.tensors, bdts, self.phys_labelss)
+        return Obc1DBTPS(self.tensors, bdts, self.phys_labelss)
 
 
 
-# ███████ ██████  ████████ ██████  ███████ 
-# ██      ██   ██    ██    ██   ██ ██      
-# █████   ██████     ██    ██████  ███████ 
-# ██      ██   ██    ██    ██           ██ 
-# ██      ██████     ██    ██      ███████ 
+#  ██████  ██████  ████████ ██████  ███████ 
+# ██    ██ ██   ██    ██    ██   ██ ██      
+# ██    ██ ██████     ██    ██████  ███████ 
+# ██    ██ ██   ██    ██    ██           ██ 
+#  ██████  ██████     ██    ██      ███████ 
 # bdts[0] -- tensors[0] -- bdts[1] -- tensors[1] -- ... -- tensors[len-1] -- bdts[len]
-class Fin1DSimBTPS(_1DSim_PSMixin, _1DSimBTPSMixin, Fin1DSimBTP_Mixin):
+class Obc1DBTPS(_1DSim_PSMixin, _1DSimBTPSMixin, Obc1DBTP_Mixin):
     def __init__(self, tensors, bdts, phys_labelss=None):
         self.tensors = list(tensors)
         self.bdts = list(bdts)
@@ -295,7 +295,7 @@ class Fin1DSimBTPS(_1DSim_PSMixin, _1DSimBTPSMixin, Fin1DSimBTP_Mixin):
             self.phys_labelss = list(phys_labelss)
 
     def __repr__(self):
-        return f"Fin1DSimBTPS(tensors={self.tensors}, bdts={self.bdts}, phys_labelss={self.phys_labelss})"
+        return f"Obc1DBTPS(tensors={self.tensors}, bdts={self.bdts}, phys_labelss={self.phys_labelss})"
 
     def __str__(self):
         if len(self) > 20:
@@ -318,7 +318,7 @@ class Fin1DSimBTPS(_1DSim_PSMixin, _1DSimBTPSMixin, Fin1DSimBTP_Mixin):
         dataStr += f"phys_labelss={self.phys_labelss},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Fin1DSimBTPS(\n" + dataStr + f")"
+        dataStr = f"Obc1DBTPS(\n" + dataStr + f")"
 
         return dataStr
 
@@ -328,7 +328,7 @@ class Fin1DSimBTPS(_1DSim_PSMixin, _1DSimBTPSMixin, Fin1DSimBTP_Mixin):
     def adjoint(self):
         tensors = [self.get_bra_site(site) for site in range(len(self))]
         bdts = [self.get_bra_bond(bondsite) for bondsite in range(len(self)+1)]
-        return Fin1DSimBTPS(tensors, bdts, self.phys_labelss)
+        return Obc1DBTPS(tensors, bdts, self.phys_labelss)
 
     def to_tensor(self):
         return self.to_TPS().to_TMS().to_tensor()
@@ -341,7 +341,7 @@ class Fin1DSimBTPS(_1DSim_PSMixin, _1DSimBTPSMixin, Fin1DSimBTP_Mixin):
         for i in range(len(self)):
             tensors.append( self.bdts[i][self.get_right_labels_bond(i)] * self.tensors[i][self.get_left_labels_site(i)] )
         tensors[-1] = tensors[-1][self.get_right_labels_site(len(self)-1)] * self.bdts[len(self)][self.get_left_labels_bond(len(self))]
-        return Fin1DSimTPS(tensors, self.phys_labelss)
+        return Obc1DTPS(tensors, self.phys_labelss)
 
     def to_BTPS(self):
         return self
@@ -498,7 +498,7 @@ class Fin1DSimBTPS(_1DSim_PSMixin, _1DSimBTPSMixin, Fin1DSimBTP_Mixin):
 
     # applying methods
     def apply(self, gate, offset=0, chi=None, keep_universal_canonicality=True, keep_phys_labels=True):
-        if type(gate) in [Fin1DSimBTPO, Fin1DSimTPO, Fin1DSimTMO]:
+        if type(gate) in [Obc1DBTPO, Obc1DTPO, Obc1DTMO]:
             gate = gate.to_BTPO()
         else: # list of gates
             for reallygate in gate:
@@ -507,7 +507,7 @@ class Fin1DSimBTPS(_1DSim_PSMixin, _1DSimBTPSMixin, Fin1DSimBTP_Mixin):
         tnop.apply_fin1DSimBTPS_fin1DSimBTPO(self,gate,offset=offset,chi=chi,keep_universal_canonicality=keep_universal_canonicality,keep_phys_labels=keep_phys_labels)
 
     def apply_everyplace(self, gate, chi=None, keep_universal_canonicality=True, gating_order="grissand"):
-        if type(gate) in [Fin1DSimBTPO, Fin1DSimTPO, Fin1DSimTMO]:
+        if type(gate) in [Obc1DBTPO, Obc1DTPO, Obc1DTMO]:
             gate = gate.to_BTPO()
         else:
             for reallygate in gate:
@@ -534,7 +534,7 @@ class Fin1DSimBTPS(_1DSim_PSMixin, _1DSimBTPSMixin, Fin1DSimBTP_Mixin):
 # ██    ██    ██           ██ 
 # ██    ██    ██      ███████ 
 # )-- tensors[0] -- tensors[1] -- ... -- tensors[len-1] --(
-class Inf1DSimTPS(_1DSim_PSMixin, Inf1DSimTP_Mixin):
+class Inf1DTPS(_1DSim_PSMixin, Inf1DTP_Mixin):
     def __init__(self, tensors, phys_labelss=None):
         self.tensors = CyclicList(tensors)
         if phys_labelss is None:
@@ -542,7 +542,7 @@ class Inf1DSimTPS(_1DSim_PSMixin, Inf1DSimTP_Mixin):
         self.phys_labelss = CyclicList(phys_labelss)
 
     def __repr__(self):
-        return f"Inf1DSimTPS(tensors={self.tensors}, phys_labelss={self.phys_labelss})"
+        return f"Inf1DTPS(tensors={self.tensors}, phys_labelss={self.phys_labelss})"
 
     def __str__(self):
         if len(self) > 20:
@@ -559,7 +559,7 @@ class Inf1DSimTPS(_1DSim_PSMixin, Inf1DSimTP_Mixin):
         dataStr += f"phys_labelss={self.phys_labelss},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Inf1DSimTPS(\n" + dataStr + f")"
+        dataStr = f"Inf1DTPS(\n" + dataStr + f")"
 
         return dataStr
 
@@ -568,7 +568,7 @@ class Inf1DSimTPS(_1DSim_PSMixin, Inf1DSimTP_Mixin):
 
     def adjoint(self):
         tensors = [self.get_bra_site(site) for site in range(len(self))]
-        return Inf1DSimTPS(tensors, self.phys_labelss)
+        return Inf1DTPS(tensors, self.phys_labelss)
 
     def to_tensor(self): # TODO losts information
         re = 1
@@ -586,7 +586,7 @@ class Inf1DSimTPS(_1DSim_PSMixin, Inf1DSimTP_Mixin):
             shape = self.get_left_shape_site(i)
             bdt = tni.identity_diagonalTensor(shape, labels)
             bdts.append(bdt)
-        return Inf1DSimBTPS(self.tensors, bdts, self.phys_labelss)
+        return Inf1DBTPS(self.tensors, bdts, self.phys_labelss)
 
 
 
@@ -596,7 +596,7 @@ class Inf1DSimTPS(_1DSim_PSMixin, Inf1DSimTP_Mixin):
 # ██ ██   ██    ██    ██           ██ 
 # ██ ██████     ██    ██      ███████ 
 # )-- bdts[0] -- tensors[0] -- bdts[1] -- tensors[1] -- ... -- bdts[-1] -- tensors[-1] --(
-class Inf1DSimBTPS(Inf1DSimBTP_Mixin, Fin1DSimBTPS):
+class Inf1DBTPS(Inf1DBTP_Mixin, Obc1DBTPS):
     def __init__(self, tensors, bdts, phys_labelss=None):
         self.tensors = CyclicList(tensors)
         self.bdts = CyclicList(bdts)
@@ -605,7 +605,7 @@ class Inf1DSimBTPS(Inf1DSimBTP_Mixin, Fin1DSimBTPS):
         self.phys_labelss = CyclicList(phys_labelss)
 
     def __repr__(self):
-        return f"Inf1DSimBTPS(tensors={self.tensors}, bdts={self.bdts}, phys_labelss={self.phys_labelss})"
+        return f"Inf1DBTPS(tensors={self.tensors}, bdts={self.bdts}, phys_labelss={self.phys_labelss})"
 
     def __str__(self):
         if len(self) > 20:
@@ -625,7 +625,7 @@ class Inf1DSimBTPS(Inf1DSimBTP_Mixin, Fin1DSimBTPS):
         dataStr += f"phys_labelss={self.phys_labelss},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Inf1DSimBTPS(\n" + dataStr + f")"
+        dataStr = f"Inf1DBTPS(\n" + dataStr + f")"
 
         return dataStr
 
@@ -635,7 +635,7 @@ class Inf1DSimBTPS(Inf1DSimBTP_Mixin, Fin1DSimBTPS):
     def adjoint(self):
         tensors = [self.get_bra_site(site) for site in range(len(self))]
         bdts = [self.get_bra_bond(bondsite) for bondsite in range(len(self))]
-        return Inf1DSimBTPS(tensors, bdts, self.phys_labelss)
+        return Inf1DBTPS(tensors, bdts, self.phys_labelss)
 
     def to_tensor(self): # losts information
         re = 1
@@ -648,7 +648,7 @@ class Inf1DSimBTPS(Inf1DSimBTP_Mixin, Fin1DSimBTPS):
         tensors = []
         for i in range(len(self)):
             tensors.append( self.bdts[i][self.get_right_labels_bond(i)] * self.tensors[i][self.get_left_labels_site(i)] )
-        return Inf1DSimTPS(tensors, self.phys_labelss)
+        return Inf1DTPS(tensors, self.phys_labelss)
 
     def to_BTPS(self):
         return self
@@ -774,7 +774,7 @@ class Inf1DSimBTPS(Inf1DSimBTP_Mixin, Fin1DSimBTPS):
     def apply(self, gate, offset=0, chi=None, keep_universal_canonicality=True, keep_phys_labels=True):
         if type(gate)==Inf1DSImBTPO:
             tnop.apply_inf1DSimBTPS_inf1DSimBTPO(self,gate,offset=offset,chi=chi,keep_universal_canonicality=keep_universal_canonicality,keep_phys_labels=keep_phys_labels)
-        elif type(gate) in [Fin1DSimBTPO, Fin1DSimTPO, Fin1DSimTMO]:
+        elif type(gate) in [Obc1DBTPO, Obc1DTPO, Obc1DTMO]:
             gate = gate.to_BTPO()
             tnop.apply_inf1DSimBTPS_fin1DSimBTPO(self,gate,offset=offset,chi=chi,keep_universal_canonicality=keep_universal_canonicality,keep_phys_labels=keep_phys_labels)
         else: # list of gates
@@ -785,7 +785,7 @@ class Inf1DSimBTPS(Inf1DSimBTP_Mixin, Fin1DSimBTPS):
     def apply_everyplace(self, gate, chi=None, keep_universal_canonicality=True, gating_order="grissand"):
         if type(gate)==Inf1DSImBTPO:
             pass
-        elif type(gate) in [Fin1DSimBTPO, Fin1DSimTPO, Fin1DSimTMO]:
+        elif type(gate) in [Obc1DBTPO, Obc1DTPO, Obc1DTMO]:
             gate = gate.to_BTPO()
         else:
             for reallygate in gate:
@@ -810,12 +810,12 @@ class Inf1DSimBTPS(Inf1DSimBTP_Mixin, Fin1DSimBTPS):
 
 
 
-# ███████ ████████ ███    ███  ██████  
-# ██         ██    ████  ████ ██    ██ 
-# █████      ██    ██ ████ ██ ██    ██ 
-# ██         ██    ██  ██  ██ ██    ██ 
-# ██         ██    ██      ██  ██████  
-class Fin1DSimTMO: #Tensor Mass Operator
+#  ██████  ████████ ███    ███  ██████  
+# ██    ██    ██    ████  ████ ██    ██ 
+# ██    ██    ██    ██ ████ ██ ██    ██ 
+# ██    ██    ██    ██  ██  ██ ██    ██ 
+#  ██████     ██    ██      ██  ██████  
+class Obc1DTMO: #Tensor Mass Operator
     def __init__(self, tensor, physout_labelss, physin_labelss, is_unitary=False, is_hermite=False):
         self.tensor = tensor
         self.physout_labelss = list(physout_labelss)
@@ -824,7 +824,7 @@ class Fin1DSimTMO: #Tensor Mass Operator
         self.is_hermite = is_hermite
 
     def __repr__(self):
-        return f"Fin1DSimTMO(tensor={self.tensor}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
+        return f"Obc1DTMO(tensor={self.tensor}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
 
     def __str__(self):
         dataStr = f"{self.tensor},\n"
@@ -834,7 +834,7 @@ class Fin1DSimTMO: #Tensor Mass Operator
         dataStr += f"is_hermite={self.is_hermite},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Fin1DSimTMO(\n" + dataStr + f")"
+        dataStr = f"Obc1DTMO(\n" + dataStr + f")"
 
         return dataStr
 
@@ -861,7 +861,7 @@ class Fin1DSimTMO: #Tensor Mass Operator
         rev_tensors.append(G)
         rev_tensors.reverse()
         rev_bdts.reverse()
-        return Fin1DSimBTPO(rev_tensors, rev_bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
+        return Obc1DBTPO(rev_tensors, rev_bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
 
     def exp(self, coeff=1):
         G = self.tensor
@@ -874,16 +874,16 @@ class Fin1DSimTMO: #Tensor Mass Operator
             is_unitary = True
         if self.is_hermite and np.imag(coeff)==0:
             is_hermite = True
-        return Fin1DSimTMO(G, self.physout_labelss, self.physin_labelss, is_unitary=is_unitary, is_hermite=is_hermite)
+        return Obc1DTMO(G, self.physout_labelss, self.physin_labelss, is_unitary=is_unitary, is_hermite=is_hermite)
 
 
 
-# ███████ ████████ ██████   ██████  
-# ██         ██    ██   ██ ██    ██ 
-# █████      ██    ██████  ██    ██ 
-# ██         ██    ██      ██    ██ 
-# ██         ██    ██       ██████  
-class Fin1DSimTPO(_1DSim_POMixin, Fin1DSimTP_Mixin):
+#  ██████  ████████ ██████   ██████  
+# ██    ██    ██    ██   ██ ██    ██ 
+# ██    ██    ██    ██████  ██    ██ 
+# ██    ██    ██    ██      ██    ██ 
+#  ██████     ██    ██       ██████  
+class Obc1DTPO(_1DSim_POMixin, Obc1DTP_Mixin):
     def __init__(self, tensors, physout_labelss, physin_labelss, is_unitary=False, is_hermite=False):
         self.tensors = list(tensors)
         self.physout_labelss = list(physout_labelss)
@@ -892,7 +892,7 @@ class Fin1DSimTPO(_1DSim_POMixin, Fin1DSimTP_Mixin):
         self.is_hermite = is_hermite
 
     def __repr__(self):
-        return f"Fin1DSimTPO(tensors={self.tensors}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
+        return f"Obc1DTPO(tensors={self.tensors}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
 
     def __str__(self):
         if len(self) > 20:
@@ -912,7 +912,7 @@ class Fin1DSimTPO(_1DSim_POMixin, Fin1DSimTP_Mixin):
         dataStr += f"is_hermite={self.is_hermite},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Fin1DSimTPO(\n" + dataStr + f")"
+        dataStr = f"Obc1DTPO(\n" + dataStr + f")"
 
         return dataStr
 
@@ -928,7 +928,7 @@ class Fin1DSimTPO(_1DSim_POMixin, Fin1DSimTP_Mixin):
         t = 1
         for i in range(len(self)):
             t *= self.tensors[i]
-        return Fin1DSimTMO(t, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
+        return Obc1DTMO(t, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
 
     def to_TPO(self):
         return self
@@ -941,7 +941,7 @@ class Fin1DSimTPO(_1DSim_POMixin, Fin1DSimTP_Mixin):
             bdt = tni.identity_diagonalTensor(shape, labels)
             bdts.append(bdt)
         bdts.append(tni.dummy_diagonalTensor())
-        return Fin1DSimBTPO(self.tensors, bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
+        return Obc1DBTPO(self.tensors, bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
 
 
 
@@ -950,7 +950,7 @@ class Fin1DSimTPO(_1DSim_POMixin, Fin1DSimTP_Mixin):
 # █████   ██████     ██    ██████  ██    ██ 
 # ██      ██   ██    ██    ██      ██    ██ 
 # ██      ██████     ██    ██       ██████  
-class Fin1DSimBTPO(Fin1DSimBTP_Mixin):
+class Obc1DBTPO(Obc1DBTP_Mixin):
     def __init__(self, tensors, bdts, physout_labelss, physin_labelss, is_unitary=False, is_hermite=False):
         self.tensors = list(tensors)
         self.bdts = list(bdts)
@@ -962,7 +962,7 @@ class Fin1DSimBTPO(Fin1DSimBTP_Mixin):
         self.is_hermite = is_hermite
 
     def __repr__(self):
-        return f"Fin1DSimBTPO(tensors={self.tensors}, bdts={self.bdts}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
+        return f"Obc1DBTPO(tensors={self.tensors}, bdts={self.bdts}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
 
     def __str__(self):
         if len(self) > 20:
@@ -988,7 +988,7 @@ class Fin1DSimBTPO(Fin1DSimBTP_Mixin):
         dataStr += f"is_hermite={self.is_hermite},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Fin1DSimBTPO(\n" + dataStr + f")"
+        dataStr = f"Obc1DBTPO(\n" + dataStr + f")"
 
         return dataStr
 
@@ -1006,7 +1006,7 @@ class Fin1DSimBTPO(Fin1DSimBTP_Mixin):
         for i in range(len(self)):
             tensors.append( self.bdts[i][self.get_right_labels_bond(i)] * self.tensors[i][self.get_left_labels_site(i)] )
         tensors[-1] = tensors[-1][self.get_right_labels_site(len(self)-1)] * self.bdts[len(self)][self.get_left_labels_bond(len(self))]
-        return Fin1DSimTPO(tensors, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
+        return Obc1DTPO(tensors, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
 
     def to_BTPO(self):
         return self
@@ -1026,7 +1026,7 @@ class Fin1DSimBTPO(Fin1DSimBTP_Mixin):
 # ██    ██    ██      ██    ██ 
 # ██    ██    ██       ██████  
 # )-- tensors[0] -- tensors[1] -- ... -- tensors[len-1] --(
-class Inf1DSimTPO(_1DSim_POMixin, Inf1DSimTP_Mixin):
+class Inf1DTPO(_1DSim_POMixin, Inf1DTP_Mixin):
     def __init__(self, tensors, physout_labelss, physin_labelss, is_unitary=False, is_hermite=False):
         self.tensors = CyclicList(tensors)
         self.physout_labelss = CyclicList(physout_labelss)
@@ -1035,7 +1035,7 @@ class Inf1DSimTPO(_1DSim_POMixin, Inf1DSimTP_Mixin):
         self.is_hermite = is_hermite
 
     def __repr__(self):
-        return f"Inf1DSimTPO(tensors={self.tensors}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
+        return f"Inf1DTPO(tensors={self.tensors}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
 
     def __str__(self):
         if len(self) > 20:
@@ -1055,7 +1055,7 @@ class Inf1DSimTPO(_1DSim_POMixin, Inf1DSimTP_Mixin):
         dataStr += f"is_hermite={self.is_hermite},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Inf1DSimTPO(\n" + dataStr + f")"
+        dataStr = f"Inf1DTPO(\n" + dataStr + f")"
 
         return dataStr
 
@@ -1072,7 +1072,7 @@ class Inf1DSimTPO(_1DSim_POMixin, Inf1DSimTP_Mixin):
             shape = self.get_left_shape_site(i)
             bdt = tni.identity_diagonalTensor(shape, labels)
             bdts.append(bdt)
-        return Inf1DSimBTPO(self.tensors, bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
+        return Inf1DBTPO(self.tensors, bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
 
 
 
@@ -1083,7 +1083,7 @@ class Inf1DSimTPO(_1DSim_POMixin, Inf1DSimTP_Mixin):
 # ██ ██   ██    ██    ██      ██    ██ 
 # ██ ██████     ██    ██       ██████  
 # )-- bdts[0] -- tensors[0] -- bdts[1] -- tensors[1] -- ... -- bdts[-1] -- tensors[-1] --(
-class Inf1DSimBTPO(Inf1DSimBTP_Mixin, Fin1DSimBTPO):
+class Inf1DBTPO(Inf1DBTP_Mixin, Obc1DBTPO):
     def __init__(self, tensors, bdts, physout_labelss, physin_labelss, is_unitary=False, is_hermite=False):
         self.tensors = CyclicList(tensors)
         self.bdts = CyclicList(bdts)
@@ -1093,7 +1093,7 @@ class Inf1DSimBTPO(Inf1DSimBTP_Mixin, Fin1DSimBTPO):
         self.is_hermite = is_hermite
 
     def __repr__(self):
-        return f"Inf1DSimBTPO(tensors={self.tensors}, bdts={self.bdts}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
+        return f"Inf1DBTPO(tensors={self.tensors}, bdts={self.bdts}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
 
     def __str__(self):
         if len(self) > 20:
@@ -1116,7 +1116,7 @@ class Inf1DSimBTPO(Inf1DSimBTP_Mixin, Fin1DSimBTPO):
         dataStr += f"is_hermite={self.is_hermite},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Inf1DSimBTPO(\n" + dataStr + f")"
+        dataStr = f"Inf1DBTPO(\n" + dataStr + f")"
 
         return dataStr
 
@@ -1127,7 +1127,7 @@ class Inf1DSimBTPO(Inf1DSimBTP_Mixin, Fin1DSimBTPO):
         tensors = []
         for i in range(len(self)):
             tensors.append( self.bdts[i][self.get_right_labels_bond(i)] * self.tensors[i][self.get_left_labels_site(i)] )
-        return Inf1DSimTPO(tensors, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
+        return Inf1DTPO(tensors, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
 
     def to_BTPO(self):
         return self

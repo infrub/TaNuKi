@@ -13,7 +13,7 @@ def test0080():
     t1 = random_tensor((2,3,2),["v1", "p1", "v2"], dtype=complex)
     l2 = random_diagonalTensor(2, ["v2", "v2"])
     t2 = random_tensor((2,3,2),["v2", "p2", "v0"], dtype=complex)
-    S = Inf1DSimBTPS([t0,t1,t2],[l0,l1,l2])
+    S = Inf1DBTPS([t0,t1,t2],[l0,l1,l2])
     s1 = S.to_tensor()
     S.canonize_end(normalize=False)
     s2 = S.to_tensor()
@@ -29,7 +29,7 @@ def test0081():
     t1 = random_tensor((2,3,2),["v1", "p1", "v2"], dtype=complex)
     l2 = random_diagonalTensor(2, ["v2", "v2"])
     t2 = random_tensor((2,3,2),["v2", "p2", "v0"], dtype=complex)
-    S = Inf1DSimBTPS([t0,t1,t2],[l0,l1,l2])
+    S = Inf1DBTPS([t0,t1,t2],[l0,l1,l2])
     s1 = S.to_tensor()
     S.canonize(normalize=False)
     s2 = S.to_tensor()
@@ -43,7 +43,7 @@ def test0082():
     t1 = random_tensor((2,3,2),["v1", "p1", "v2"], dtype=complex)
     l2 = random_diagonalTensor(2, ["v2", "v2"])
     t2 = random_tensor((2,3,2),["v2", "p2", "v0"], dtype=complex)
-    S = Inf1DSimBTPS([t0,t1,t2],[l0,l1,l2])
+    S = Inf1DBTPS([t0,t1,t2],[l0,l1,l2])
 
     S.canonize_end(normalize=False)
     V_L = S.get_left_eigenvector()
@@ -60,7 +60,7 @@ def test0083():
     t1 = random_tensor((2,3,2),["v1", "p1", "v2"], dtype=complex)
     l2 = random_diagonalTensor(2, ["v2", "v2"])
     t2 = random_tensor((2,3,2),["v2", "p2", "v0"], dtype=complex)
-    self = Inf1DSimBTPS([t0,t1,t2],[l0,l1,l2])
+    self = Inf1DBTPS([t0,t1,t2],[l0,l1,l2])
 
 
 
@@ -243,7 +243,7 @@ def test0084():
     t1 = random_tensor((2,3,2),["v1", "p1", "v2"], dtype=complex)
     l2 = random_diagonalTensor(2, ["v2", "v2"])
     t2 = random_tensor((2,3,2),["v2", "p2", "v0"], dtype=complex)
-    S = Inf1DSimBTPS([t0,t1,t2],[l0,l1,l2])
+    S = Inf1DBTPS([t0,t1,t2],[l0,l1,l2])
 
     S.canonize(normalize=False)
     print(S.is_canonical())
@@ -256,7 +256,7 @@ def test0085():
     t1 = random_tensor((2,3,2),["v1", "p1", "v2"], dtype=complex)
     l2 = random_diagonalTensor(2, ["v2", "v2"])
     t2 = random_tensor((2,3,2),["v2", "p2", "v0"], dtype=complex)
-    S = Inf1DSimBTPS([t0,t1,t2],[l0,l1,l2])
+    S = Inf1DBTPS([t0,t1,t2],[l0,l1,l2])
 
     S.canonize_end()
     w_L, V_L = S.get_left_eigen()
@@ -272,7 +272,7 @@ def test0086():
     t1 = random_tensor((2,3,2),["v1", "p1", "v2"], dtype=complex)
     l2 = random_diagonalTensor(2, ["v2", "v2"])
     t2 = random_tensor((2,3,2),["v2", "p2", "v0"], dtype=complex)
-    S = Inf1DSimBTPS([t0,t1,t2],[l0,l1,l2])
+    S = Inf1DBTPS([t0,t1,t2],[l0,l1,l2])
 
     S.canonize()
     w_L, V_L = S.get_left_eigen()

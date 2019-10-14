@@ -7,7 +7,7 @@ from tanuki.onedim.models import *
 
 
 
-class Fin1DSimTEBD:
+class Obc1DTEBD:
     def __init__(self, psi, gates, chi=None, refresh_period=None, keep_universal_canonicality=True, gating_order="grissand"):
         self.psi = psi
         self.gates = gates

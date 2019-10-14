@@ -14,14 +14,14 @@ import copy
 class TestRealFinTEBD(unittest.TestCase):
     def test01(self):
         def f(h,J): #Ising model
-            H1 = Fin1DSimTMO(Tensor([[1,0],[0,-1]],["o","i"]),[["o"]],[["i"]],is_hermite=True)
+            H1 = Obc1DTMO(Tensor([[1,0],[0,-1]],["o","i"]),[["o"]],[["i"]],is_hermite=True)
             H2 = zeros_tensor((2,2,2,2),["o0","o1","i0","i1"])
             H2.data[0,0,0,0] = 1
             H2.data[0,1,0,1] = -1
             H2.data[1,0,1,0] = -1
             H2.data[1,1,1,1] = 1
             self.assertTrue(H2.is_hermite(["o0","o1"]))
-            H2 = Fin1DSimTMO(H2,[["o0"],["o1"]],[["i0"],["i1"]],is_hermite=True)
+            H2 = Obc1DTMO(H2,[["o0"],["o1"]],[["i0"],["i1"]],is_hermite=True)
 
             EH1 = H1.exp(-h).to_BTPO()
             EH2 = H2.exp(-J)
@@ -71,7 +71,7 @@ class TestImagFinTEBD(unittest.TestCase):
         psi.data[1,0,1,0] = 1.0
         psi.data[1,1,1,1] = 1.4
         self.assertEqual(psi.norm(), 2.0)
-        psi = Fin1DSimTMS(psi,[["p0"],["p1"],["p2"],["p3"]])
+        psi = Obc1DTMS(psi,[["p0"],["p1"],["p2"],["p3"]])
         psi = psi.to_BTPS()
         psi.canonize()
         self.assertAlmostEqual(psi.to_TMS().tensor.norm(),1.0)
@@ -84,7 +84,7 @@ class TestImagFinTEBD(unittest.TestCase):
         E2high = 3*J
         E2low = -3*J
         self.assertTrue(H2.is_hermite(["o0","o1"]))
-        H2 = Fin1DSimTMO(H2,[["o0"],["o1"]],[["i0"],["i1"]],is_hermite=True)
+        H2 = Obc1DTMO(H2,[["o0"],["o1"]],[["i0"],["i1"]],is_hermite=True)
         T = 2 * np.pi / abs(E2high)
         Meh = 100
         dt = T / Meh

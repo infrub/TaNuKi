@@ -29,7 +29,7 @@ def random_fin1DSimTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_di
     for site in range(length):
         tensors.append( tni.random_tensor( virt_dimss[site]+phys_dimss[site]+virt_dimss[site+1], virt_labelss[site]+phys_labelss[site]+virt_labelss[site+1] , dtype=dtype) )
 
-    return Fin1DSimTPS(tensors, phys_labelss)
+    return Obc1DTPS(tensors, phys_labelss)
 
 
 def random_fin1DSimBTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_dimss=None, phys_dim=2, chi=3, dtype=complex):
@@ -61,7 +61,7 @@ def random_fin1DSimBTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_d
     for site in range(length):
         tensors.append( tni.random_tensor( virt_dimss[site]+phys_dimss[site]+virt_dimss[site+1], virt_labelss[site]+phys_labelss[site]+virt_labelss[site+1] , dtype=dtype) )
 
-    return Fin1DSimBTPS(tensors, bdts, phys_labelss)
+    return Obc1DBTPS(tensors, bdts, phys_labelss)
 
 
 
@@ -89,5 +89,5 @@ def random_inf1DSimBTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_d
     for site in range(length):
         tensors.append( tni.random_tensor( virt_dimss[site]+phys_dimss[site]+virt_dimss[(site+1)%length], virt_labelss[site]+phys_labelss[site]+virt_labelss[(site+1)%length] , dtype=dtype) )
 
-    return Inf1DSimBTPS(tensors, bdts, phys_labelss)
+    return Inf1DBTPS(tensors, bdts, phys_labelss)
 
