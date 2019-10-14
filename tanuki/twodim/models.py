@@ -13,7 +13,7 @@ import numpy as np
 
 
 
-class Prd2DCheckerTPK:
+class Ptr2DCheckerBTPK:
     """
     [scale=2]
           U   D
@@ -42,7 +42,7 @@ class Prd2DCheckerTPK:
         dataStr += "scale=" + str(self.scale) + "\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Prd2DCheckerTPK(\n" + dataStr + f")"
+        dataStr = f"Ptr2DCheckerTPK(\n" + dataStr + f")"
 
         return dataStr
 
@@ -85,7 +85,7 @@ class Prd2DCheckerTPK:
             B2   B5
             Y A2 X
         """
-        return Prd2DCheckerTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
+        return Ptr2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
 
 
 
@@ -126,6 +126,8 @@ class Prd2DCheckerTPK:
                    G
                    ||
         """
+        #TODO
+        
         X = E*G
         Y = F*H
         """
@@ -140,7 +142,7 @@ class Prd2DCheckerTPK:
             B2   B5
             Y A2 X
         """
-        return Prd2DCheckerTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
+        return Ptr2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
 
 
 

@@ -7,7 +7,6 @@ from tanuki.errors import *
 from tanuki.onedim import product as tnop
 import textwrap
 from math import sqrt
-import logging
 import numpy as np
 
 
