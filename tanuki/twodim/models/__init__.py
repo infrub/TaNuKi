@@ -1,0 +1,1 @@
+from tanuki.twodim.models.CheckerBTPK import *
