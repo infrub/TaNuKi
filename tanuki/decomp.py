@@ -7,6 +7,8 @@ import warnings
 def normarg_svd_labels(svd_labels):
     if svd_labels is None:
         svd_labels = [unique_label()]
+    if isinstance(svd_labels, int):
+        svd_labels = [unique_label() for _ in range(svd_labels)]
     if not isinstance(svd_labels, list):
         svd_labels = [svd_labels]
     if len(svd_labels)==1:
@@ -76,6 +78,8 @@ def truncated_svd(A, rows, cols=None, chi=None, rtol=None, atol=None, svd_labels
 def normarg_qr_labels(qr_labels):
     if qr_labels is None:
         qr_labels = [unique_label()]
+    if isinstance(qr_labels, int):
+        qr_labels = [unique_label() for _ in range(qr_labels)]
     if not isinstance(qr_labels, list):
         qr_labels = [qr_labels]
     if len(qr_labels)==1:
@@ -107,6 +111,8 @@ def tensor_qr(A, rows, cols=None, qr_labels=None, mode="economic"):
 def normarg_lq_labels(lq_labels):
     if lq_labels is None:
         lq_labels = [unique_label()]
+    if isinstance(lq_labels, int):
+        lq_labels = [unique_label() for _ in range(lq_labels)]
     if not isinstance(lq_labels, list):
         lq_labels = [lq_labels]
     if len(lq_labels)==1:
@@ -130,6 +136,8 @@ def tensor_lq(A, rows, cols=None, lq_labels=None, mode="economic"):
 def normarg_eigh_labels(eigh_labels):
     if eigh_labels is None:
         eigh_labels = [unique_label()]
+    if isinstance(eigh_labels, int):
+        eigh_labels = [unique_label() for _ in range(eigh_labels)]
     if not isinstance(eigh_labels, list):
         eigh_labels = [eigh_labels]
     if len(eigh_labels)==1:
