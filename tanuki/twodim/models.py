@@ -87,9 +87,68 @@ class Prd2DCheckerTPK:
         """
         return Prd2DCheckerTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
 
-    def renormalize(self, chi=10, algname="Naive"):
-        if algname in ["Naive", "LN", "TRG"]:
+
+
+    def renormalize_alg_YGW(self, chi=10):
+        """
+        Tensor renormalization group approach to 2D classical lattice models
+        Michael Levin, Cody P. Nave
+        https://arxiv.org/abs/cond-mat/0611687
+        """
+        A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
+
+        A1,A2,A3 = A.svd(intersection_list(A.labels, L.labels+D.labels), chi=chi, svd_labels=2)
+        A4,A5,A6 = A.svd(intersection_list(A.labels, L.labels+D.labels), chi=chi, svd_labels=2)
+        B1,B2,B3 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=chi, svd_labels=2)
+        B4,B5,B6 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=chi, svd_labels=2)
+
+        """
+                 U   D
+                A1 R B1
+               A2     B2
+            L A3       B3 L
+              D         U
+            R B4       A4 R
+               B5     A5  
+                B6 L A6    
+                 U   D
+        """
+        E = B1*R*A1*U
+        F = B3*U*A4*L
+        G = B6*L*A6*D
+        H = A3*D*B4*R
+        """
+                  ||
+                   E
+                A2   B2   
+           == H         F ==
+                B5   A5   
+                   G
+                   ||
+        """
+        X = E*G
+        Y = F*H
+        """
+                  X
+               A2   B2
+              Y       Y 
+               B5   A5
+                  X
+        """
+        """
+            X A5 Y
+            B2   B5
+            Y A2 X
+        """
+        return Prd2DCheckerTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
+
+
+
+    def renormalize(self, chi=10, algname="LN"):
+        if algname in ["LN", "Naive", "TRG"]:
             return self.renormalize_alg_LN(chi=chi)
+        elif algname in ["YGW", "Loop-TNR"]:
+            return self.renormalize_alg_YGW(chi=chi)
 
 
 
@@ -98,10 +157,10 @@ class Prd2DCheckerTPK:
 
 
 
-    def calculate(self, chi=10):
+    def calculate(self, chi=10, algname="LN"):
         re = self
         while re.scale > 0:
-            re = re.renormalize(chi=chi)
+            re = re.renormalize(chi=chi, algname=algname)
 
         """
         [scale=1]
