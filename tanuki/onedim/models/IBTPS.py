@@ -67,13 +67,15 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
 
 
 
+    # ref: https://arxiv.org/abs/0711.3960
+    #
     # [bde=0] get L s.t.
     # /-(0)-[0]-...-(len-1)-[len-1]-          /-
     # L      |                 |      ==  c * L
     # \-(0)-[0]-...-(len-1)-[len-1]-          \-
     #
     # O(chi^6)
-    def get_left_transfer_eigen(self, bde=0):
+    def get_left_transfer_eigen_ver1(self, bde=0):
         inket_memo, inbra_memo, outket_memo, outbra_memo = {}, {}, {}, {}
 
         TF_L = self.get_ket_bond(bde).fuse_indices(self.get_ket_left_labels_bond(bde), fusedLabel=unique_label(), output_memo=inket_memo)
@@ -94,13 +96,15 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
 
         return w_L, V_L
 
+    # ref: https://arxiv.org/abs/0711.3960
+    #
     # [bde=0] get R s.t.
     # -[0]-...-(len-1)-[len-1]-(0)-\          -\
     #   |                 |        R  ==  c *  R
     # -[0]-...-(len-1)-[len-1]-(0)-/          -/
     #
     # O(chi^6)
-    def get_right_transfer_eigen(self, bde=0):
+    def get_right_transfer_eigen_ver1(self, bde=0):
         inket_memo, inbra_memo, outket_memo, outbra_memo = {}, {}, {}, {}
 
         TF_R = self.get_ket_bond(bde).fuse_indices(self.get_ket_right_labels_bond(bde), fusedLabel=unique_label(), output_memo=inket_memo)
@@ -123,6 +127,70 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
 
 
 
+    # ref: https://arxiv.org/abs/1512.04938
+    #
+    # [bde=0] get L s.t.
+    # /-L-(0)-[0]-...-(len-1)-[len-1]-          /-L-
+    # |        |                 |      ==  c * |
+    # \Lh-(0)-[0]-...-(len-1)-[len-1]-          \Lh-
+    #
+    # O(chi^3 * w * repeat)
+    def get_left_transfer_eigen(self, bde=0):
+        tshape = self.get_right_shape_site(bde-1)
+        tlabels = self.get_ket_right_labels_site(bde-1)
+        trdim = soujou(tshape)
+        trlabel = unique_label()
+        T = tni.random_tensor((trdim,)+tshape, [trlabel]+tlabels)
+        V_L = T * T.adjoint(tlabels)
+
+        for _ in range(1000):
+            T.normalize(inplace=True)
+            old_V_L = T * T.adjoint(tlabels)
+
+            for e in range(bde,bde+len(self)):
+                D = T*self.get_ket_bond(e)*self.get_ket_site(e)
+                _,T = D.qr([trlabel]+self.get_phys_labels_site(e), self.get_ket_right_labels_site(e), qr_labels=trlabel)
+
+            V_L = T * T.adjoint(tlabels)
+            temp = V_L.is_prop_to(old_V_L)
+            w_L = np.real(temp["factor"])
+            if temp:
+                break
+
+        return w_L, V_L
+
+    # ref: https://arxiv.org/abs/1512.04938
+    #
+    # [bde=0] get R s.t.
+    # -[0]-...-(len-1)-[len-1]-(0)-\          -\
+    #   |                 |        R  ==  c *  R
+    # -[0]-...-(len-1)-[len-1]-(0)-/          -/
+    #
+    # O(chi^3 * w * repeat)
+    def get_right_transfer_eigen(self, bde=0):
+        tshape = self.get_left_shape_site(bde)
+        tlabels = self.get_ket_left_labels_site(bde)
+        trdim = soujou(tshape)
+        trlabel = unique_label()
+        T = tni.random_tensor((trdim,)+tshape, [trlabel]+tlabels)
+
+        for repeat in range(1000):
+            T.normalize(inplace=True)
+            old_V_R = T * T.adjoint(tlabels)
+
+            for e in range(bde+len(self)-1, bde-1, -1):
+                D = T*self.get_ket_bond(e+1)*self.get_ket_site(e)
+                T,_ = D.lq(self.get_ket_left_labels_site(e), self.get_phys_labels_site(e)+[trlabel], lq_labels=trlabel)
+
+            V_R = T * T.adjoint(tlabels)
+            temp = V_R.is_prop_to(old_V_R, rtol=1e-14, atol=1e-14)
+            w_R = np.real(temp["factor"])
+            if temp:
+                break
+
+        return w_R, V_R
+
+
     # ref: https://arxiv.org/abs/0711.3960
     #
     # [bde=0]
@@ -140,7 +208,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
         dr_label = unique_label()
         w_L, V_L = self.get_left_transfer_eigen(bde=bde)
         w_R, V_R = self.get_right_transfer_eigen(bde=bde)
-        assert abs(w_L-w_R) < 1e-10*abs(w_L)
+        assert abs(w_L-w_R) < 1e-5*abs(w_L), f"transfer_eigen different. {w_L} != {w_R}"
         Yh, d_L, Y = tnd.tensor_eigh(V_L, self.get_ket_left_labels_bond(bde), self.get_bra_left_labels_bond(bde), eigh_labels=dl_label)
         Y.unaster_labels(self.get_bra_left_labels_bond(bde), inplace=True)
         X, d_R, Xh = tnd.tensor_eigh(V_R, self.get_ket_right_labels_bond(bde), self.get_bra_right_labels_bond(bde), eigh_labels=dr_label)

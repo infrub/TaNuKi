@@ -199,6 +199,17 @@ def matrix_is_triu(M, rtol=1e-5, atol=1e-8):
 def matrix_is_tril(M, rtol=1e-5, atol=1e-8):
     return CollateralBool(xp.allclose(M, xp.tril(M), rtol=rtol, atol=atol), {})
 
+def ndarray_is_prop_to(M, I, rtol=1e-5, atol=1e-8):
+    if M.shape != I.shape:
+        return CollateralBool(False, {"reason":"WRONG_SHAPE"})
+    Ih = I.conj()
+    c = xp.sum(M*Ih) / xp.sum(I*Ih)
+
+    if not xp.allclose(M, I*c, rtol=rtol, atol=atol):
+        return CollateralBool(False, {"reason":"NOT_PROP_TO", "factor":c})
+
+    return CollateralBool(True, {"factor":c})
+
 
 
 
@@ -620,6 +631,14 @@ class TensorMixin(TensorLabelingMixin):
         Th = T.adjoint(rows, cols, style="transpose")
         return T.__eq__(Th, rtol=rtol, atol=atol)
 
+    def is_prop_to(self, other, skipLabelSort=False, rtol=1e-5, atol=1e-8):
+        if not skipLabelSort:
+            other = other.move_all_indices(self.labels)
+
+        M = self.data
+        I = other.data
+
+        return ndarray_is_prop_to(M, I, rtol=rtol, atol=atol)
 
 
 

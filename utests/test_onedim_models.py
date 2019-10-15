@@ -71,7 +71,7 @@ class TestInf1DBTPS(unittest.TestCase):
         self.assertTrue(eq_list(A.get_guessed_phys_labels_site(1), ["p10","p11"]))
         w_L, V_L = A.get_left_transfer_eigen()
         w_R, V_R = A.get_right_transfer_eigen()
-        self.assertAlmostEqual(w_L, w_R, 10)
+        self.assertTrue( abs(w_L-w_R) < 1e-5*abs(w_L) )
 
     def test_universally_canonize_around_end_bond(self):
         A = random_inf1DSimBTPS([["p0"], ["p10","p11"], ["p2"]], virt_labelss=[["v0"],["v1"],["v2"]])
@@ -84,8 +84,8 @@ class TestInf1DBTPS(unittest.TestCase):
         a2 = A.to_tensor()
         w_L, V_L = A.get_left_transfer_eigen()
         w_R, V_R = A.get_right_transfer_eigen()
-        self.assertTrue(V_L.is_prop_identity(A.get_ket_left_labels_bond(0)))
-        self.assertTrue(V_R.is_prop_identity(A.get_ket_right_labels_bond(0)))
+        self.assertTrue(V_L.is_prop_identity(A.get_ket_left_labels_bond(0), rtol=1e-4, atol=1e-4))
+        self.assertTrue(V_R.is_prop_identity(A.get_ket_right_labels_bond(0), rtol=1e-4, atol=1e-4))
         self.assertEqual(a2, a1)
 
         A = random_inf1DSimBTPS([["p0"], ["p1"], ["p2"]], virt_labelss=[["v0"],["v10","v11"],["v2"]])
@@ -101,10 +101,10 @@ class TestInf1DBTPS(unittest.TestCase):
         a2 = A.to_tensor()
         w_L, V_L = A.get_left_transfer_eigen()
         w_R, V_R = A.get_right_transfer_eigen()
-        self.assertTrue(V_L.is_prop_identity(A.get_ket_left_labels_bond(0)))
-        self.assertTrue(V_R.is_prop_identity(A.get_ket_right_labels_bond(0)))
-        self.assertAlmostEqual(w_L, 1)
-        self.assertAlmostEqual(w_R, 1)
+        self.assertTrue(V_L.is_prop_identity(A.get_ket_left_labels_bond(0), rtol=1e-4, atol=1e-4))
+        self.assertTrue(V_R.is_prop_identity(A.get_ket_right_labels_bond(0), rtol=1e-4, atol=1e-4))
+        self.assertAlmostEqual(w_L, 1, 5)
+        self.assertAlmostEqual(w_R, 1, 5)
         self.assertEqual(a2*sqrt(w_L1), a1)
 
     def test_canonize(self):
@@ -114,12 +114,12 @@ class TestInf1DBTPS(unittest.TestCase):
         A.canonize(transfer_normalize=True)
         a2 = A.to_tensor()
         self.assertEqual(a2*sqrt(w_L1), a1)
-        re = A.is_canonical()
+        re = A.is_canonical(rtol=1e-4,atol=1e-6)
         self.assertTrue(re)
         for lr in ["left","right"]:
             for i in range(len(A)):
                 self.assertTrue(re[lr][i])
-                self.assertAlmostEqual(re[lr][i]["factor"], 1, 10)
+                self.assertAlmostEqual(re[lr][i]["factor"], 1, 5)
 
     def test_universally_canonize_around_end_bond_not_zero(self):
         A = random_inf1DSimBTPS([["p0"], ["p10","p11"], ["p2"]], virt_labelss=[["v0"],["v1"],["v2"]])
@@ -144,8 +144,8 @@ class TestInf1DBTPS(unittest.TestCase):
         a2 = A.to_tensor()
         w_L, V_L = A.get_left_transfer_eigen(9)
         w_R, V_R = A.get_right_transfer_eigen(-5)
-        self.assertAlmostEqual(w_L, 1)
-        self.assertAlmostEqual(w_R, 1)
+        self.assertAlmostEqual(w_L, 1, 5)
+        self.assertAlmostEqual(w_R, 1, 5)
         self.assertEqual(a2*sqrt(w_L1), a1)
 
 
@@ -241,8 +241,8 @@ class TestMPO(unittest.TestCase):
         self.assertAlmostEqual((bh*a).to_scalar(), 1.0, 3)
         self.assertAlmostEqual((ah*b).to_scalar(), 1.0, 3)
         self.assertAlmostEqual((bh*b).to_scalar(), 1.0, 2)
-        self.assertLess(diff1, 2e-4)
-        self.assertLess(diff2, 2e-4)
+        self.assertLess(diff1, 3e-4)
+        self.assertLess(diff2, 3e-4)
         self.assertAlmostEqual(diff1, diff2)
 
 

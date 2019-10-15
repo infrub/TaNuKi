@@ -172,48 +172,48 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
 
 
 
-    def is_locally_left_canonical_around_bond(self, bde):
+    def is_locally_left_canonical_around_bond(self, bde, rtol=1e-5, atol=1e-8):
         if bde == 0:
             return CollateralBool(True, {"factor":1.0})
         S = self.bdts[bde-1]
         V = self.tensors[bde-1]
         SV = S*V
-        re = SV.is_prop_semi_unitary(self.get_left_labels_bond(bde-1)+self.get_phys_labels_site(bde-1))
+        re = SV.is_prop_semi_unitary(self.get_left_labels_bond(bde-1)+self.get_phys_labels_site(bde-1), rtol=rtol, atol=atol)
         return re
 
-    def is_locally_right_canonical_around_bond(self, bde):
+    def is_locally_right_canonical_around_bond(self, bde, rtol=1e-5, atol=1e-8):
         if bde == len(self):
             return CollateralBool(True, {"factor":1.0})
         U = self.tensors[bde]
         S = self.bdts[bde+1]
         US = U*S
-        re = US.is_prop_semi_unitary(self.get_phys_labels_site(bde)+self.get_right_labels_bond(bde+1))
+        re = US.is_prop_semi_unitary(self.get_phys_labels_site(bde)+self.get_right_labels_bond(bde+1), rtol=rtol, atol=atol)
         return re
 
-    def is_grobally_left_canonical_upto_bond(self, upto_bde=None):
+    def is_grobally_left_canonical_upto_bond(self, upto_bde=None, rtol=1e-5, atol=1e-8):
         if upto_bde is None: upto_bde = len(self)
         ok = True
         res = {}
         for bde in range(0, upto_bde+1):
-            re = self.is_locally_left_canonical_around_bond(bde)
+            re = self.is_locally_left_canonical_around_bond(bde, rtol=rtol, atol=atol)
             res[bde] = re
             if not re: ok = False
         return CollateralBool(ok, res)
 
-    def is_grobally_right_canonical_upto_bond(self, upto_bde=0):
+    def is_grobally_right_canonical_upto_bond(self, upto_bde=0, rtol=1e-5, atol=1e-8):
         ok = True
         res = {}
         for bde in range(len(self), upto_bde-1, -1):
-            re = self.is_locally_right_canonical_around_bond(bde)
+            re = self.is_locally_right_canonical_around_bond(bde, rtol=rtol, atol=atol)
             res[bde] = re
             if not re: ok = False
         return CollateralBool(ok, res)
 
-    def is_globally_both_canonical_upto_bond(self, upto_bde):
-        return self.is_grobally_left_canonical_upto_bond(upto_bde) & self.is_grobally_right_canonical_upto_bond(upto_bde)
+    def is_globally_both_canonical_upto_bond(self, upto_bde, rtol=1e-5, atol=1e-8):
+        return self.is_grobally_left_canonical_upto_bond(upto_bde, rtol=rtol, atol=atol) & self.is_grobally_right_canonical_upto_bond(upto_bde, rtol=rtol, atol=atol)
 
-    def is_universally_canonical(self, bde_start=None, bde_end=None):
-        return self.is_grobally_left_canonical_upto_bond() & self.is_grobally_right_canonical_upto_bond()
+    def is_universally_canonical(self, bde_start=None, bde_end=None, rtol=1e-5, atol=1e-8):
+        return self.is_grobally_left_canonical_upto_bond(rtol=rtol, atol=atol) & self.is_grobally_right_canonical_upto_bond(rtol=rtol, atol=atol)
 
     is_canonical = is_universally_canonical
 
