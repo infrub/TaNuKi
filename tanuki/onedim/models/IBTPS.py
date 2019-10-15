@@ -71,6 +71,8 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     # /-(0)-[0]-...-(len-1)-[len-1]-          /-
     # L      |                 |      ==  c * L
     # \-(0)-[0]-...-(len-1)-[len-1]-          \-
+    #
+    # O(chi^6)
     def get_left_transfer_eigen(self, bde=0):
         inket_memo, inbra_memo, outket_memo, outbra_memo = {}, {}, {}, {}
 
@@ -96,6 +98,8 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     # -[0]-...-(len-1)-[len-1]-(0)-\          -\
     #   |                 |        R  ==  c *  R
     # -[0]-...-(len-1)-[len-1]-(0)-/          -/
+    #
+    # O(chi^6)
     def get_right_transfer_eigen(self, bde=0):
         inket_memo, inbra_memo, outket_memo, outbra_memo = {}, {}, {}, {}
 
@@ -129,6 +133,8 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     # -[0]-...-(len-1)-[len-1]-(0)-\          -\
     #   |                 |        |  ==  c *  |
     # -[0]-...-(len-1)-[len-1]-(0)-/          -/
+    #
+    # O(chi^6) + O(chi^6)
     def universally_canonize_around_end_bond(self, bde=0, chi=None, rtol=None, atol=None, transfer_normalize=True):
         dl_label = unique_label()
         dr_label = unique_label()
@@ -170,13 +176,13 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
             for i in range(len(self)-1,0,-1):
                 self.locally_right_canonize_around_bond(i, chi=chi, rtol=rtol, atol=atol)
             """
-            self.globally_left_canonize_upto(len(self)-1, 0, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
-            self.globally_right_canonize_upto(1, len(self), chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+            self.globally_left_canonize_upto(len(self)-1, 0, chi=chi, rtol=rtol, atol=atol, transfer_normalize=transfer_normalize)
+            self.globally_right_canonize_upto(1, len(self), chi=chi, rtol=rtol, atol=atol, transfer_normalize=transfer_normalize)
             """
         else:
             if right_already is None: right_already = len(self)
-            self.globally_left_canonize_upto(right_already-1, left_already, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
-            self.globally_right_canonize_upto(left_already+1, right_already, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+            self.globally_left_canonize_upto(right_already-1, left_already, chi=chi, rtol=rtol, atol=atol)
+            self.globally_right_canonize_upto(left_already+1, right_already, chi=chi, rtol=rtol, atol=atol)
 
     canonize = universally_canonize
 

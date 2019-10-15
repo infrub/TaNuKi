@@ -15,8 +15,8 @@ display_max_size = 100
 
 
 #decorators
-#decorate in-place Tensor class method with @Mixinoutofplacable_tensor_method to be able to use as out-of-place method.
-def Mixinoutofplacable_tensor_method(f):
+#decorate in-place Tensor class method with @outofplacable_tensorMixin_method to be able to use as out-of-place method.
+def outofplacable_tensorMixin_method(f):
     def g(self, *args, inplace=True, **kwargs):
         if inplace:
             return f(self, *args, **kwargs)
@@ -26,8 +26,8 @@ def Mixinoutofplacable_tensor_method(f):
             return copied
     return g
 
-#decorate out-of-place Tensor class method with @Mixininplacable_tensor_method to be able to use as out-of-place method.
-def Mixininplacable_tensor_method(f):
+#decorate out-of-place Tensor class method with @inplacable_tensorMixin_method to be able to use as out-of-place method.
+def inplacable_tensorMixin_method(f):
     def g(self, *args, inplace=False, **kwargs):
         if inplace:
             re = f(self, *args, **kwargs)
@@ -204,7 +204,7 @@ def matrix_is_tril(M, rtol=1e-5, atol=1e-8):
 
 
 #classes
-class MixinTensorLabeling:
+class TensorLabelingMixin:
     def get_labels(self):
         return self._labels
     def set_labels(self, labels):
@@ -336,14 +336,14 @@ class MixinTensorLabeling:
 
 
     #methods for changing labels
-    @Mixinoutofplacable_tensor_method
+    @outofplacable_tensorMixin_method
     def replace_labels(self, oldIndices, newLabels):
         oldIndices = self.normarg_indices(oldIndices)
         newLabels = normarg_labels(newLabels)
         for oldIndex, newLabel in zip(oldIndices, newLabels):
             self.labels[oldIndex] = newLabel
 
-    @Mixinoutofplacable_tensor_method
+    @outofplacable_tensorMixin_method
     def aster_labels(self, oldIndices=None):
         if oldIndices is None: oldIndices=self.labels
         oldIndices = self.normarg_indices(oldIndices)
@@ -351,7 +351,7 @@ class MixinTensorLabeling:
         newLabels = aster_labels(oldLabels)
         self.replace_labels(oldIndices, newLabels)
 
-    @Mixinoutofplacable_tensor_method
+    @outofplacable_tensorMixin_method
     def unaster_labels(self, oldIndices=None):
         if oldIndices is None: oldIndices=self.labels
         oldIndices = self.normarg_indices(oldIndices)
@@ -359,7 +359,7 @@ class MixinTensorLabeling:
         newLabels = unaster_labels(oldLabels)
         self.replace_labels(oldIndices, newLabels)
 
-    @Mixinoutofplacable_tensor_method
+    @outofplacable_tensorMixin_method
     def assign_labels(self, base_label):
         self.labels = [base_label+"_"+str(i) for i in range(self.ndim)]
 
@@ -371,7 +371,7 @@ class MixinTensorLabeling:
 
 
 
-class MixinTensor(MixinTensorLabeling):
+class TensorMixin(TensorLabelingMixin):
     def __copy__(self):
         return self.copy(shallow=True)
 
@@ -386,7 +386,7 @@ class MixinTensor(MixinTensorLabeling):
     def norm(self): #Frobenius norm
         return xp.linalg.norm(self.data)
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def normalize(self):
         norm = self.norm()
         return self / norm
@@ -394,25 +394,25 @@ class MixinTensor(MixinTensorLabeling):
     def __neg__(self):
         return self.__class__(-self.data, labels=self.labels)
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def real(self):
         return self.__class__(xp.real(self.data), self.labels)
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def imag(self):
         return self.__class__(xp.imag(self.data), self.labels)
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def abs(self):
         return self.__class__(xp.absolute(self.data), self.labels)
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def conjugate(self):
         return self.__class__(self.data.conj(), labels=self.labels)
 
     conj = conjugate
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def transpose(self, rows=None, cols=None):
         rows, cols = self.normarg_complement_indices(rows, cols)
         row_labels, col_labels = self.labels_of_indices(rows), self.labels_of_indices(cols)
@@ -422,7 +422,7 @@ class MixinTensor(MixinTensorLabeling):
         out.replace_labels(rows+cols, col_labels+row_labels)
         return out
         
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def adjoint(self, rows=None, cols=None, style="aster"):
         if style=="transpose":
             rows, cols = self.normarg_complement_indices(rows, cols)
@@ -444,7 +444,7 @@ class MixinTensor(MixinTensorLabeling):
 
     adj = adjoint
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def hermite(self, rows, cols=None, assume_definite_and_if_negative_then_make_positive=False):
         re = (self + self.adjoint(rows,cols,style="transpose"))/2
         if assume_definite_and_if_negative_then_make_positive:
@@ -452,7 +452,7 @@ class MixinTensor(MixinTensorLabeling):
                 re = re * (-1)
         return re
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def antihermite(self, rows, cols=None):
         return (self - self.adjoint(rows,cols,style="transpose"))/2
 
@@ -460,7 +460,7 @@ class MixinTensor(MixinTensorLabeling):
 
     #methods for basic binary operations
     def __add__(self, other, skipLabelSort=False):
-        if isinstance(other, MixinTensor):
+        if isinstance(other, TensorMixin):
             if isinstance(self, DiagonalTensor) and isinstance(other, DiagonalTensor):
                 try:
                     if not skipLabelSort:
@@ -478,7 +478,7 @@ class MixinTensor(MixinTensorLabeling):
         return NotImplemented
 
     def __sub__(self, other, skipLabelSort=False):
-        if isinstance(other, MixinTensor):
+        if isinstance(other, TensorMixin):
             if isinstance(self, DiagonalTensor) and isinstance(other, DiagonalTensor):
                 try:
                     if not skipLabelSort:
@@ -496,14 +496,14 @@ class MixinTensor(MixinTensorLabeling):
         return NotImplemented
 
     def __mul__(self, other):
-        if isinstance(other, MixinTensor):
+        if isinstance(other, TensorMixin):
             return contract_common(self, other)
         elif xp.isscalar(other):
             return self.__class__(self.data*other, labels=self.labels)
         return NotImplemented
 
     def __rmul__(self, other):
-        if isinstance(other, MixinTensor):
+        if isinstance(other, TensorMixin):
             return contract_common(other, self)
         elif xp.isscalar(other):
             return self.__class__(self.data*other, labels=self.labels)
@@ -517,7 +517,7 @@ class MixinTensor(MixinTensorLabeling):
         return NotImplemented
 
     def __eq__(self, other, skipLabelSort=False, rtol=1e-5, atol=1e-8):
-        if isinstance(other, MixinTensor):
+        if isinstance(other, TensorMixin):
             if isinstance(self, DiagonalTensor) and isinstance(other, DiagonalTensor):
                 try:
                     if not skipLabelSort:
@@ -624,7 +624,7 @@ class MixinTensor(MixinTensorLabeling):
 
 
 
-class Tensor(MixinTensor):
+class Tensor(TensorMixin):
     #basic methods
     def __init__(self, data, labels=None, base_label=None, copy=False):
         self.data = xp.array(data, copy=copy)
@@ -686,7 +686,7 @@ class Tensor(MixinTensor):
 
 
     #methods for truncate, pad, dummy
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def truncate_index(self, index, fromto1, fromto2=None):
         index = self.normarg_index(index)
         if fromto2 is None:
@@ -696,7 +696,7 @@ class Tensor(MixinTensor):
         data = xp.split(data, [fromto1, fromto2], axis=index)[1]
         return Tensor(data, self.labels)
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def pad_indices(self, indices, npads):
         indices = self.normarg_indices(indices)
         wholeNpad = [(0,0)] * self.ndim
@@ -705,13 +705,13 @@ class Tensor(MixinTensor):
         newData = xp.pad(self.data, wholeNpad, mode="constant", constant_values=0)
         return Tensor(newData, labels=self.labels)
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def add_dummy_index(self, label=()):
         newData = self.data[xp.newaxis, :]
         newLabels = [label] + self.labels
         return Tensor(newData, newLabels)
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def remove_dummy_indices(self, indices=None):
         if indices is not None: indices = self.normarg_indices(indices)
         oldShape = self.shape
@@ -733,21 +733,21 @@ class Tensor(MixinTensor):
     #I assumed that rollaxis is better than moveaxis in terms of computing costs
     #TODO pass if newIndices==oldIndices
     """
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def move_index_to_top(self, indexMoveFrom):
         indexMoveFrom = self.normarg_index(indexMoveFrom)
         newData = xp.rollaxis(self.data, indexMoveFrom, 0)
         newLabels = self.labels[indexMoveFrom:indexMoveFrom+1] + self.labels[:indexMoveFrom] + self.labels[indexMoveFrom+1:]
         return Tensor(newData, newLabels)
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def move_index_to_bottom(self, indexMoveFrom):
         indexMoveFrom = self.normarg_index(indexMoveFrom)
         newData = xp.rollaxis(self.data, indexMoveFrom, self.ndim)
         newLabels = self.labels[:indexMoveFrom] + self.labels[indexMoveFrom+1:] + self.labels[indexMoveFrom:indexMoveFrom+1]
         return Tensor(newData, newLabels)
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def move_index_to_position(self, indexMoveFrom, position):
         indexMoveFrom = self.normarg_index(indexMoveFrom)
         labelMove = self.labels.pop(indexMoveFrom)
@@ -760,7 +760,7 @@ class Tensor(MixinTensor):
             newLabels = self.labels[:indexMoveFrom] + self.labels[indexMoveFrom+1:position+1] + self.labels[indexMoveFrom:indexMoveFrom+1] + self.labels[position+1:]
         return Tensor(newData, newLabels)
     """
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def move_indices_to_top(self, moveFrom):
         moveFrom = self.normarg_indices_front(moveFrom)
         moveTo = list(range(len(moveFrom)))
@@ -769,7 +769,7 @@ class Tensor(MixinTensor):
         newData = xp.moveaxis(self.data, moveFrom, moveTo)
         return Tensor(newData, newLabels)
     
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def move_indices_to_bottom(self, moveFrom):
         moveFrom = self.normarg_indices_back(moveFrom)
         moveTo = list(range(self.ndim-len(moveFrom), self.ndim))
@@ -778,7 +778,7 @@ class Tensor(MixinTensor):
         newData = xp.moveaxis(self.data, moveFrom, moveTo)
         return Tensor(newData, newLabels)
     
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def move_indices_to_position(self, moveFrom, position):
         moveFrom = self.normarg_indices(moveFrom)
         moveTo = list(range(position, position+len(moveFrom)))
@@ -788,7 +788,7 @@ class Tensor(MixinTensor):
         newData = xp.moveaxis(self.data, moveFrom, moveTo)
         return Tensor(newData, newLabels)
     
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def move_all_indices(self, moveFrom):
         moveFrom = self.normarg_indices_front(moveFrom)
         if len(moveFrom) != self.ndim:
@@ -803,7 +803,7 @@ class Tensor(MixinTensor):
     #methods for fuse/split
     #if new.. is no specified, assume like following:
     #["a","b","c","d"] <=split / fuse=> ["a",("b","c"),"d"]
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def fuse_indices(self, splittedLabels=None, fusedLabel=None, input_memo=None, output_memo=None):
         if input_memo is None:
             input_memo = {}
@@ -841,7 +841,7 @@ class Tensor(MixinTensor):
 
         return Tensor(newData, newLabels)
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def split_index(self, fusedLabel=None, splittedShape=None, splittedLabels=None, input_memo=None, output_memo=None):
         if input_memo is None:
             input_memo = {}
@@ -889,7 +889,7 @@ class Tensor(MixinTensor):
 
 
     #methods for trace, contract
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def contract_internal_index(self, index1, index2):
         index1 = self.normarg_index_front(index1)
         index2 = self.normarg_index_back(index2)
@@ -900,7 +900,7 @@ class Tensor(MixinTensor):
 
         return Tensor(newData, newLabels)
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def contract_internal_indices(self, indices1, indices2):
         indices1 = self.normarg_indices_front(indices1)
         indices2 = self.normarg_indices_back(indices2)
@@ -923,7 +923,7 @@ class Tensor(MixinTensor):
 
         return temp
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def contract_internal_common(self):
         temp = self
         commons = floor_half_list(temp.labels)
@@ -931,7 +931,7 @@ class Tensor(MixinTensor):
         return temp
 
     
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def contract_internal(self, index1=None, index2=None):
         if index1 is None:
             return self.contract_internal_common()
@@ -976,7 +976,7 @@ class Tensor(MixinTensor):
 
 
 # A[i,j,k,l] = [i==k][j==l]A.data[i,j]
-class DiagonalTensor(MixinTensor):
+class DiagonalTensor(TensorMixin):
     #basic methods
     def __init__(self, data, labels=None, base_label=None, copy=False):
         self.data = xp.array(data, copy=copy)
@@ -1049,22 +1049,30 @@ class DiagonalTensor(MixinTensor):
     def round(self, decimals=8):
         return Tensor(self.data.round(decimals=decimals), self.labels)
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def inv(self):
         return DiagonalTensor(1.0/self.data, labels=self.labels)
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def sqrt(self):
         return DiagonalTensor(xp.sqrt(self.data), labels=self.labels)
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
+    def sqrt2(self):
+        firstHalfLabels = self.labels[:self.ndim//2]
+        lastHalfLabels = self.labels[self.ndim//2:]
+        newLabels = [unique_label() for _ in firstHalfLabels]
+        nakami = xp.sqrt(self.data)
+        return DiagonalTensor(nakami, labels=firstHalfLabels+newLabels), DiagonalTensor(nakami, labels=newLabels+lastHalfLabels), 
+
+    @inplacable_tensorMixin_method
     def exp(self, coeff=1):
         return DiagonalTensor(xp.exp(coeff*self.data), labels=self.labels)
 
 
 
     #methods for truncate, pad, dummy
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def truncate_index(self, index, fromto1, fromto2=None):
         index = self.normarg_index(index)
         if fromto2 is None:
@@ -1078,7 +1086,7 @@ class DiagonalTensor(MixinTensor):
 
     # MUST bag{moveFrom}==bag{0:self.ndim} (else: idk)
     # WILL moveFrom keep diagonality (else: CantKeepDiagonalityError)
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def move_all_indices_assuming_can_keep_diagonality(self, moveFrom):
         moveFrom = self.normarg_indices_front(moveFrom)
         if len(moveFrom)!=self.ndim:
@@ -1125,7 +1133,7 @@ class DiagonalTensor(MixinTensor):
     # A[i,j,k,l,m,n] = [i==l][j==m][k==n]a[i,j,k]
     # \sum[j==k]A[i,j,k,l,m,n] = \sum_j [i==l][j==m][j==n]a[i,m,n] = [i==l][m==n] \sum_j a[i,m,n]
     # TODO not tested
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def contract_internal_index(self, index1, index2):
         index1 = self.normarg_index_front(index1)
         index2 = self.normarg_index_back(index2)
@@ -1148,7 +1156,7 @@ class DiagonalTensor(MixinTensor):
 
         return DiagonalTensor(newData, newLabels)
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def contract_internal_indices(self, indices1, indices2):
         indices1 = self.normarg_indices_front(indices1)
         indices2 = self.normarg_indices_back(indices2)
@@ -1185,14 +1193,14 @@ class DiagonalTensor(MixinTensor):
             temp = temp.contract_internal_index(index1, index2)
         return temp
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def contract_internal_common(self):
         temp = self
         commons = floor_half_list(temp.labels)
         temp = temp.contract_internal_indices(commons, commons)
         return temp
 
-    @Mixininplacable_tensor_method
+    @inplacable_tensorMixin_method
     def contract_internal(self, index1=None, index2=None):
         if index1 is None:
             return self.contract_internal_common()

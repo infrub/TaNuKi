@@ -1,6 +1,7 @@
 from tanuki.onedim.models.OTMS import *
 from tanuki.onedim.models.OTPS import *
 from tanuki.onedim.models.OBTPS import *
+from tanuki.onedim.models.CBTPS import *
 from tanuki.onedim.models.ITPS import *
 from tanuki.onedim.models.IBTPS import *
 from tanuki.onedim.models.OTMO import *

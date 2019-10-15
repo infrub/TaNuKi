@@ -4,6 +4,7 @@ from tanuki import tensor_instant as tni
 from tanuki import decomp as tnd
 from tanuki.utils import *
 from tanuki.errors import *
+from tanuki import onedim
 import textwrap
 from math import sqrt
 import logging
@@ -55,8 +56,9 @@ class Ptr2DCheckerBTPK:
         """
         A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
 
-        A1,A2,A3 = A.svd(intersection_list(A.labels, L.labels+D.labels), chi=chi, svd_labels=2)
-        A4,A5,A6 = A.svd(intersection_list(A.labels, L.labels+D.labels), chi=chi, svd_labels=2)
+        # O(chi^5)
+        A1,A2,A3 = A.svd(intersection_list(A.labels, R.labels+U.labels), chi=chi, svd_labels=2)
+        A4,A5,A6 = A.svd(intersection_list(A.labels, R.labels+U.labels), chi=chi, svd_labels=2)
         B1,B2,B3 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=chi, svd_labels=2)
         B4,B5,B6 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=chi, svd_labels=2)
 
@@ -71,6 +73,7 @@ class Ptr2DCheckerBTPK:
                 B6 L A6    
                  U   D
         """
+        # O(chi^6)
         X = (B6*L*A6)*U*D*(B1*R*A1)
         Y = (B3*U*A4)*L*R*(A3*D*B4)
         """
@@ -91,16 +94,17 @@ class Ptr2DCheckerBTPK:
 
     def renormalize_alg_YGW(self, chi=10):
         """
-        Tensor renormalization group approach to 2D classical lattice models
-        Michael Levin, Cody P. Nave
-        https://arxiv.org/abs/cond-mat/0611687
+        Loop optimization for tensor network renormalization
+        Shuo Yang, Zheng-Cheng Gu, Xiao-Gang Wen
+        https://arxiv.org/abs/1512.04938
         """
         A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
 
-        A1,A2,A3 = A.svd(intersection_list(A.labels, L.labels+D.labels), chi=chi, svd_labels=2)
-        A4,A5,A6 = A.svd(intersection_list(A.labels, L.labels+D.labels), chi=chi, svd_labels=2)
-        B1,B2,B3 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=chi, svd_labels=2)
-        B4,B5,B6 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=chi, svd_labels=2)
+        # O(chi^6)
+        A1,A2,A3 = A.svd(intersection_list(A.labels, R.labels+U.labels), svd_labels=2)
+        A4,A5,A6 = A.svd(intersection_list(A.labels, R.labels+U.labels), svd_labels=2)
+        B1,B2,B3 = B.svd(intersection_list(B.labels, R.labels+D.labels), svd_labels=2)
+        B4,B5,B6 = B.svd(intersection_list(B.labels, R.labels+D.labels), svd_labels=2)
 
         """
                  U   D
@@ -113,6 +117,7 @@ class Ptr2DCheckerBTPK:
                 B6 L A6    
                  U   D
         """
+        # O(chi^7)
         E = B1*R*A1*U
         F = B3*U*A4*L
         G = B6*L*A6*D
@@ -126,7 +131,11 @@ class Ptr2DCheckerBTPK:
                    G
                    ||
         """
-        #TODO
+        # O(chi^12) #OMG!!
+        CBTPS = onedim.Cyc1DBTPS([E,F,G,H],[A2,B2,A5,B5])
+        CBTPS.universally_canonize(chi=chi, transfer_normalize=False)
+        A2,B2,A5,B5 = tuple(CBTPS.bdts)
+        E,F,G,H = tuple(CBTPS.tensors)
         
         X = E*G
         Y = F*H

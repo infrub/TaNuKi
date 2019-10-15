@@ -9,7 +9,7 @@ import logging
 
 
 
-class TensorFrame(tnc.MixinTensorLabeling):
+class TensorFrame(tnc.TensorLabelingMixin):
     def __init__(self, shape, labels, *args):
         self.shape = shape
         self.ndim = len(shape)

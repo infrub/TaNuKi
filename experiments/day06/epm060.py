@@ -45,10 +45,10 @@ def epm0601():
     U = random_diagonalTensor((b,),["AU","BU"])
     D = random_diagonalTensor((b,),["AD","BD"])
 
-    funi = twodim.Ptr2DCheckerBTPK(A,B,L,R,U,D, scale=2)
+    funi = twodim.Ptr2DCheckerBTPK(A,B,L,R,U,D, scale=3)
     print(funi)
     for algname in ["LN","YGW"]:
-        for chi in [2,3,4,5]:
+        for chi in [3,5,7]:
             print(algname, chi, funi.calculate(chi=chi, algname=algname).to_scalar())
 
 
