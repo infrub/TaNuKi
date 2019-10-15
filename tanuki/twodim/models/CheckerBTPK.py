@@ -48,7 +48,7 @@ class Ptr2DCheckerBTPK:
         return dataStr
 
 
-    def renormalize_alg_LN(self, chi=10):
+    def renormalize_alg_LN(self, chi=10, normalize=True):
         """
         Tensor renormalization group approach to 2D classical lattice models
         Michael Levin, Cody P. Nave
@@ -61,6 +61,17 @@ class Ptr2DCheckerBTPK:
         A4,A5,A6 = A.svd(intersection_list(A.labels, R.labels+U.labels), chi=chi, svd_labels=2)
         B1,B2,B3 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=chi, svd_labels=2)
         B4,B5,B6 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=chi, svd_labels=2)
+
+        if normalize:
+            A2norm = A2.norm()
+            A5norm = A5.norm()
+            B2norm = B2.norm()
+            B5norm = B5.norm()
+            A2 /= A2norm
+            A5 /= A5norm
+            B2 /= B2norm
+            B5 /= B5norm
+            weight = A2norm*A5norm*B2norm*B5norm
 
         """
                  U   D
@@ -88,11 +99,14 @@ class Ptr2DCheckerBTPK:
             B2   B5
             Y A2 X
         """
-        return Ptr2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
+        if normalize:
+            return Ptr2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1), PowPowFloat(weight, 2, self.scale-1)
+        else:
+            return Ptr2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
 
 
 
-    def renormalize_alg_YGW(self, chi=10):
+    def renormalize_alg_YGW(self, chi=10, normalize=True):
         """
         Loop optimization for tensor network renormalization
         Shuo Yang, Zheng-Cheng Gu, Xiao-Gang Wen
@@ -133,7 +147,12 @@ class Ptr2DCheckerBTPK:
         """
         # O(chi^5 * repeat)
         CBTPS = onedim.Cyc1DBTPS([E,F,G,H],[A2,B2,A5,B5])
-        CBTPS.universally_canonize(chi=chi, transfer_normalize=False)
+        if normalize:
+            memo = {}
+            CBTPS.universally_canonize(chi=chi, transfer_normalize=True, memo=memo)
+            weight = sqrt(memo["w"])
+        else:
+            CBTPS.universally_canonize(chi=chi, transfer_normalize=False)
         A2,B2,A5,B5 = tuple(CBTPS.bdts)
         E,F,G,H = tuple(CBTPS.tensors)
         
@@ -151,15 +170,18 @@ class Ptr2DCheckerBTPK:
             B2   B5
             Y A2 X
         """
-        return Ptr2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
+        if normalize:
+            return Ptr2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1), PowPowFloat(weight, 2, self.scale-1)
+        else:
+            return Ptr2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
 
 
 
-    def renormalize(self, chi=10, algname="LN"):
+    def renormalize(self, chi=10, normalize=True, algname="LN"):
         if algname in ["LN", "Naive", "TRG"]:
-            return self.renormalize_alg_LN(chi=chi)
+            return self.renormalize_alg_LN(chi=chi, normalize=normalize)
         elif algname in ["YGW", "Loop-TNR"]:
-            return self.renormalize_alg_YGW(chi=chi)
+            return self.renormalize_alg_YGW(chi=chi, normalize=normalize)
 
 
 
@@ -168,10 +190,20 @@ class Ptr2DCheckerBTPK:
 
 
 
-    def calculate(self, chi=10, algname="LN"):
-        re = self
-        while re.scale > 0:
-            re = re.renormalize(chi=chi, algname=algname)
+    def calculate(self, chi=10,  normalize=True, algname="LN"):
+        temp = self
+        if normalize:
+            weight = PowPowFloat([])
+        else:
+            weight = 1.0
+        while temp.scale > 0:
+            if normalize:
+                n,w = temp.renormalize(chi=chi, normalize=normalize, algname=algname)
+                temp = n
+                weight *= w
+            else:
+                temp = temp.renormalize(chi=chi, normalize=normalize, algname=algname)
+
 
         """
         [scale=1]
@@ -179,7 +211,8 @@ class Ptr2DCheckerBTPK:
             L A R B L
               D   U
         """
-        return re.A*re.L*re.R*re.U*re.D*re.B
+        weight *= (temp.A*temp.L*temp.R*temp.U*temp.D*temp.B).to_scalar()
+        return weight
 
 
 

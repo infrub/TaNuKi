@@ -159,6 +159,32 @@ class CollateralBool:
         return self.expression[arg]
 
 
+class PowPowFloat: #[ (mantissa, radix, exponent) ]
+    def __init__(self, *args):
+        if len(args)==1:
+            self.mres = args[0]
+        else:
+            self.mres = [(args[0],args[1],args[2])]
+    def __str__(self):
+        re = ""
+        for m,r,e in self.mres:
+            if len(re)>0:
+                re += " * "
+            re += f"({m})**({r}**{e})"
+        return re
+    def __mul__(self, other):
+        if type(other) == PowPowFloat:
+            return PowPowFloat(self.mres + other.mres)
+        else:
+            return self * PowPowFloat(other, self.mres[0][1], 0)
+    def __float__(self):
+        return soujou([m ** (r ** e) for (m,r,e) in self.mres])
+    def __complex__(self):
+        return soujou([m ** (r ** e) for (m,r,e) in self.mres])
+
+
+
+
 pccs_table = {"v1":(185,31,87),
 "v2":(208,47,72),
 "v3":(221,68,59),

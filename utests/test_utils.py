@@ -32,6 +32,12 @@ class TestCollateralBool(unittest.TestCase):
         self.assertTrue(a|b)
         self.assertTrue(len(str(a)) > 6)
 
+class TestPowPowFloat(unittest.TestCase):
+    def test01(self):
+        a = PowPowFloat(1.4, 2, 0)
+        b = PowPowFloat(sqrt(2), 2, 3)
+        self.assertAlmostEqual(float(a+b), 17.4)
+
 
 
 

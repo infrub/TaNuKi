@@ -203,12 +203,17 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     # -[0]-...-(len-1)-[len-1]-(0)-/          -/
     #
     # O(chi^6) + O(chi^6)
-    def universally_canonize_around_end_bond(self, bde=0, chi=None, rtol=None, atol=None, transfer_normalize=True):
+    def universally_canonize_around_end_bond(self, bde=0, chi=None, rtol=None, atol=None, transfer_normalize=True, memo=None):
+        if memo is None: memo = {}
         dl_label = unique_label()
         dr_label = unique_label()
         w_L, V_L = self.get_left_transfer_eigen(bde=bde)
         w_R, V_R = self.get_right_transfer_eigen(bde=bde)
+        w = (w_L+w_R)/2
         #assert abs(w_L-w_R) < 1e-5*abs(w_L), f"transfer_eigen different. {w_L} != {w_R}"
+        memo["w_L"] = w_L
+        memo["w_R"] = w_R
+        memo["w"] = w
         Yh, d_L, Y = tnd.tensor_eigh(V_L, self.get_ket_left_labels_bond(bde), self.get_bra_left_labels_bond(bde), eigh_labels=dl_label)
         Y.unaster_labels(self.get_bra_left_labels_bond(bde), inplace=True)
         X, d_R, Xh = tnd.tensor_eigh(V_R, self.get_ket_right_labels_bond(bde), self.get_bra_right_labels_bond(bde), eigh_labels=dr_label)
@@ -220,7 +225,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
         N = V * d_R.inv().sqrt() * Xh
         # l0 == M*S*N
         if transfer_normalize:
-            self.bdts[bde] = S / sqrt(w_L)
+            self.bdts[bde] = S / sqrt(w)
         else:
             self.bdts[bde] = S
         self.tensors[bde] = N * self.tensors[bde]
@@ -236,9 +241,10 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
         self.locally_right_canonize_around_not_end_bond(bde, chi=chi, rtol=rtol, atol=atol)
 
 
-    def universally_canonize(self, left_already=0, right_already=None, chi=None, rtol=None, atol=None, transfer_normalize=True):
+    def universally_canonize(self, left_already=0, right_already=None, chi=None, rtol=None, atol=None, transfer_normalize=True, memo=None):
+        if memo is None: memo={}
         if left_already == 0 and right_already is None:
-            self.universally_canonize_around_end_bond(0, chi=chi, rtol=rtol, atol=atol, transfer_normalize=transfer_normalize)
+            self.universally_canonize_around_end_bond(0, chi=chi, rtol=rtol, atol=atol, transfer_normalize=transfer_normalize, memo=memo)
             for i in range(1, len(self)):
                 self.locally_left_canonize_around_bond(i, chi=chi, rtol=rtol, atol=atol)
             for i in range(len(self)-1,0,-1):
