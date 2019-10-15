@@ -208,7 +208,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
         dr_label = unique_label()
         w_L, V_L = self.get_left_transfer_eigen(bde=bde)
         w_R, V_R = self.get_right_transfer_eigen(bde=bde)
-        assert abs(w_L-w_R) < 1e-5*abs(w_L), f"transfer_eigen different. {w_L} != {w_R}"
+        #assert abs(w_L-w_R) < 1e-5*abs(w_L), f"transfer_eigen different. {w_L} != {w_R}"
         Yh, d_L, Y = tnd.tensor_eigh(V_L, self.get_ket_left_labels_bond(bde), self.get_bra_left_labels_bond(bde), eigh_labels=dl_label)
         Y.unaster_labels(self.get_bra_left_labels_bond(bde), inplace=True)
         X, d_R, Xh = tnd.tensor_eigh(V_R, self.get_ket_right_labels_bond(bde), self.get_bra_right_labels_bond(bde), eigh_labels=dr_label)

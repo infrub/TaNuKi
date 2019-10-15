@@ -131,7 +131,7 @@ class Ptr2DCheckerBTPK:
                    G
                    ||
         """
-        # O(chi^12) #OMG!!
+        # O(chi^5 * repeat)
         CBTPS = onedim.Cyc1DBTPS([E,F,G,H],[A2,B2,A5,B5])
         CBTPS.universally_canonize(chi=chi, transfer_normalize=False)
         A2,B2,A5,B5 = tuple(CBTPS.bdts)
