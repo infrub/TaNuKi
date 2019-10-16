@@ -276,7 +276,7 @@ class TensorLabelingMixin:
     normarg_index = normarg_index_front
 
     def normarg_indices_front(self, indicesOrLabels):
-        if isinstance(indicesOrLabels, TensorMixin):
+        if isinstance(indicesOrLabels, TensorLabelingMixin):
             indicesOrLabels = intersection_list(self.labels, indicesOrLabels.labels)
         if type(indicesOrLabels)!=list:
             indicesOrLabels = [indicesOrLabels]
@@ -301,7 +301,7 @@ class TensorLabelingMixin:
         return res
 
     def normarg_indices_back(self, indicesOrLabels):
-        if isinstance(indicesOrLabels, TensorMixin):
+        if isinstance(indicesOrLabels, TensorLabelingMixin):
             indicesOrLabels = intersection_list(self.labels, indicesOrLabels.labels)
         if type(indicesOrLabels)!=list:
             indicesOrLabels = [indicesOrLabels]
