@@ -638,11 +638,7 @@ class TensorMixin(TensorLabelingMixin):
     def is_prop_to(self, other, skipLabelSort=False, rtol=1e-5, atol=1e-8):
         if not skipLabelSort:
             other = other.move_all_indices(self.labels)
-
-        M = self.data
-        I = other.data
-
-        return ndarray_is_prop_to(M, I, rtol=rtol, atol=atol)
+        return ndarray_is_prop_to(self.data, other.data, rtol=rtol, atol=atol)
 
 
 
