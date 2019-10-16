@@ -64,8 +64,8 @@ def epm0602():
 
     funi = twodim.Ptr2DCheckerBTPK(A,B,L,R,U,D, scale=3)
     print(funi)
-    for algname in ["LN","YGW"]:
-        for chi in [4,7,10,16,17]:
+    for chi in [4,7,10,16,17]:
+        for algname in ["LN","YGW2","YGW1"]:
             #print(algname, chi, funi.calculate(chi=chi, algname=algname))
             print(algname, chi, complex(funi.calculate(chi=chi, algname=algname)))
 

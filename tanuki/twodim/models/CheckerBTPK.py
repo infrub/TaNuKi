@@ -106,7 +106,7 @@ class Ptr2DCheckerBTPK:
 
 
 
-    def renormalize_alg_YGW(self, chi=10, normalize=True):
+    def renormalize_alg_YGW1(self, chi=10, normalize=True):
         """
         Loop optimization for tensor network renormalization
         Shuo Yang, Zheng-Cheng Gu, Xiao-Gang Wen
@@ -147,27 +147,27 @@ class Ptr2DCheckerBTPK:
         """
         # O(chi^7)
         E = B1*R*A1*u2*d2
-        F = B3*U*A4*l1*r1
+        F = A3*D*B4*l2*r2
         G = B6*L*A6*u1*d1
-        H = A3*D*B4*l2*r2
+        H = B3*U*A4*l1*r1
         """
                   ||
                    E
                 A2   B2   
-           == H         F ==
+           == F         H ==
                 B5   A5   
                    G
                    ||
         """
-        # O(chi^5 * repeat)
-        CBTPS = onedim.Cyc1DBTPS([E,F,G,H],[A2,B2,A5,B5])
+        # O(chi^8 * repeat)
+        CBTPS = onedim.Cyc1DBTPS([E,F,G,H],[B2,A2,B5,A5])
         if normalize:
             memo = {}
             CBTPS.universally_canonize(chi=chi, transfer_normalize=True, memo=memo)
             weight = sqrt(memo["w"])
         else:
             CBTPS.universally_canonize(chi=chi, transfer_normalize=False)
-        A2,B2,A5,B5 = tuple(CBTPS.bdts)
+        B2,A2,B5,A5 = tuple(CBTPS.bdts)
         E,F,G,H = tuple(CBTPS.tensors)
         
         X = E*G
@@ -191,11 +191,106 @@ class Ptr2DCheckerBTPK:
 
 
 
+    def renormalize_alg_YGW2(self, chi=10, normalize=True):
+        """
+        Loop optimization for tensor network renormalization
+        Shuo Yang, Zheng-Cheng Gu, Xiao-Gang Wen
+        https://arxiv.org/abs/1512.04938
+        """
+        A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
+
+        # O(chi^6)
+        A1,A2,A3 = A.svd(intersection_list(A.labels, R.labels+U.labels), svd_labels=2)
+        A4,A5,A6 = A.svd(intersection_list(A.labels, R.labels+U.labels), svd_labels=2)
+        B1,B2,B3 = B.svd(intersection_list(B.labels, R.labels+D.labels), svd_labels=2)
+        B4,B5,B6 = B.svd(intersection_list(B.labels, R.labels+D.labels), svd_labels=2)
+        """
+                 U   D
+                A1 R B1
+               A2     B2
+            L A3       B3 L
+              D         U
+            R B4       A4 R
+               B5     A5  
+                B6 L A6    
+                 U   D
+        """
+        u1,u2 = U.sqrt2(B6)
+        d1,d2 = D.sqrt2(A6)
+        l1,l2 = L.sqrt2(B3)
+        r1,r2 = R.sqrt2(A4)
+        """
+                u2   d2
+                A1 R B1
+               A2     B2
+           l2 A3       B3 l1
+              D         U
+           r2 B4       A4 r1
+               B5     A5  
+                B6 L A6    
+                u1   d1
+        """
+        # O(chi^4)
+        A1 *= u2
+        A3 *= l2
+        B4 *= r2
+        B6 *= u1
+        A6 *= d1
+        A4 *= r1
+        B3 *= l1
+        B1 *= d2
+        """
+                 |   |
+                A1 R B1
+               A2     B2
+           -- A3       B3 --
+              D         U
+           -- B4       A4 --
+               B5     A5  
+                B6 L A6    
+                 |   |
+        """
+        # O((chi^5 + chi^6) * repeat)
+        CBTPS = onedim.Cyc1DBTPS([A1,A3,B4,B6,A6,A4,B3,B1],[R,A2,D,B5,L,A5,U,B2])
+        if normalize:
+            memo = {}
+            CBTPS.universally_canonize(chi=chi, transfer_normalize=True, memo=memo)
+            weight = sqrt(memo["w"])
+        else:
+            CBTPS.universally_canonize(chi=chi, transfer_normalize=False)
+        R,A2,D,B5,L,A5,U,B2 = tuple(CBTPS.bdts)
+        A1,A3,B4,B6,A6,A4,B3,B1 = tuple(CBTPS.tensors)
+        
+        # O(chi^6)
+        X = (A1*R*B1)*(B6*L*A6)
+        Y = (A3*D*B4)*(B3*U*A4)
+        """
+                  X
+               A2   B2
+              Y       Y 
+               B5   A5
+                  X
+        """
+        """
+            X A5 Y
+            B2   B5
+            Y A2 X
+        """
+        if normalize:
+            return Ptr2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1), PowPowFloat(weight, 2, self.scale-1)
+        else:
+            return Ptr2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
+
+
+
+
     def renormalize(self, chi=10, normalize=True, algname="LN"):
         if algname in ["LN", "Naive", "TRG"]:
             return self.renormalize_alg_LN(chi=chi, normalize=normalize)
-        elif algname in ["YGW", "Loop-TNR"]:
-            return self.renormalize_alg_YGW(chi=chi, normalize=normalize)
+        elif algname in ["YGW1"]:
+            return self.renormalize_alg_YGW1(chi=chi, normalize=normalize)
+        elif algname in ["YGW2"]:
+            return self.renormalize_alg_YGW2(chi=chi, normalize=normalize)
 
 
 

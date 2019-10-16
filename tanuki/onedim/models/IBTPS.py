@@ -18,17 +18,17 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     def __repr__(self):
         return f"Inf1DBTPS(tensors={self.tensors}, bdts={self.bdts}, phys_labelss={self.phys_labelss})"
 
-    def __str__(self):
+    def __str__(self, nodata=False):
         if len(self) > 20:
             dataStr = " ... "
         else:
             dataStr = ""
             for i in range(len(self)):
                 bdt = self.bdts[i]
-                dataStr += str(bdt)
+                dataStr += bdt.__str__(nodata=nodata)
                 dataStr += "\n"
                 tensor = self.tensors[i]
-                dataStr += str(tensor)
+                dataStr += tensor.__str__(nodata=nodata)
                 dataStr += ",\n"
         dataStr = textwrap.indent(dataStr, "    ")
 

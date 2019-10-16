@@ -660,7 +660,14 @@ class Tensor(TensorMixin):
     def __repr__(self):
         return f"Tensor(data={self.data}, labels={self.labels})"
 
-    def __str__(self):
+    def __str__(self, nodata=False):
+        if nodata:
+            return \
+            f"Tensor(\n" + \
+            f"    labels={self.labels},\n" + \
+            f"    shape={self.shape},\n" + \
+            f")"
+
         if self.size > display_max_size:
             dataStr = \
             "["*self.ndim + str(self.data.item(0)) + " ... " + "]"*self.ndim
@@ -1014,7 +1021,14 @@ class DiagonalTensor(TensorMixin):
     def __repr__(self):
         return f"DiagonalTensor(data={self.data}, labels={self.labels})"
 
-    def __str__(self):
+    def __str__(self, nodata=False):
+        if nodata:
+            return \
+            f"DiagonalTensor(\n" + \
+            f"    labels={self.labels},\n" + \
+            f"    shape={self.shape},\n" + \
+            f")"
+
         if self.halfsize > display_max_size:
             dataStr = \
             "["*self.halfndim + str(self.data.item(0)) + " ... " + "]"*self.halfndim
