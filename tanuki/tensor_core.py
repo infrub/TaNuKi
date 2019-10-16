@@ -276,6 +276,8 @@ class TensorLabelingMixin:
     normarg_index = normarg_index_front
 
     def normarg_indices_front(self, indicesOrLabels):
+        if isinstance(indicesOrLabels, TensorMixin):
+            indicesOrLabels = intersection_list(self.labels, indicesOrLabels.labels)
         if type(indicesOrLabels)!=list:
             indicesOrLabels = [indicesOrLabels]
         res = [None] * len(indicesOrLabels)
@@ -299,6 +301,8 @@ class TensorLabelingMixin:
         return res
 
     def normarg_indices_back(self, indicesOrLabels):
+        if isinstance(indicesOrLabels, TensorMixin):
+            indicesOrLabels = intersection_list(self.labels, indicesOrLabels.labels)
         if type(indicesOrLabels)!=list:
             indicesOrLabels = [indicesOrLabels]
         res = [None] * len(indicesOrLabels)
@@ -1077,11 +1081,16 @@ class DiagonalTensor(TensorMixin):
         return DiagonalTensor(xp.sqrt(self.data), labels=self.labels)
 
     @inplacable_tensorMixin_method
-    def sqrt2(self):
-        firstHalfLabels = self.labels[:self.ndim//2]
-        lastHalfLabels = self.labels[self.ndim//2:]
+    def sqrt2(self, firstHalfIndices=None):
+        if firstHalfIndices is None:
+            temp = self
+        else:
+            firstHalfIndices = self.normarg_indices_front(firstHalfIndices)
+            temp = self.move_half_all_indices_to_top(firstHalfIndices)
+        firstHalfLabels = temp.labels[:temp.ndim//2]
+        lastHalfLabels = temp.labels[temp.ndim//2:]
         newLabels = [unique_label() for _ in firstHalfLabels]
-        nakami = xp.sqrt(self.data)
+        nakami = xp.sqrt(temp.data)
         return DiagonalTensor(nakami, labels=firstHalfLabels+newLabels), DiagonalTensor(nakami, labels=newLabels+lastHalfLabels), 
 
     @inplacable_tensorMixin_method

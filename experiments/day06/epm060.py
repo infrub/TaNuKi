@@ -48,9 +48,27 @@ def epm0601():
     funi = twodim.Ptr2DCheckerBTPK(A,B,L,R,U,D, scale=3)
     print(funi)
     for algname in ["LN","YGW"]:
-        for chi in [3,4,5,6,7,8]:
+        for chi in [3,4,5,6,7]:
             #print(algname, chi, funi.calculate(chi=chi, algname=algname))
             print(algname, chi, complex(funi.calculate(chi=chi, algname=algname)), funi.calculate(chi=chi, normalize=False, algname=algname))
 
 
-epm0601()
+def epm0602():
+    b = 2
+    A = random_tensor((b,b,b,b),["AL","AR","AU","AD"])
+    B = random_tensor((b,b,b,b),["BL","BR","BU","BD"])
+    L = random_diagonalTensor((b,),["AL","BL"])
+    R = random_diagonalTensor((b,),["AR","BR"])
+    U = random_diagonalTensor((b,),["AU","BU"])
+    D = random_diagonalTensor((b,),["AD","BD"])
+
+    funi = twodim.Ptr2DCheckerBTPK(A,B,L,R,U,D, scale=3)
+    print(funi)
+    for algname in ["LN","YGW"]:
+        for chi in [4,7,10,16,17]:
+            #print(algname, chi, funi.calculate(chi=chi, algname=algname))
+            print(algname, chi, complex(funi.calculate(chi=chi, algname=algname)))
+
+
+
+epm0602()

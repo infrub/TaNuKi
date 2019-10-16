@@ -135,7 +135,8 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     # \Lh-(0)-[0]-...-(len-1)-[len-1]-          \Lh-
     #
     # O(chi^3 * w * repeat)
-    def get_left_transfer_eigen(self, bde=0):
+    def get_left_transfer_eigen(self, bde=0, memo=None):
+        if memo is None: memo = {}
         tshape = self.get_right_shape_site(bde-1)
         tlabels = self.get_ket_right_labels_site(bde-1)
         trdim = soujou(tshape)
@@ -143,7 +144,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
         T = tni.random_tensor((trdim,)+tshape, [trlabel]+tlabels)
         V_L = T * T.adjoint(tlabels)
 
-        for _ in range(1000):
+        for iteri in range(1,101):
             T.normalize(inplace=True)
             old_V_L = T * T.adjoint(tlabels)
 
@@ -156,6 +157,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
             w_L = np.real(temp["factor"])
             if temp:
                 break
+        memo["iter_times"] = iteri
 
         return w_L, V_L
 
@@ -167,14 +169,15 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     # -[0]-...-(len-1)-[len-1]-(0)-/          -/
     #
     # O(chi^3 * w * repeat)
-    def get_right_transfer_eigen(self, bde=0):
+    def get_right_transfer_eigen(self, bde=0,  memo=None):
+        if memo is None: memo = {}
         tshape = self.get_left_shape_site(bde)
         tlabels = self.get_ket_left_labels_site(bde)
         trdim = soujou(tshape)
         trlabel = unique_label()
         T = tni.random_tensor((trdim,)+tshape, [trlabel]+tlabels)
 
-        for repeat in range(1000):
+        for iteri in range(1,101):
             T.normalize(inplace=True)
             old_V_R = T * T.adjoint(tlabels)
 
@@ -187,6 +190,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
             w_R = np.real(temp["factor"])
             if temp:
                 break
+        memo["iter_times"] = iteri
 
         return w_R, V_R
 
@@ -207,8 +211,10 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
         if memo is None: memo = {}
         dl_label = unique_label()
         dr_label = unique_label()
-        w_L, V_L = self.get_left_transfer_eigen(bde=bde)
-        w_R, V_R = self.get_right_transfer_eigen(bde=bde)
+        memo["left_transfer_eigen"] = {}
+        w_L, V_L = self.get_left_transfer_eigen(bde=bde, memo=memo["left_transfer_eigen"])
+        memo["right_transfer_eigen"] = {}
+        w_R, V_R = self.get_right_transfer_eigen(bde=bde, memo=memo["right_transfer_eigen"])
         w = (w_L+w_R)/2
         #assert abs(w_L-w_R) < 1e-5*abs(w_L), f"transfer_eigen different. {w_L} != {w_R}"
         memo["w_L"] = w_L

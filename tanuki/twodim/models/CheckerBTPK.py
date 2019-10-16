@@ -119,7 +119,6 @@ class Ptr2DCheckerBTPK:
         A4,A5,A6 = A.svd(intersection_list(A.labels, R.labels+U.labels), svd_labels=2)
         B1,B2,B3 = B.svd(intersection_list(B.labels, R.labels+D.labels), svd_labels=2)
         B4,B5,B6 = B.svd(intersection_list(B.labels, R.labels+D.labels), svd_labels=2)
-
         """
                  U   D
                 A1 R B1
@@ -132,10 +131,14 @@ class Ptr2DCheckerBTPK:
                  U   D
         """
         # O(chi^7)
-        E = B1*R*A1*U
-        F = B3*U*A4*L
-        G = B6*L*A6*D
-        H = A3*D*B4*R
+        u1,u2 = U.sqrt2(B6)
+        d1,d2 = D.sqrt2(A6)
+        l1,l2 = L.sqrt2(B3)
+        r1,r2 = R.sqrt2(A4)
+        E = B1*R*A1*u2*d2
+        F = B3*U*A4*l1*r1
+        G = B6*L*A6*u1*d1
+        H = A3*D*B4*l2*r2
         """
                   ||
                    E
@@ -203,7 +206,6 @@ class Ptr2DCheckerBTPK:
                 weight *= w
             else:
                 temp = temp.renormalize(chi=chi, normalize=normalize, algname=algname)
-
 
         """
         [scale=1]
