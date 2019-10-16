@@ -1278,6 +1278,10 @@ def direct_product(A, B):
         cData = xp.tensordot(A.data, B.data, 0)
         cLabels = A.labels[:A.halfndim] + B.labels[:B.halfndim] + A.labels[A.halfndim:] + B.labels[B.halfndim:]
         return DiagonalTensor(cData, cLabels)
+    elif type(A)==Tensor and type(B)==DiagonalTensor:
+        return direct_product(A, diagonalTensor_to_tensor(B))
+    elif type(A)==DiagonalTensor and type(B)==Tensor:
+        return direct_product(diagonalTensor_to_tensor(A), B)
 
 
 
