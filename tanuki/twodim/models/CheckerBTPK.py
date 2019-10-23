@@ -14,7 +14,7 @@ import numpy as np
 
 
 
-class Ptr2DCheckerBTPK:
+class Ptn2DCheckerBTPK:
     """
     [scale=2]
           U   D
@@ -43,7 +43,7 @@ class Ptr2DCheckerBTPK:
         dataStr += "scale=" + str(self.scale) + "\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Ptr2DCheckerTPK(\n" + dataStr + f")"
+        dataStr = f"Ptn2DCheckerTPK(\n" + dataStr + f")"
 
         return dataStr
 
@@ -100,13 +100,13 @@ class Ptr2DCheckerBTPK:
             Y A2 X
         """
         if normalize:
-            return Ptr2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1), PowPowFloat(weight, 2, self.scale-1)
+            return Ptn2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1), PowPowFloat(weight, 2, self.scale-1)
         else:
-            return Ptr2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
+            return Ptn2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
 
 
 
-    def renormalize_alg_YGW1(self, chi=10, normalize=True):
+    def renormalize_alg_YGW1(self, chi=10, normalize=True, loop_compress_algname="YGW"):
         """
         Loop optimization for tensor network renormalization
         Shuo Yang, Zheng-Cheng Gu, Xiao-Gang Wen
@@ -162,11 +162,9 @@ class Ptr2DCheckerBTPK:
         # O(chi^8 * repeat)
         CBTPS = onedim.Cyc1DBTPS([E,F,G,H],[B2,A2,B5,A5])
         if normalize:
-            memo = {}
-            CBTPS.universally_canonize(chi=chi, transfer_normalize=True, memo=memo)
-            weight = sqrt(memo["w"])
+            weight = CBTPS.compress(chi=chi, transfer_normalize=True, algname=loop_compress_algname)
         else:
-            CBTPS.universally_canonize(chi=chi, transfer_normalize=False)
+            CBTPS.compress(chi=chi, transfer_normalize=False, algname=loop_compress_algname)
         B2,A2,B5,A5 = tuple(CBTPS.bdts)
         E,F,G,H = tuple(CBTPS.tensors)
         
@@ -185,13 +183,13 @@ class Ptr2DCheckerBTPK:
             Y A2 X
         """
         if normalize:
-            return Ptr2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1), PowPowFloat(weight, 2, self.scale-1)
+            return Ptn2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1), PowPowFloat(weight, 2, self.scale-1)
         else:
-            return Ptr2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
+            return Ptn2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
 
 
 
-    def renormalize_alg_YGW2(self, chi=10, normalize=True):
+    def renormalize_alg_YGW2(self, chi=10, normalize=True, loop_compress_algname="YGW"):
         """
         Loop optimization for tensor network renormalization
         Shuo Yang, Zheng-Cheng Gu, Xiao-Gang Wen
@@ -253,11 +251,9 @@ class Ptr2DCheckerBTPK:
         # O((chi^5 + chi^6) * repeat)
         CBTPS = onedim.Cyc1DBTPS([A1,A3,B4,B6,A6,A4,B3,B1],[R,A2,D,B5,L,A5,U,B2])
         if normalize:
-            memo = {}
-            CBTPS.universally_canonize(chi=chi, transfer_normalize=True, memo=memo)
-            weight = sqrt(memo["w"])
+            weight = CBTPS.compress(chi=chi, transfer_normalize=True, algname=loop_compress_algname)
         else:
-            CBTPS.universally_canonize(chi=chi, transfer_normalize=False)
+            CBTPS.compress(chi=chi, transfer_normalize=False, algname=loop_compress_algname)
         R,A2,D,B5,L,A5,U,B2 = tuple(CBTPS.bdts)
         A1,A3,B4,B6,A6,A4,B3,B1 = tuple(CBTPS.tensors)
         
@@ -277,20 +273,20 @@ class Ptr2DCheckerBTPK:
             Y A2 X
         """
         if normalize:
-            return Ptr2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1), PowPowFloat(weight, 2, self.scale-1)
+            return Ptn2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1), PowPowFloat(weight, 2, self.scale-1)
         else:
-            return Ptr2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
+            return Ptn2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
 
 
 
 
-    def renormalize(self, chi=10, normalize=True, algname="LN"):
+    def renormalize(self, chi=10, normalize=True, algname="LN", loop_compress_algname="YGW"):
         if algname in ["LN", "Naive", "TRG"]:
             return self.renormalize_alg_LN(chi=chi, normalize=normalize)
         elif algname in ["YGW1"]:
-            return self.renormalize_alg_YGW1(chi=chi, normalize=normalize)
-        elif algname in ["YGW2"]:
-            return self.renormalize_alg_YGW2(chi=chi, normalize=normalize)
+            return self.renormalize_alg_YGW1(chi=chi, normalize=normalize, loop_compress_algname=loop_compress_algname)
+        elif algname in ["YGW2","YGW"]:
+            return self.renormalize_alg_YGW2(chi=chi, normalize=normalize, loop_compress_algname=loop_compress_algname)
 
 
 
@@ -299,7 +295,7 @@ class Ptr2DCheckerBTPK:
 
 
 
-    def calculate(self, chi=10,  normalize=True, algname="LN"):
+    def calculate(self, chi=10,  normalize=True, algname="LN", loop_compress_algname="YGW"):
         temp = self
         if normalize:
             weight = PowPowFloat([])
@@ -307,11 +303,11 @@ class Ptr2DCheckerBTPK:
             weight = 1.0
         while temp.scale > 0:
             if normalize:
-                n,w = temp.renormalize(chi=chi, normalize=normalize, algname=algname)
+                n,w = temp.renormalize(chi=chi, normalize=normalize, algname=algname, loop_compress_algname=loop_compress_algname)
                 temp = n
                 weight *= w
             else:
-                temp = temp.renormalize(chi=chi, normalize=normalize, algname=algname)
+                temp = temp.renormalize(chi=chi, normalize=normalize, algname=algname, loop_compress_algname=loop_compress_algname)
 
         """
         [scale=1]

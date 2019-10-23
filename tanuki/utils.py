@@ -1,6 +1,7 @@
 from collections import Counter
 import random
 import copy as copyModule
+import math
 
 def soujou(xs):
     re = 1
@@ -177,10 +178,25 @@ class PowPowFloat: #[ (mantissa, radix, exponent) ]
             return PowPowFloat(self.mres + other.mres)
         else:
             return self * PowPowFloat(other, self.mres[0][1], 0)
+    @property
+    def value(self):
+        return soujou([m ** (r ** e) for (m,r,e) in self.mres])
     def __float__(self):
-        return soujou([m ** (r ** e) for (m,r,e) in self.mres])
+        result = self.value
+        if type(result) == complex:
+            result = result.real
+        return result
     def __complex__(self):
-        return soujou([m ** (r ** e) for (m,r,e) in self.mres])
+        result = self.value
+        if type(result) == float:
+            result = result * (1.0+0.0j)
+        return result
+    @property
+    def log(self, radix=math.e):
+        result = 0
+        for m,r,e in self.mres:
+            result += math.log(abs(m),radix) * (r**e)
+        return result
 
 
 

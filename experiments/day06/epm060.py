@@ -30,7 +30,7 @@ def epm0600():
     U = random_diagonalTensor((b,),["AU","BU"])
     D = random_diagonalTensor((b,),["AD","BD"])
 
-    funi = twodim.Ptr2DCheckerBTPK(A,B,L,R,U,D, scale=2)
+    funi = twodim.Ptn2DCheckerBTPK(A,B,L,R,U,D, scale=2)
     print(funi)
     for chi in [2,3,4,5]:
         print(chi, funi.calculate(chi=chi))
@@ -45,7 +45,7 @@ def epm0601():
     U = random_diagonalTensor((b,),["AU","BU"])
     D = random_diagonalTensor((b,),["AD","BD"])
 
-    funi = twodim.Ptr2DCheckerBTPK(A,B,L,R,U,D, scale=3)
+    funi = twodim.Ptn2DCheckerBTPK(A,B,L,R,U,D, scale=3)
     print(funi)
     for algname in ["LN","YGW"]:
         for chi in [3,4,5,6,7]:
@@ -62,7 +62,7 @@ def epm0602():
     U = random_diagonalTensor((b,),["AU","BU"])
     D = random_diagonalTensor((b,),["AD","BD"])
 
-    funi = twodim.Ptr2DCheckerBTPK(A,B,L,R,U,D, scale=3)
+    funi = twodim.Ptn2DCheckerBTPK(A,B,L,R,U,D, scale=3)
     print(funi)
     for chi in [4,7,10,16,17]:
         for algname in ["LN","YGW2","YGW1"]:
@@ -71,4 +71,45 @@ def epm0602():
 
 
 
-epm0602()
+def epm0603():
+    beta = 0.1
+    scale = 17
+
+    #push# make Ising model partition function TPK
+    gate = zeros_tensor((2,2,2,2), ["ain","aout","bin","bout"])
+    gate.data[1,1,1,1] = np.exp(beta)
+    gate.data[0,0,0,0] = np.exp(beta)
+    gate.data[0,0,1,1] = np.exp(-beta)
+    gate.data[1,1,0,0] = np.exp(-beta)
+    gate = onedim.Obc1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
+    A = identity_tensor((2,), labels=["ain","aout"])
+    B = identity_tensor((2,), labels=["bin","bout"])
+
+    Ss = []
+    for _ in range(4):
+        funi = gate.to_BTPO()
+        a,S,b = funi.tensors[0], funi.bdts[1], funi.tensors[1]
+        A = A["aout"]*a["ain"]
+        Ss.append(S)
+        B = B["bout"]*b["bin"]
+    L,R,U,D = tuple(Ss)
+    A = A.trace("aout","ain")
+    B = B.trace("bout","bin")
+
+    Z = twodim.Ptn2DCheckerBTPK(A,B,L,R,U,D, scale=scale)
+    #pop# make Ising model TPK
+
+    for chi in [16]:
+        for algname in ["LN","YGW2"]:
+            re = Z.calculate(chi=chi, algname=algname)
+            #Z_value = float(re)
+            F_value = -1.0 / beta * re.log
+            print(algname, chi, F_value)
+
+
+
+
+
+
+
+epm0603()

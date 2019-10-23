@@ -47,3 +47,17 @@ class Cyc1DBTPS(Inf1DBTPS):
         tensors = [self.get_bra_site(site) for site in range(len(self))]
         bdts = [self.get_bra_bond(bondsite) for bondsite in range(len(self))]
         return Cyc1DBTPS(tensors, bdts, self.phys_labelss)
+
+    def compress(self, chi, transfer_normalize=True, algname="canonize"):
+        if algname in ["YGW", "canonize"]:
+            if transfer_normalize:
+                memo = {}
+                self.universally_canonize(chi=chi, transfer_normalize=True, memo=memo)
+                weight = sqrt(memo["w"])
+                return weight
+            else:
+                self.universally_canonize(chi=chi, transfer_normalize=False)
+                return
+
+        if algname in ["iterative"]:
+            pass
