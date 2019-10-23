@@ -100,14 +100,15 @@ def epm0603():
     Z = twodim.Ptn2DCheckerBTPK(A,B,L,R,U,D, scale=scale)
     #pop# make Ising model TPK
 
-    symbols = [a+b+c+d for a in "HN" for b in "FT" for c in "CN" for d in "EO"]
-    kwargss = [dict(env_choice=env_choice, contract_medium=contract_medium, loop_truncation_algname=loop_truncation_algname, drill_parity=drill_parity) for env_choice in ["half","no"] for contract_medium in [False,True] for loop_truncation_algname in ["canonize", "naive"] for drill_parity in [0,1]]
+    symbols = [a+b+c+d for a in "HN" for b in "FT" for c in "CNRI" for d in "EO"]
+    kwargss = [dict(env_choice=env_choice, contract_medium=contract_medium, loop_truncation_algname=loop_truncation_algname, drill_parity=drill_parity) for env_choice in ["half","no"] for contract_medium in [False,True] for loop_truncation_algname, initial_value in [("canonize",None), ("naive",None), ("iterative","random"), ("iterative", "naive_truncation")] for drill_parity in [0,1]]
 
-    chi = 20
+    chi = 6
     results = []
     for symbol, kwargs in zip(symbols,kwargss):
+        print(symbol)
         try:
-            @timeout(10)
+            @timeout(20)
             def funi():
                 re = Z.calculate(chi=chi, **kwargs)
                 return re
@@ -115,10 +116,14 @@ def epm0603():
             #Z_value = float(re)
             F_value = -1.0 / beta * re.log
             #print(F_value)
+            print(symbol, F_value)
             results.append((symbol,F_value))
         except Exception as e:
             print(symbol, e)
+            results.append((symbol,114514))
             #raise e
+
+    print("\n\n")
 
     results.sort(key=lambda a: a[1])
     for symbol, F_value in results:

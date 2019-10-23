@@ -62,6 +62,7 @@ def tensor_to_vector(T, indices):
     return xp.reshape(T.data, (T.size,))
 
 def tensor_to_scalar(T):
+    assert T.size == 1
     return xp.asscalar(T.data)
 
 

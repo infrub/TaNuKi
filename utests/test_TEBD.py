@@ -28,7 +28,7 @@ class TestRealFinTEBD(unittest.TestCase):
             self.assertTrue(EH2.tensor.is_hermite(["o0","o1"]))
             EH2 = EH2.to_BTPO()
             self.assertTrue(EH2.is_hermite)
-            psi = random_fin1DSimBTPS([["p0"],["p1"],["p2"],["p3"]])
+            psi = random_fin1DBTPS([["p0"],["p1"],["p2"],["p3"]])
 
             for _ in range(100):
                 psi.apply_everyplace([EH1,EH2], chi=4)

@@ -48,7 +48,19 @@ class Cyc1DBTPS(Inf1DBTPS):
         bdts = [self.get_bra_bond(bondsite) for bondsite in range(len(self))]
         return Cyc1DBTPS(tensors, bdts, self.phys_labelss)
 
-    def truncate(self, chi, normalize=True, algname="canonize"):
+    def to_TPS(self):
+        tensors = []
+        for i in range(len(self)):
+            tensors.append( self.bdts[i][self.get_right_labels_bond(i)] * self.tensors[i][self.get_left_labels_site(i)] )
+        from tanuki.onedim.models.CTPS import Cyc1DTPS
+        return Cyc1DTPS(tensors, self.phys_labelss)
+
+    def to_BTPS(self):
+        return self
+
+    def truncate(self, chi, normalize=True, algname="canonize", memo=None, **kwargs):
+        if memo is None: memo = {}
+
         if algname == "naive":
             if normalize:
                 weight = 1.0
@@ -77,5 +89,88 @@ class Cyc1DBTPS(Inf1DBTPS):
                 self.universally_canonize(chi=chi, transfer_normalize=False)
                 return
 
-        elif algname in ["iterative"]:
-            pass
+        elif algname == "iterative":
+            params = {
+                "conv_atol": kwargs.get("conv_atol", 1e-10),
+                "conv_rtol": kwargs.get("conv_rtol", 1e-10),
+                "max_iter": kwargs.get("max_iter", 200),
+                "initial_value": kwargs.get("initial_value", "random")
+                }
+
+            ORIGIN = self.to_TPS()
+
+            ORIGIN_SQ = 1.0
+            for e in range(len(ORIGIN)):
+                ORIGIN_SQ *= ORIGIN.get_ket_site(e)
+                ORIGIN_SQ *= ORIGIN.get_bra_site(e)
+            ORIGIN_SQ = ORIGIN_SQ.real()
+
+            if params["initial_value"] == "naive_truncation":
+                PHI = Cyc1DBTPS(self.tensors, self.bdts, self.phys_labelss)
+                PHI.truncate(chi=chi, normalize=False, algname="naive")
+                PHI = PHI.to_TPS()
+            elif params["initial_value"] == "random":
+                from tanuki.onedim.models_instant import random_cyc1DTPS
+                PHI = random_cyc1DTPS(self.phys_labelss, phys_dimss=[self.tensors[e].dims(self.phys_labelss[e]) for e in range(len(self))], chi=chi)
+            
+            sqdiff = float("inf")
+
+            for iteri in range(params["max_iter"]):
+                #print(iteri, sqdiff)
+                old_sqdiff = sqdiff
+
+                for e in range(len(ORIGIN)):
+                    M = PHI.get_ket_site(e)
+                    Mshape = M.dims(PHI.get_ket_left_labels_site(e)+PHI.get_ket_right_labels_site(e)+PHI.get_phys_labels_site(e))
+                    Mlabels = PHI.get_ket_left_labels_site(e)+PHI.get_ket_right_labels_site(e)+PHI.get_phys_labels_site(e)
+
+                    B = 1
+                    C = 1
+                    for i in range(1,len(ORIGIN)):
+                        B *= PHI.get_ket_site(e+i)
+                        B *= PHI.get_bra_site(e+i)
+                        C *= ORIGIN.get_ket_site(e+i)
+                        C *= PHI.get_bra_site(e+i)
+                    C *= ORIGIN.get_ket_site(e)
+
+                    Bdata = B.to_matrix(PHI.get_bra_left_labels_site(e)+PHI.get_bra_right_labels_site(e), PHI.get_ket_left_labels_site(e)+PHI.get_ket_right_labels_site(e))
+                    Cdata = C.to_matrix(PHI.get_bra_left_labels_site(e)+PHI.get_bra_right_labels_site(e), PHI.get_phys_labels_site(e))
+
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings('error')
+                        try:
+                            Mdata = xp.linalg.solve(Bdata, Cdata, assume_a="pos")
+                            M = tnc.matrix_to_tensor(Mdata, Mshape, Mlabels)
+                            PHI.tensors[e] = M
+                        except:
+                            continue
+
+                sqdiff = ( (B * PHI.get_ket_site(e) * PHI.get_bra_site(e)).real() - (C * PHI.get_bra_site(e)).real()*2 + ORIGIN_SQ ).to_scalar()
+
+                if abs(sqdiff-old_sqdiff) <= sqdiff*params["conv_rtol"] + params["conv_atol"]:
+                    break
+
+            memo["sqdiff"] = sqdiff
+            memo["iter_times"] = iteri+1
+            print(memo)
+
+            PHI = PHI.to_BTPS()
+            self.tensors = PHI.tensors
+            self.bdts = PHI.bdts
+            self.phys_labelss = PHI.phys_labelss
+
+            if normalize:
+                memo2 = {}
+                self.universally_canonize(chi=None, transfer_normalize=True, memo=memo2)
+                weight = sqrt(memo2["w"])
+                return weight
+            else:
+                self.universally_canonize(chi=None, transfer_normalize=False)
+                return
+
+
+
+
+
+
+

@@ -14,10 +14,10 @@ import copy
 class TestObc1DBTPS(unittest.TestCase):
     def test_instant(self):
         phys_labelss = [["p0"], ["p1"], ["p2"]]
-        A = random_fin1DSimBTPS(phys_labelss)
+        A = random_fin1DBTPS(phys_labelss)
         a = A.to_tensor()
         self.assertTrue(eq_list(a.labels, ["p0","p1","p2"]))
-        A = random_fin1DSimBTPS([["p0"], ["p10","p11"], ["p2"], ["p3"]], virt_labelss=[["v0"],["v10,v11"],["v2"]], chi=4)
+        A = random_fin1DBTPS([["p0"], ["p10","p11"], ["p2"], ["p3"]], virt_labelss=[["v0"],["v10,v11"],["v2"]], chi=4)
         self.assertTrue(eq_list(A.get_guessed_phys_labels_site(1), ["p10","p11"]))
         self.assertEqual(A.tensors[1].size, 64)
         a = A.to_tensor()
@@ -25,7 +25,7 @@ class TestObc1DBTPS(unittest.TestCase):
 
     def test_canonize_site(self):
         phys_labelss = [["p0"], ["p1"], ["p2"]]
-        A = random_fin1DSimBTPS(phys_labelss)
+        A = random_fin1DBTPS(phys_labelss)
         self.assertFalse(A.is_locally_left_canonical_around_bond(1))
         A.locally_left_canonize_around_bond(1)
         self.assertTrue(A.is_locally_left_canonical_around_bond(1))
@@ -36,7 +36,7 @@ class TestObc1DBTPS(unittest.TestCase):
 
     def test_universally_canonize(self):
         phys_labelss = [["p0"], ["p1"], ["p2"]]
-        A = random_fin1DSimBTPS(phys_labelss)
+        A = random_fin1DBTPS(phys_labelss)
         a1 = A.to_tensor()
         self.assertFalse(A.is_canonical())
         A.universally_canonize(end_dealing="no")
@@ -51,9 +51,9 @@ class TestObc1DBTPS(unittest.TestCase):
 
     def test_convert(self):
         phys_labelss = [["p0"], ["p1"], ["p2"]]
-        A = random_fin1DSimTPS(phys_labelss)
+        A = random_fin1DTPS(phys_labelss)
         self.assertEqual(A.to_BTPS().to_tensor(), A.to_tensor())
-        B = random_fin1DSimBTPS(phys_labelss)
+        B = random_fin1DBTPS(phys_labelss)
         self.assertEqual(B.to_TPS().to_tensor(), B.to_tensor())
 
 
@@ -62,19 +62,19 @@ class TestObc1DBTPS(unittest.TestCase):
 class TestInf1DBTPS(unittest.TestCase):
     def test_instant(self):
         phys_labelss = [["p0"], ["p1"], ["p2"]]
-        A = random_inf1DSimBTPS(phys_labelss)
+        A = random_inf1DBTPS(phys_labelss)
         a = A.to_tensor()
         self.assertTrue(eq_list(a.labels, ["p0","p1","p2"]))
 
     def test_transfer_eigen(self):
-        A = random_inf1DSimBTPS([["p0"], ["p10","p11"], ["p2"]], virt_labelss=[["v0"],["v10","v11"],["v2"]], chi=4)
+        A = random_inf1DBTPS([["p0"], ["p10","p11"], ["p2"]], virt_labelss=[["v0"],["v10","v11"],["v2"]], chi=4)
         self.assertTrue(eq_list(A.get_guessed_phys_labels_site(1), ["p10","p11"]))
         w_L, V_L = A.get_left_transfer_eigen()
         w_R, V_R = A.get_right_transfer_eigen()
         self.assertTrue( abs(w_L-w_R) < 1e-5*abs(w_L) )
 
     def test_universally_canonize_around_end_bond(self):
-        A = random_inf1DSimBTPS([["p0"], ["p10","p11"], ["p2"]], virt_labelss=[["v0"],["v1"],["v2"]])
+        A = random_inf1DBTPS([["p0"], ["p10","p11"], ["p2"]], virt_labelss=[["v0"],["v1"],["v2"]])
         a1 = A.to_tensor()
         w_L, V_L = A.get_left_transfer_eigen()
         w_R, V_R = A.get_right_transfer_eigen()
@@ -88,7 +88,7 @@ class TestInf1DBTPS(unittest.TestCase):
         self.assertTrue(V_R.is_prop_identity(A.get_ket_right_labels_bond(0), rtol=1e-4, atol=1e-4))
         self.assertEqual(a2, a1)
 
-        A = random_inf1DSimBTPS([["p0"], ["p1"], ["p2"]], virt_labelss=[["v0"],["v10","v11"],["v2"]])
+        A = random_inf1DBTPS([["p0"], ["p1"], ["p2"]], virt_labelss=[["v0"],["v10","v11"],["v2"]])
         a1 = A.to_tensor()
         w_L, V_L = A.get_left_transfer_eigen()
         w_R, V_R = A.get_right_transfer_eigen()
@@ -108,7 +108,7 @@ class TestInf1DBTPS(unittest.TestCase):
         self.assertEqual(a2*sqrt(w_L1), a1)
 
     def test_canonize(self):
-        A = random_inf1DSimBTPS([["p0"], ["p1"], ["p2"]], virt_labelss=[["v0"],["v1"],["v2"]])
+        A = random_inf1DBTPS([["p0"], ["p1"], ["p2"]], virt_labelss=[["v0"],["v1"],["v2"]])
         a1 = A.to_tensor()
         w_L1, V_L1 = A.get_left_transfer_eigen()
         A.canonize(transfer_normalize=True)
@@ -122,7 +122,7 @@ class TestInf1DBTPS(unittest.TestCase):
                 self.assertAlmostEqual(re[lr][i]["factor"], 1, 5)
 
     def test_universally_canonize_around_end_bond_not_zero(self):
-        A = random_inf1DSimBTPS([["p0"], ["p10","p11"], ["p2"]], virt_labelss=[["v0"],["v1"],["v2"]])
+        A = random_inf1DBTPS([["p0"], ["p10","p11"], ["p2"]], virt_labelss=[["v0"],["v1"],["v2"]])
         a1 = A.to_tensor()
         w_L, V_L = A.get_left_transfer_eigen(4)
         w_R, V_R = A.get_right_transfer_eigen(2)
@@ -133,7 +133,7 @@ class TestInf1DBTPS(unittest.TestCase):
         a2 = A.to_tensor()
         self.assertEqual(a2, a1)
 
-        A = random_inf1DSimBTPS([["p0"], ["p1"], ["p2"]], virt_labelss=[["v0"],["v10","v11"],["v2"]])
+        A = random_inf1DBTPS([["p0"], ["p1"], ["p2"]], virt_labelss=[["v0"],["v10","v11"],["v2"]])
         a1 = A.to_tensor()
         w_L, V_L = A.get_left_transfer_eigen(4)
         w_R, V_R = A.get_right_transfer_eigen(3)
@@ -164,7 +164,7 @@ class TestMPO(unittest.TestCase):
         bmpo = mpo.to_BTPO()
         self.assertEqual(mpo.to_tensor(), bmpo.to_tensor())
 
-        mps = random_fin1DSimBTPS([["p0"], ["p1"], ["p2"]])
+        mps = random_fin1DBTPS([["p0"], ["p1"], ["p2"]])
         mps.canonize()
         mps0 = copyModule.deepcopy(mps)
         self.assertAlmostEqual(mps.to_tensor().norm(), 1)
@@ -186,7 +186,7 @@ class TestMPO(unittest.TestCase):
         a1, s2, a2 = tensor_svd(G, ["out1", "in1"])
         mpo = Obc1DBTPO([a0,a1,a2],[s1,s2],physin_labelss=[["in0"],["in1"],["in2"]],physout_labelss=[["out0"],["out1"],["out2"]], is_unitary=True)
 
-        mps0 = random_fin1DSimBTPS([["p0"], ["p1"], ["p2"], ["p3"], ["p4"], ["p5"]], chi=5, phys_dim=3)
+        mps0 = random_fin1DBTPS([["p0"], ["p1"], ["p2"], ["p3"], ["p4"], ["p5"]], chi=5, phys_dim=3)
         mps = copyModule.deepcopy(mps0)
         self.assertFalse(mps.is_canonical())
         apply_fin1DSimBTPS_fin1DSimBTPO(mps, mpo, 0, keep_phys_labels=True)
@@ -207,7 +207,7 @@ class TestMPO(unittest.TestCase):
         a0, s1, G = tensor_svd(G, ["out0", "in0"])
         a1, s2, a2 = tensor_svd(G, ["out1", "in1"])
         mpo = Obc1DBTPO([a0,a1,a2],[s1,s2],physin_labelss=[["in0"],["in1"],["in2"]],physout_labelss=[["out0"],["out1"],["out2"]], is_unitary=True)
-        mps0 = random_fin1DSimBTPS([["p0"], ["p1"], ["p2"], ["p3"], ["p4"], ["p5"]], chi=5, phys_dim=3)
+        mps0 = random_fin1DBTPS([["p0"], ["p1"], ["p2"], ["p3"], ["p4"], ["p5"]], chi=5, phys_dim=3)
 
         mps = copyModule.deepcopy(mps0)
         mps.canonize()

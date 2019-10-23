@@ -2,12 +2,14 @@ import copy as copyModule
 from tanuki import tensor_core as tnc
 from tanuki import tensor_instant as tni
 from tanuki import decomp as tnd
+from tanuki.tnxp import xp as xp
 from tanuki.utils import *
 from tanuki.errors import *
 from tanuki.onedim import product as tnop
 import textwrap
 from math import sqrt
 import numpy as np
+import warnings
 
 
 
