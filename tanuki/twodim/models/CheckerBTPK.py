@@ -32,14 +32,14 @@ class Ptn2DCheckerBTPK:
         self.D = D
         self.scale = scale
 
-    def __str__(self):
+    def __str__(self, nodata=False):
         dataStr = ""
-        dataStr += "A = " + str(self.A) + "\n"
-        dataStr += "B = " + str(self.B) + "\n"
-        dataStr += "L = " + str(self.L) + "\n"
-        dataStr += "R = " + str(self.R) + "\n"
-        dataStr += "U = " + str(self.U) + "\n"
-        dataStr += "D = " + str(self.D) + "\n"
+        dataStr += "A = " + self.A.__str__(nodata=nodata) + "\n"
+        dataStr += "B = " + self.B.__str__(nodata=nodata) + "\n"
+        dataStr += "L = " + self.L.__str__(nodata=nodata) + "\n"
+        dataStr += "R = " + self.R.__str__(nodata=nodata) + "\n"
+        dataStr += "U = " + self.U.__str__(nodata=nodata) + "\n"
+        dataStr += "D = " + self.D.__str__(nodata=nodata) + "\n"
         dataStr += "scale=" + str(self.scale) + "\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
@@ -48,12 +48,14 @@ class Ptn2DCheckerBTPK:
         return dataStr
 
 
-    def renormalize_alg_LN(self, chi=10, normalize=True):
+
+    def renormalize(self, chi=10, normalize=True, env_choice="half", contract_medium=False, loop_truncation_algname="canonize", drill_parity=0):
         """
-        Tensor renormalization group approach to 2D classical lattice models
-        Michael Levin, Cody P. Nave
-        https://arxiv.org/abs/cond-mat/0611687
+        Loop optimization for tensor network renormalization
+        Shuo Yang, Zheng-Cheng Gu, Xiao-Gang Wen
+        https://arxiv.org/abs/1512.04938
         """
+
         A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
 
         # O(chi^5)
@@ -61,18 +63,6 @@ class Ptn2DCheckerBTPK:
         A4,A5,A6 = A.svd(intersection_list(A.labels, R.labels+U.labels), chi=chi, svd_labels=2)
         B1,B2,B3 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=chi, svd_labels=2)
         B4,B5,B6 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=chi, svd_labels=2)
-
-        if normalize:
-            A2norm = A2.norm()
-            A5norm = A5.norm()
-            B2norm = B2.norm()
-            B5norm = B5.norm()
-            A2 /= A2norm
-            A5 /= A5norm
-            B2 /= B2norm
-            B5 /= B5norm
-            weight = A2norm*A5norm*B2norm*B5norm
-
         """
                  U   D
                 A1 R B1
@@ -84,72 +74,70 @@ class Ptn2DCheckerBTPK:
                 B6 L A6    
                  U   D
         """
-        # O(chi^6)
-        X = (B6*L*A6)*U*D*(B1*R*A1)
-        Y = (B3*U*A4)*L*R*(A3*D*B4)
-        """
-                  X
-               A2   B2
-              Y       Y 
-               B5   A5
-                  X
-        """
-        """
-            X A5 Y
-            B2   B5
-            Y A2 X
-        """
-        if normalize:
-            return Ptn2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1), PowPowFloat(weight, 2, self.scale-1)
+
+        if env_choice=="no":
+            pass
+        elif env_choice=="half":
+            u1,u2 = U.sqrt2(B6)
+            d1,d2 = D.sqrt2(A6)
+            l1,l2 = L.sqrt2(B3)
+            r1,r2 = R.sqrt2(A4)
+            A1 *= u2
+            A3 *= l2
+            B4 *= r2
+            B6 *= u1
+            A6 *= d1
+            A4 *= r1
+            B3 *= l1
+            B1 *= d2
+            """
+                     |   |
+                    A1 R B1
+                   A2     B2
+               -- A3       B3 --
+                  D         U
+               -- B4       A4 --
+                   B5     A5  
+                    B6 L A6    
+                     |   |
+            """
         else:
-            return Ptn2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
+            raise ArgumentError
 
 
+        if contract_medium:
+            # O(chi^7)
+            E = A1*R*B1
+            F = A3*D*B4
+            G = B6*L*A6
+            H = B3*U*A4
 
-    def renormalize_alg_YGW1(self, chi=10, normalize=True, loop_compress_algname="YGW"):
-        """
-        Loop optimization for tensor network renormalization
-        Shuo Yang, Zheng-Cheng Gu, Xiao-Gang Wen
-        https://arxiv.org/abs/1512.04938
-        """
-        A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
+            # O(chi^8 * repeat)
+            CBTPS = onedim.Cyc1DBTPS([E,F,G,H],[B2,A2,B5,A5])
+            if normalize:
+                weight = CBTPS.truncate(chi=chi, normalize=True, algname=loop_truncation_algname)
+            else:
+                CBTPS.truncate(chi=chi, normalize=False, algname=loop_truncation_algname)
 
-        # O(chi^6)
-        A1,A2,A3 = A.svd(intersection_list(A.labels, R.labels+U.labels), svd_labels=2)
-        A4,A5,A6 = A.svd(intersection_list(A.labels, R.labels+U.labels), svd_labels=2)
-        B1,B2,B3 = B.svd(intersection_list(B.labels, R.labels+D.labels), svd_labels=2)
-        B4,B5,B6 = B.svd(intersection_list(B.labels, R.labels+D.labels), svd_labels=2)
-        """
-                 U   D
-                A1 R B1
-               A2     B2
-            L A3       B3 L
-              D         U
-            R B4       A4 R
-               B5     A5  
-                B6 L A6    
-                 U   D
-        """
-        u1,u2 = U.sqrt2(B6)
-        d1,d2 = D.sqrt2(A6)
-        l1,l2 = L.sqrt2(B3)
-        r1,r2 = R.sqrt2(A4)
-        """
-                u2   d2
-                A1 R B1
-               A2     B2
-           l2 A3       B3 l1
-              D         U
-           r2 B4       A4 r1
-               B5     A5  
-                B6 L A6    
-                u1   d1
-        """
-        # O(chi^7)
-        E = B1*R*A1*u2*d2
-        F = A3*D*B4*l2*r2
-        G = B6*L*A6*u1*d1
-        H = B3*U*A4*l1*r1
+            B2,A2,B5,A5 = tuple(CBTPS.bdts)
+            E,F,G,H = tuple(CBTPS.tensors)
+
+        else:
+            # O((chi^5 + chi^6) * repeat)
+            CBTPS = onedim.Cyc1DBTPS([A1,A3,B4,B6,A6,A4,B3,B1],[R,A2,D,B5,L,A5,U,B2])
+            if normalize:
+                weight = CBTPS.truncate(chi=chi, normalize=True, algname=loop_truncation_algname)
+            else:
+                CBTPS.truncate(chi=chi, normalize=False, algname=loop_truncation_algname)
+            R_,A2,D_,B5,L_,A5,U_,B2 = tuple(CBTPS.bdts)
+            A1,A3,B4,B6,A6,A4,B3,B1 = tuple(CBTPS.tensors)
+
+            # O(chi^6)
+            E = A1*R_*B1
+            F = A3*D_*B4
+            G = B6*L_*A6
+            H = B3*U_*A4
+
         """
                   ||
                    E
@@ -159,17 +147,14 @@ class Ptn2DCheckerBTPK:
                    G
                    ||
         """
-        # O(chi^8 * repeat)
-        CBTPS = onedim.Cyc1DBTPS([E,F,G,H],[B2,A2,B5,A5])
-        if normalize:
-            weight = CBTPS.compress(chi=chi, transfer_normalize=True, algname=loop_compress_algname)
-        else:
-            CBTPS.compress(chi=chi, transfer_normalize=False, algname=loop_compress_algname)
-        B2,A2,B5,A5 = tuple(CBTPS.bdts)
-        E,F,G,H = tuple(CBTPS.tensors)
-        
-        X = E*G
-        Y = F*H
+
+        # O(chi^6)
+        if env_choice=="no":
+            X = E*U*D*G
+            Y = F*L*R*H
+        elif env_choice=="half":
+            X = E*G
+            Y = F*H
         """
                   X
                A2   B2
@@ -177,101 +162,23 @@ class Ptn2DCheckerBTPK:
                B5   A5
                   X
         """
-        """
-            X A5 Y
-            B2   B5
-            Y A2 X
-        """
-        if normalize:
-            return Ptn2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1), PowPowFloat(weight, 2, self.scale-1)
+
+        if drill_parity % 2 == 0:
+            A,B,L,R,U,D = X,Y,B5,B2,A5,A2
+            """
+                X B2 Y
+                A2   A5
+                Y B5 X
+            """
         else:
-            return Ptn2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
+            A,B,L,R,U,D = X,Y,A2,A5,B5,B2
+            """
+                X A5 Y
+                B2   B5
+                Y A2 X
+            """
 
 
-
-    def renormalize_alg_YGW2(self, chi=10, normalize=True, loop_compress_algname="YGW"):
-        """
-        Loop optimization for tensor network renormalization
-        Shuo Yang, Zheng-Cheng Gu, Xiao-Gang Wen
-        https://arxiv.org/abs/1512.04938
-        """
-        A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
-
-        # O(chi^6)
-        A1,A2,A3 = A.svd(intersection_list(A.labels, R.labels+U.labels), svd_labels=2)
-        A4,A5,A6 = A.svd(intersection_list(A.labels, R.labels+U.labels), svd_labels=2)
-        B1,B2,B3 = B.svd(intersection_list(B.labels, R.labels+D.labels), svd_labels=2)
-        B4,B5,B6 = B.svd(intersection_list(B.labels, R.labels+D.labels), svd_labels=2)
-        """
-                 U   D
-                A1 R B1
-               A2     B2
-            L A3       B3 L
-              D         U
-            R B4       A4 R
-               B5     A5  
-                B6 L A6    
-                 U   D
-        """
-        u1,u2 = U.sqrt2(B6)
-        d1,d2 = D.sqrt2(A6)
-        l1,l2 = L.sqrt2(B3)
-        r1,r2 = R.sqrt2(A4)
-        """
-                u2   d2
-                A1 R B1
-               A2     B2
-           l2 A3       B3 l1
-              D         U
-           r2 B4       A4 r1
-               B5     A5  
-                B6 L A6    
-                u1   d1
-        """
-        # O(chi^4)
-        A1 *= u2
-        A3 *= l2
-        B4 *= r2
-        B6 *= u1
-        A6 *= d1
-        A4 *= r1
-        B3 *= l1
-        B1 *= d2
-        """
-                 |   |
-                A1 R B1
-               A2     B2
-           -- A3       B3 --
-              D         U
-           -- B4       A4 --
-               B5     A5  
-                B6 L A6    
-                 |   |
-        """
-        # O((chi^5 + chi^6) * repeat)
-        CBTPS = onedim.Cyc1DBTPS([A1,A3,B4,B6,A6,A4,B3,B1],[R,A2,D,B5,L,A5,U,B2])
-        if normalize:
-            weight = CBTPS.compress(chi=chi, transfer_normalize=True, algname=loop_compress_algname)
-        else:
-            CBTPS.compress(chi=chi, transfer_normalize=False, algname=loop_compress_algname)
-        R,A2,D,B5,L,A5,U,B2 = tuple(CBTPS.bdts)
-        A1,A3,B4,B6,A6,A4,B3,B1 = tuple(CBTPS.tensors)
-        
-        # O(chi^6)
-        X = (A1*R*B1)*(B6*L*A6)
-        Y = (A3*D*B4)*(B3*U*A4)
-        """
-                  X
-               A2   B2
-              Y       Y 
-               B5   A5
-                  X
-        """
-        """
-            X A5 Y
-            B2   B5
-            Y A2 X
-        """
         if normalize:
             return Ptn2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1), PowPowFloat(weight, 2, self.scale-1)
         else:
@@ -280,22 +187,7 @@ class Ptn2DCheckerBTPK:
 
 
 
-    def renormalize(self, chi=10, normalize=True, algname="LN", loop_compress_algname="YGW"):
-        if algname in ["LN", "Naive", "TRG"]:
-            return self.renormalize_alg_LN(chi=chi, normalize=normalize)
-        elif algname in ["YGW1"]:
-            return self.renormalize_alg_YGW1(chi=chi, normalize=normalize, loop_compress_algname=loop_compress_algname)
-        elif algname in ["YGW2","YGW"]:
-            return self.renormalize_alg_YGW2(chi=chi, normalize=normalize, loop_compress_algname=loop_compress_algname)
-
-
-
-
-
-
-
-
-    def calculate(self, chi=10,  normalize=True, algname="LN", loop_compress_algname="YGW"):
+    def calculate(self, chi=10,  normalize=True, **kwargs):
         temp = self
         if normalize:
             weight = PowPowFloat([])
@@ -303,11 +195,11 @@ class Ptn2DCheckerBTPK:
             weight = 1.0
         while temp.scale > 0:
             if normalize:
-                n,w = temp.renormalize(chi=chi, normalize=normalize, algname=algname, loop_compress_algname=loop_compress_algname)
+                n,w = temp.renormalize(chi=chi, normalize=normalize, **kwargs)
                 temp = n
                 weight *= w
             else:
-                temp = temp.renormalize(chi=chi, normalize=normalize, algname=algname, loop_compress_algname=loop_compress_algname)
+                temp = temp.renormalize(chi=chi, normalize=normalize, **kwargs)
 
         """
         [scale=1]

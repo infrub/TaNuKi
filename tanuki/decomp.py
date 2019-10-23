@@ -20,7 +20,7 @@ def normarg_svd_labels(svd_labels):
     return svd_labels
 
 
-def tensor_svd(A, rows, cols=None, svd_labels=None):
+def tensor_svd(A, rows, cols=None, svd_labels=2):
     #I believe gesvd and gesdd return s which is positive, descending #TODO check
     #A == U*S*V
     rows, cols = A.normarg_complement_indices(rows, cols)
@@ -48,7 +48,7 @@ def tensor_svd(A, rows, cols=None, svd_labels=None):
     return U, S, V
 
 
-def truncated_svd(A, rows, cols=None, chi=None, rtol=None, atol=None, svd_labels=None):
+def truncated_svd(A, rows, cols=None, chi=None, rtol=None, atol=None, svd_labels=2):
     svd_labels = normarg_svd_labels(svd_labels)
 
     U, S, V = tensor_svd(A, rows, cols, svd_labels=svd_labels)
@@ -89,7 +89,7 @@ def normarg_qr_labels(qr_labels):
     return qr_labels
 
 
-def tensor_qr(A, rows, cols=None, qr_labels=None, mode="economic"):
+def tensor_qr(A, rows, cols=None, qr_labels=1, mode="economic"):
     #A == Q*R
     rows, cols = A.normarg_complement_indices(rows, cols)
     qr_labels = normarg_qr_labels(qr_labels)
@@ -122,7 +122,7 @@ def normarg_lq_labels(lq_labels):
     return lq_labels
 
 
-def tensor_lq(A, rows, cols=None, lq_labels=None, mode="economic"):
+def tensor_lq(A, rows, cols=None, lq_labels=1, mode="economic"):
     #A == L*Q
     rows, cols = A.normarg_complement_indices(rows, cols)
     lq_labels = normarg_lq_labels(lq_labels)
@@ -150,7 +150,7 @@ def normarg_eigh_labels(eigh_labels):
 
 
 # A == V*W*Vh
-def tensor_eigh(A, rows, cols=None, eigh_labels=None):
+def tensor_eigh(A, rows, cols=None, eigh_labels=1):
     rows, cols = A.normarg_complement_indices(rows, cols)
     eigh_labels = normarg_eigh_labels(eigh_labels)
     row_labels, col_labels = A.labels_of_indices(rows), A.labels_of_indices(cols)
@@ -177,7 +177,7 @@ def tensor_eigsh(A, rows, cols=None):
     return w,V
 
 
-def truncated_eigh(A, rows, cols=None, chi=None, rtol=None, atol=None, eigh_labels=None):
+def truncated_eigh(A, rows, cols=None, chi=None, rtol=None, atol=None, eigh_labels=1):
     eigh_labels = normarg_eigh_labels(eigh_labels)
 
     V,W,Vh = tensor_eigh(A, rows, cols, eigh_labels=eigh_labels)

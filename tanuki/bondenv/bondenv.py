@@ -394,7 +394,7 @@ class UnbridgeBondOptimalTruncator:
             N = optimize_N_from_M(M,N)
 
         else:
-            raise Exception(f"no such algname == {self.algname}")
+            raise ArgumentError(f"no such algname == {self.algname}")
 
 
         self.M = M

@@ -13,6 +13,7 @@ import matplotlib.cm as cm
 import pandas as pd
 from datetime import datetime
 import textwrap
+from timeout_decorator import timeout, TimeoutError
 
 pd.options.display.max_columns = 30
 pd.options.display.width = 160
@@ -73,7 +74,7 @@ def epm0602():
 
 def epm0603():
     beta = 0.1
-    scale = 17
+    scale = 4
 
     #push# make Ising model partition function TPK
     gate = zeros_tensor((2,2,2,2), ["ain","aout","bin","bout"])
@@ -99,13 +100,29 @@ def epm0603():
     Z = twodim.Ptn2DCheckerBTPK(A,B,L,R,U,D, scale=scale)
     #pop# make Ising model TPK
 
-    for chi in [16]:
-        for algname in ["LN","YGW2"]:
-            re = Z.calculate(chi=chi, algname=algname)
+    symbols = [a+b+c+d for a in "HN" for b in "FT" for c in "CN" for d in "EO"]
+    kwargss = [dict(env_choice=env_choice, contract_medium=contract_medium, loop_truncation_algname=loop_truncation_algname, drill_parity=drill_parity) for env_choice in ["half","no"] for contract_medium in [False,True] for loop_truncation_algname in ["canonize", "naive"] for drill_parity in [0,1]]
+
+    chi = 20
+    results = []
+    for symbol, kwargs in zip(symbols,kwargss):
+        try:
+            @timeout(10)
+            def funi():
+                re = Z.calculate(chi=chi, **kwargs)
+                return re
+            re = funi()
             #Z_value = float(re)
             F_value = -1.0 / beta * re.log
-            print(algname, chi, F_value)
+            #print(F_value)
+            results.append((symbol,F_value))
+        except Exception as e:
+            print(symbol, e)
+            #raise e
 
+    results.sort(key=lambda a: a[1])
+    for symbol, F_value in results:
+        print(symbol, F_value)
 
 
 

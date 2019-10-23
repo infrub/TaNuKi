@@ -21,3 +21,6 @@ class SitesLengthError(LengthError):
 
 class CantKeepDiagonalityError(Exception):
     pass
+
+class ArgumentError(Exception):
+    pass

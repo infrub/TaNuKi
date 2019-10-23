@@ -401,10 +401,13 @@ class TensorMixin(TensorLabelingMixin):
     def norm(self): #Frobenius norm
         return xp.linalg.norm(self.data)
 
-    @inplacable_tensorMixin_method
-    def normalize(self):
+    def normalize(self, inplace=False):
         norm = self.norm()
-        return self / norm
+        if inplace:
+            self.data = self.data / norm
+            return norm
+        else:
+            return self / norm
 
     def __neg__(self):
         return self.__class__(-self.data, labels=self.labels)

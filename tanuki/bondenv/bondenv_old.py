@@ -349,7 +349,7 @@ class UnbridgeBondEnv:
                     N = optimize_N_from_M(M,N)
 
                 else:
-                    raise Exception(f"no such algname == {algname}")
+                    raise ArgumentError(f"no such algname == {algname}")
 
                 fx = ((M*N-sigma0)*ETA*(M*N-sigma0).adjoint()).real().to_scalar()
                 sqdiff_history.append(fx)

@@ -48,9 +48,27 @@ class Cyc1DBTPS(Inf1DBTPS):
         bdts = [self.get_bra_bond(bondsite) for bondsite in range(len(self))]
         return Cyc1DBTPS(tensors, bdts, self.phys_labelss)
 
-    def compress(self, chi, transfer_normalize=True, algname="canonize"):
-        if algname in ["YGW", "canonize"]:
-            if transfer_normalize:
+    def truncate(self, chi, normalize=True, algname="canonize"):
+        if algname == "naive":
+            if normalize:
+                weight = 1.0
+                for bde in range(len(self)):
+                    U,S,V = self.bdts[bde].svd(self.get_left_labels_bond(bde), chi=chi, svd_labels=2)
+                    weight *= S.normalize(inplace=True)
+                    self.tensors[bde-1] = self.tensors[bde-1] * U
+                    self.bdts[bde] = S
+                    self.tensors[bde] = V * self.tensors[bde]
+                return weight
+            else:
+                for bde in range(len(self)):
+                    U,S,V = self.bdts[bde].svd(self.get_left_labels_bond(bde), chi=chi, svd_labels=2)
+                    self.tensors[bde-1] = self.tensors[bde-1] * U
+                    self.bdts[bde] = S
+                    self.tensors[bde] = V * self.tensors[bde]
+                return
+
+        elif algname == "canonize":
+            if normalize:
                 memo = {}
                 self.universally_canonize(chi=chi, transfer_normalize=True, memo=memo)
                 weight = sqrt(memo["w"])
@@ -59,5 +77,5 @@ class Cyc1DBTPS(Inf1DBTPS):
                 self.universally_canonize(chi=chi, transfer_normalize=False)
                 return
 
-        if algname in ["iterative"]:
+        elif algname in ["iterative"]:
             pass
