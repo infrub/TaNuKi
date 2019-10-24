@@ -2,6 +2,7 @@ from collections import Counter
 import random
 import copy as copyModule
 import math
+import numpy as np
 
 def soujou(xs):
     re = 1
@@ -199,198 +200,233 @@ class PowPowFloat: #[ (mantissa, radix, exponent) ]
         return result
 
 
+class ExpFloat:
+    def __init__(self, *args):
+        if len(args)==1:
+            moto = args[0]
+            if moto == 0:
+                self.sign = 0
+                self.ent = -float("inf")
+            elif type(moto)==ExpFloat:
+                self.sign = moto.sign
+                self.ent = moto.ent
+            elif type(moto)==complex:
+                nrm = abs(moto)
+                self.sign = moto / nrm
+                self.ent = math.log(nrm)
+            elif moto > 0:
+                self.sign = 1
+                self.ent = math.log(moto)
+            else:
+                self.sign = -1
+                self.ent = math.log(-moto)
+        elif len(args)==2:
+            self.sign = args[0]
+            self.ent = args[1]
+
+    def __str__(self):
+        if self.sign == 0:
+            return f"0.0"
+        elif type(self.sign)==complex:
+            return f"({self.sign})*exp({self.ent})"
+        elif self.sign == 1:
+            return f"exp({self.ent})"
+        else:
+            return f"-exp({self.ent})"
+
+    def __repr__(self):
+        return f"ExpFloat({repr(self.sign)},{repr(self.ent)})"
+
+    @property
+    def value(self):
+        return self.sign * math.exp(self.ent)
+
+    @property
+    def log(self):
+        return self.ent
+
+    @property
+    def real(self):
+        if type(self.sign)==complex:
+            return ExpFloat(self.sign.real) * abs(self)
+        else:
+            return ExpFloat(self.sign) * abs(self)
+
+    @property
+    def imag(self):
+        if type(self.sign)==complex:
+            return ExpFloat(self.sign.imag) * abs(self)
+        else:
+            return ExpFloat(0.0)
+
+    def __abs__(self):
+        if self.sign == 0:
+            return ExpFloat(0.0)
+        else:
+            return ExpFloat(1, self.ent)
+
+    def __eq__(self, other):
+        d = abs(self - other)
+        return d.sign == 0 or d.ent < -15
+
+    def __lt__(self, other):
+        if type(other)==ExpFloat:
+            if self.sign < other.sign:
+                return True
+            if self.sign > other.sign:
+                return False
+            if self.sign == 0:
+                return False
+            elif self.sign == 1:
+                return self.ent < other.ent
+            else:
+                return self.ent > other.ent
+        else:
+            return self < ExpFloat(other)
+
+    def __gt__(self, other):
+        if type(other)==ExpFloat:
+            if self.sign > other.sign:
+                return True
+            if self.sign < other.sign:
+                return False
+            if self.sign == 0:
+                return False
+            elif self.sign == 1:
+                return self.ent > other.ent
+            else:
+                return self.ent < other.ent
+        else:
+            return self > ExpFloat(other)
+
+    def __mul__(self, other):
+        if type(other)==ExpFloat:
+            return ExpFloat(self.sign * other.sign, self.ent + other.ent)
+        else:
+            return self * ExpFloat(other)
+
+    def __rmul__(self, other):
+        return self * other
+
+    def __truediv__(self, other):
+        if type(other)==ExpFloat:
+            return ExpFloat(self.sign / other.sign, self.ent - other.ent)
+        else:
+            return self / ExpFloat(other)
+
+    def __neg__(self):
+        return ExpFloat(-self.sign, self.ent)
+
+    def __add__(self, other):
+        if type(other)==ExpFloat:
+            if type(self.sign)==complex or type(other.sign)==complex:
+                return ef_complex(self.real+other.real, self.imag+other.imag)
+            if other.sign == 0:
+                return self
+            elif self.sign == 0:
+                return other
+            elif self.sign == 1 and other.sign == -1:
+                return self - (-other)
+            elif self.sign == -1 and other.sign == 1:
+                return other - (-self)
+            elif self.sign == -1 and other.sign == -1:
+                return -( (-self) + (-other) )
+
+            # exp(a)+exp(b) = exp(a) * (1 + exp(b-a))
+            # log(exp(a)+exp(b)) = a + log(1 + exp(b-a))
+            if self < other:
+                self,other = other,self
+            a = self.ent
+            b = other.ent
+            c = a + np.log1p(math.exp(b-a))
+            return ExpFloat(1,c)
+
+        else:
+            return self + ExpFloat(other)
+
+    def __sub__(self, other):
+        if type(other)==ExpFloat:
+            if type(self.sign)==complex or type(other.sign)==complex:
+                return ef_complex(self.real-other.real, self.imag-other.imag)
+            if other.sign == 0:
+                return self
+            elif self.sign == 0:
+                return -other
+            elif self.sign == 1 and other.sign == -1:
+                return self + (-other)
+            elif self.sign == -1 and other.sign == 1:
+                return -( (-self) + other )
+            elif self.sign == -1 and other.sign == -1:
+                return (-other) - (-self)
+
+            if self < other:
+                return -(other - self)
+
+            # exp(a)-exp(b) = exp(a) * (1 - exp(b-a))
+            # log(exp(a)-exp(b)) = a + log(1 - exp(b-a))
+            a = self.ent
+            b = other.ent
+            if b-a > -1e-15:
+                return ExpFloat(0.0)
+            c = a + np.log1p(-math.exp(b-a))
+            return ExpFloat(1,c)
+
+        else:
+            return self - ExpFloat(other)
+
+    def __pow__(self, k):
+        if self.sign==1:
+            return ExpFloat(1, self.ent*k)
+        elif self.sign==0:
+            if k>0:
+                return ExpFloat(0.0)
+            elif k==0:
+                return ExpFloat(1.0)
+            else:
+                raise ValueError
+        else:
+            if int(k) != k:
+                raise ValueError
+            else:
+                return ExpFloat(self.sign**k, self.ent*k)
+
+    def sqrt(self):
+        if self.sign==1:
+            return ExpFloat(1, self.ent/2)
+        elif self.sign==0:
+            return ExpFloat(0.0)
+        else:
+            raise ValueError
 
 
-pccs_table = {"v1":(185,31,87),
-"v2":(208,47,72),
-"v3":(221,68,59),
-"v4":(233,91,35),
-"v5":(230,120,0),
-"v6":(244,157,0),
-"v7":(241,181,0),
-"v8":(238,201,0),
-"v9":(210,193,0),
-"v10":(168,187,0),
-"v11":(88,169,29),
-"v12":(0,161,90),
-"v13":(0,146,110),
-"v14":(0,133,127),
-"v15":(0,116,136),
-"v16":(0,112,155),
-"v17":(0,96,156),
-"v18":(0,91,165),
-"v19":(26,84,165),
-"v20":(83,74,160),
-"v21":(112,63,150),
-"v22":(129,55,138),
-"v23":(143,46,124),
-"v24":(173,46,108),
-"b2":(239,108,112),
-"b4":(250,129,85),
-"b6":(255,173,54),
-"b8":(250,216,49),
-"b10":(183,200,43),
-"b12":(65,184,121),
-"b14":(0,170,159),
-"b16":(0,152,185),
-"b18":(41,129,192),
-"b20":(117,116,188),
-"b22":(161,101,168),
-"b24":(208,103,142),
-"s2":(197,63,77),
-"s4":(204,87,46),
-"s6":(225,146,21),
-"s8":(222,188,3),
-"s10":(156,173,0),
-"s12":(0,143,86),
-"s14":(0,130,124),
-"s16":(0,111,146),
-"s18":(0,91,155),
-"s20":(83,76,152),
-"s22":(124,61,132),
-"s24":(163,60,106),
-"dp2":(166,29,57),
-"dp4":(171,61,29),
-"dp6":(177,108,0),
-"dp8":(179,147,0),
-"dp10":(116,132,0),
-"dp12":(0,114,67),
-"dp14":(0,102,100),
-"dp16":(0,84,118),
-"dp18":(0,66,128),
-"dp20":(62,51,123),
-"dp22":(97,36,105),
-"dp24":(134,29,85),
-"lt+2":(241,152,150),
-"lt+4":(255,167,135),
-"lt+6":(255,190,113),
-"lt+8":(242,217,110),
-"lt+10":(199,211,109),
-"lt+12":(133,206,158),
-"lt+14":(98,192,181),
-"lt+16":(91,175,196),
-"lt+18":(108,154,197),
-"lt+20":(144,145,195),
-"lt+22":(176,136,181),
-"lt+24":(217,142,165),
-"lt2":(246,171,165),
-"lt4":(255,185,158),
-"lt6":(255,206,144),
-"lt8":(251,230,143),
-"lt10":(216,223,146),
-"lt12":(156,217,172),
-"lt14":(126,204,193),
-"lt16":(121,186,202),
-"lt18":(131,167,200),
-"lt20":(162,159,199),
-"lt22":(184,154,184),
-"lt24":(218,160,179),
-"sf2":(202,130,129),
-"sf4":(218,146,122),
-"sf6":(219,166,107),
-"sf8":(211,189,108),
-"sf10":(173,182,107),
-"sf12":(118,177,138),
-"sf14":(84,163,155),
-"sf16":(81,146,164),
-"sf18":(93,126,160),
-"sf20":(120,120,160),
-"sf22":(144,113,148),
-"sf24":(180,120,139),
-"d2":(163,90,92),
-"d4":(175,105,84),
-"d6":(179,127,70),
-"d8":(171,148,70),
-"d10":(133,143,70),
-"d12":(79,135,102),
-"d14":(42,123,118),
-"d16":(36,106,125),
-"d18":(52,89,125),
-"d20":(84,82,124),
-"d22":(108,74,113),
-"d24":(139,79,101),
-"dk2":(105,41,52),
-"dk4":(117,54,42),
-"dk6":(121,77,28),
-"dk8":(116,96,31),
-"dk10":(82,91,32),
-"dk12":(35,82,58),
-"dk14":(0,71,70),
-"dk16":(0,69,88),
-"dk18":(18,52,82),
-"dk20":(50,45,81),
-"dk22":(67,40,72),
-"dk24":(97,45,70),
-"p+2":(232,194,191),
-"p+4":(235,194,181),
-"p+6":(244,212,176),
-"p+8":(242,230,184),
-"p+10":(216,221,173),
-"p+12":(174,212,185),
-"p+14":(166,212,204),
-"p+16":(173,209,218),
-"p+18":(175,192,209),
-"p+20":(187,189,208),
-"p+22":(200,185,201),
-"p+24":(222,196,202),
-"p2":(231,213,212),
-"p4":(233,213,207),
-"p6":(246,227,206),
-"p8":(239,230,198),
-"p10":(230,233,198),
-"p12":(196,224,203),
-"p14":(191,224,217),
-"p16":(198,221,226),
-"p18":(194,204,213),
-"p20":(201,202,213),
-"p22":(208,200,209),
-"p24":(228,213,217),
-"ltg2":(192,171,170),
-"ltg4":(193,171,165),
-"ltg6":(206,187,168),
-"ltg8":(198,190,161),
-"ltg10":(189,193,162),
-"ltg12":(157,182,165),
-"ltg14":(152,182,177),
-"ltg16":(158,180,185),
-"ltg18":(155,165,175),
-"ltg20":(162,162,175),
-"ltg22":(171,160,171),
-"ltg24":(189,172,176),
-"g2":(116,92,92),
-"g4":(117,92,87),
-"g6":(128,108,92),
-"g8":(120,111,87),
-"g10":(110,114,90),
-"g12":(83,102,90),
-"g14":(78,103,100),
-"g16":(79,101,108),
-"g18":(76,87,101),
-"g20":(86,85,102),
-"g22":(96,82,98),
-"g24":(114,92,99),
-"dkg2":(62,45,48),
-"dkg4":(63,46,44),
-"dkg6":(74,60,50),
-"dkg8":(68,62,48),
-"dkg10":(61,64,51),
-"dkg12":(42,52,46),
-"dkg14":(39,52,52),
-"dkg16":(39,52,57),
-"dkg18":(34,41,51),
-"dkg20":(41,39,52),
-"dkg22":(48,37,49),
-"dkg24":(61,46,52),
-"Gy-9.5":(241,241,241),
-"Gy-8.5":(214,214,214),
-"Gy-7.5":(187,187,187),
-"Gy-6.5":(161,161,161),
-"Gy-5.5":(135,135,135),
-"Gy-4.5":(109,109,109),
-"Gy-3.5":(84,84,84),
-"Gy-2.5":(60,60,60),
-"Gy-1.5":(39,39,39),}
+def ef_exp(k):
+    return ExpFloat(1,k)
 
-def pccs(moji):
-    a = pccs_table.get(moji, (0,0,0))
-    return (a[0]/255,a[1]/255,a[2]/255)
+def ef_pow(r,k):
+    return ExpFloat(r)**k
+
+def ef_cosh(x):
+    return ( ef_exp(x) + ef_exp(-x) ) / 2
+
+def ef_sinh(x):
+    return ( ef_exp(x) - ef_exp(-x) ) / 2
+
+def ef_complex(x,y):
+    if type(x) == ExpFloat and type(y) == ExpFloat:
+        if x == 0 and y == 0:
+            return ExpFloat(0.0)
+        if x.ent >= y.ent:
+            r = x.sign + y.sign * math.exp(y.ent-x.ent) * 1.0j
+            r = ExpFloat(r)
+            r.ent += x.ent
+            return r
+        else:
+            r = x.sign * math.exp(x.ent-y.ent) + y.sign * 1.0j
+            r = ExpFloat(r)
+            r.ent += y.ent
+            return r
+    else:
+        return ef_complex(ExpFloat(x),ExpFloat(y))
+
+
+

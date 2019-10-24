@@ -14,6 +14,7 @@ import pandas as pd
 from datetime import datetime
 import textwrap
 from timeout_decorator import timeout, TimeoutError
+from math import *
 
 pd.options.display.max_columns = 30
 pd.options.display.width = 160
@@ -72,16 +73,46 @@ def epm0602():
 
 
 
+
+
+
+def partition_function(beta, Jx, Jy, Lx, Ly):
+    a = beta * Jx
+    b = beta * Jy
+    gamma = [None for _ in range(2*Lx)]
+    for k in range(2*Lx):
+        cosh_g = ( ef_cosh(2*a) * ef_cosh(2*b) - cos(pi*k/Lx) * ef_sinh(2*b) ) / ef_sinh(2*a)
+        gamma[k] = (cosh_g + (cosh_g * cosh_g - 1).sqrt()).log
+
+    if ef_sinh(2*a) * ef_sinh(2*b) > 1: gamma[0] = -gamma[0]
+
+    p0,p1,p2,p3 = 1.0,1.0,1.0,1.0
+    for k in range(1,Lx+1):
+        p0 *= 2 * ef_cosh(Ly * gamma[2*k-1] / 2)
+        p1 *= 2 * ef_sinh(Ly * gamma[2*k-1] / 2)
+        p2 *= 2 * ef_cosh(Ly * gamma[2*k-2] / 2)
+        p3 *= 2 * ef_sinh(Ly * gamma[2*k-2] / 2)
+
+    z = 0.5 * ( (2 * ef_sinh(2*a)) ** (Lx*Ly/2) ) * (p0 + p1 + p2 - p3);
+    return z
+
+
+
+
 def epm0603():
     beta = 0.1
-    scale = 4
+    J = 1.0
+    scale = 4 # guusuu dato chigau katachi ni naru?
+    chi = 6
+
+    print(f"beta:{beta}, scale:{scale}, chi:{chi}\n\n")
 
     #push# make Ising model partition function TPK
     gate = zeros_tensor((2,2,2,2), ["ain","aout","bin","bout"])
-    gate.data[1,1,1,1] = np.exp(beta)
-    gate.data[0,0,0,0] = np.exp(beta)
-    gate.data[0,0,1,1] = np.exp(-beta)
-    gate.data[1,1,0,0] = np.exp(-beta)
+    gate.data[1,1,1,1] = np.exp(beta*J)
+    gate.data[0,0,0,0] = np.exp(beta*J)
+    gate.data[0,0,1,1] = np.exp(-beta*J)
+    gate.data[1,1,0,0] = np.exp(-beta*J)
     gate = onedim.Obc1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
     A = identity_tensor((2,), labels=["ain","aout"])
     B = identity_tensor((2,), labels=["bin","bout"])
@@ -100,18 +131,20 @@ def epm0603():
     Z = twodim.Ptn2DCheckerBTPK(A,B,L,R,U,D, scale=scale)
     #pop# make Ising model TPK
 
-    symbols = [a+b+c+d for a in "HN" for b in "FT" for c in "CNRI" for d in "EO"]
-    kwargss = [dict(env_choice=env_choice, contract_medium=contract_medium, loop_truncation_algname=loop_truncation_algname, drill_parity=drill_parity) for env_choice in ["half","no"] for contract_medium in [False,True] for loop_truncation_algname, initial_value in [("canonize",None), ("naive",None), ("iterative","random"), ("iterative", "naive_truncation")] for drill_parity in [0,1]]
+    symbols = ["otehon"] + [a+b+c+d for a in "HN" for b in "AB" for c in "CNRI" for d in "EO"]
+    kwargss = ["otehon"] + [dict(env_choice=env_choice, contract_before_truncate=contract_before_truncate, loop_truncation_algname=loop_truncation_algname, drill_parity=drill_parity) for env_choice in ["half","no"] for contract_before_truncate in [False,True] for loop_truncation_algname, initial_value in [("canonize",None), ("naive",None), ("iterative","random"), ("iterative", "naive_truncation")] for drill_parity in [0,1]]
 
-    chi = 6
     results = []
     for symbol, kwargs in zip(symbols,kwargss):
+        #if kwargs!="otehon" and kwargs["loop_truncation_algname"] == "iterative": continue
         print(symbol)
         try:
             @timeout(20)
             def funi():
-                re = Z.calculate(chi=chi, **kwargs)
-                return re
+                if kwargs == "otehon":
+                    return partition_function(beta,J,J,2**(scale//2+1),2**(scale-(scale//2)))
+                else:
+                    return Z.calculate(chi=chi, **kwargs)
             re = funi()
             #Z_value = float(re)
             F_value = -1.0 / beta * re.log
@@ -133,5 +166,7 @@ def epm0603():
 
 
 
-
 epm0603()
+
+
+#print(partition_function(0.1,1,1,10,10))

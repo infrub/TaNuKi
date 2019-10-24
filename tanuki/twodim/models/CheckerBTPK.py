@@ -49,7 +49,7 @@ class Ptn2DCheckerBTPK:
 
 
 
-    def renormalize(self, chi=10, normalize=True, env_choice="half", contract_medium=False, loop_truncation_algname="canonize", drill_parity=0):
+    def renormalize(self, chi=10, normalize=True, env_choice="half", contract_before_truncate=False, loop_truncation_algname="canonize", drill_parity=0):
         """
         Loop optimization for tensor network renormalization
         Shuo Yang, Zheng-Cheng Gu, Xiao-Gang Wen
@@ -105,7 +105,7 @@ class Ptn2DCheckerBTPK:
             raise ArgumentError
 
 
-        if contract_medium:
+        if contract_before_truncate:
             # O(chi^7)
             E = A1*R*B1
             F = A3*D*B4
@@ -180,7 +180,7 @@ class Ptn2DCheckerBTPK:
 
 
         if normalize:
-            return Ptn2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1), PowPowFloat(weight, 2, self.scale-1)
+            return Ptn2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1), ef_pow(weight, 2**(self.scale-1))
         else:
             return Ptn2DCheckerBTPK(X, Y, A2, A5, B5, B2, scale=self.scale-1)
 
@@ -190,7 +190,7 @@ class Ptn2DCheckerBTPK:
     def calculate(self, chi=10,  normalize=True, **kwargs):
         temp = self
         if normalize:
-            weight = PowPowFloat([])
+            weight = ExpFloat(1.0)
         else:
             weight = 1.0
         while temp.scale > 0:

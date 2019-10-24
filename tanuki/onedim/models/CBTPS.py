@@ -152,7 +152,7 @@ class Cyc1DBTPS(Inf1DBTPS):
 
             memo["sqdiff"] = sqdiff
             memo["iter_times"] = iteri+1
-            print(memo)
+            #print(memo)
 
             PHI = PHI.to_BTPS()
             self.tensors = PHI.tensors

@@ -31,17 +31,20 @@ class TestCollateralBool(unittest.TestCase):
         self.assertFalse(a&b)
         self.assertTrue(a|b)
         self.assertTrue(len(str(a)) > 6)
-
+"""
 class TestPowPowFloat(unittest.TestCase):
     def test01(self):
         a = PowPowFloat(1.4, 2, 0)
         b = PowPowFloat(sqrt(2), 2, 3)
-        self.assertAlmostEqual(float(a+b), 17.4)
+        self.assertAlmostEqual(float(a+b), 17.4)"""
 
-
-
-
-
+class TestExpFloat(unittest.TestCase):
+    def test01(self):
+        self.assertEqual( ExpFloat(2) + ExpFloat(3), ExpFloat(5) )
+        self.assertEqual( ExpFloat(2) - ExpFloat(3), ExpFloat(-1) )
+        self.assertEqual( ef_cosh(1), np.cosh(1) )
+        self.assertEqual( ExpFloat(1+2j) + ExpFloat(3+0j), ExpFloat(4+2j) )
+        self.assertEqual( ExpFloat(1+2j) - ExpFloat(1+2j), ExpFloat(0) )
 
 
 

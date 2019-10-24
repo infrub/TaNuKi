@@ -1,0 +1,189 @@
+beta:0.1, scale:4, chi:6
+
+
+
+HACE
+ ** On entry to ZGEQRF parameter number  7 had an illegal value
+HACE illegal value in 7-th argument of internal geqrf
+HACO
+HACO -1792.337936856592
+HANE
+HANE -225.0332112644968
+HANO
+HANO -225.0332112644968
+HARE
+{'sqdiff': 4.831245405512163e-06, 'iter_times': 200}
+{'sqdiff': 1.0918364168333028e-07, 'iter_times': 33}
+{'sqdiff': 4.366350437462474e-09, 'iter_times': 71}
+{'sqdiff': 2.344337168835864e-09, 'iter_times': 42}
+HARE -217.8023010490545
+HARO
+{'sqdiff': 7.644872766832123e-06, 'iter_times': 200}
+{'sqdiff': 3.0457862010280223e-08, 'iter_times': 20}
+{'sqdiff': 1.5711506132567998e-09, 'iter_times': 41}
+{'sqdiff': 5.977174311055933e-11, 'iter_times': 124}
+HARO -206.70616015733546
+HAIE
+{'sqdiff': 2.0605823522146238e-05, 'iter_times': 200}
+{'sqdiff': 1.516685443903043e-09, 'iter_times': 10}
+{'sqdiff': 1.5932763086298762e-09, 'iter_times': 34}
+{'sqdiff': 1.311839525897085e-11, 'iter_times': 78}
+HAIE -223.47145726552748
+HAIO
+{'sqdiff': 7.258596212977864e-06, 'iter_times': 200}
+{'sqdiff': 3.814119835965357e-06, 'iter_times': 132}
+{'sqdiff': 5.70677484357876e-11, 'iter_times': 4}
+{'sqdiff': 7.001899060554706e-13, 'iter_times': 20}
+HAIO -153.69790472579444
+HBCE
+HBCE -366.2714593977796
+HBCO
+HBCO -483.5006640539654
+HBNE
+HBNE -225.02899555243215
+HBNO
+HBNO -225.02899555243215
+HBRE
+{'sqdiff': 7.465155135832902e-06, 'iter_times': 200}
+{'sqdiff': 1.6047714268552227e-09, 'iter_times': 188}
+{'sqdiff': 1.0738274616294702e-09, 'iter_times': 10}
+{'sqdiff': 5.321404927727258e-05, 'iter_times': 200}
+HBRE -225.03680237472003
+HBRO
+{'sqdiff': 3.2470852033839037e-06, 'iter_times': 200}
+{'sqdiff': 1.1361951379740276e-08, 'iter_times': 200}
+{'sqdiff': 5.6327840425828e-09, 'iter_times': 23}
+{'sqdiff': 0.0006706919217407403, 'iter_times': 200}
+HBRO -225.02769914157898
+HBIE
+{'sqdiff': 6.934893747256865e-06, 'iter_times': 200}
+{'sqdiff': 6.693935752366542e-07, 'iter_times': 200}
+{'sqdiff': 6.5499512484808176e-09, 'iter_times': 37}
+{'sqdiff': 0.00013857697114616485, 'iter_times': 200}
+HBIE -225.04327148461172
+HBIO
+{'sqdiff': 7.899810043454636e-06, 'iter_times': 200}
+{'sqdiff': 2.8408287988668235e-07, 'iter_times': 200}
+{'sqdiff': 6.201745795240184e-10, 'iter_times': 7}
+{'sqdiff': 2.73529064074296e-05, 'iter_times': 200}
+HBIO -225.03421056373583
+NACE
+ ** On entry to ZGESDDM parameter number  5 had an illegal value
+../../tanuki/decomp.py:36: UserWarning: xp.linalg.svd failed with gesdd. retry with gesvd.
+  warnings.warn("xp.linalg.svd failed with gesdd. retry with gesvd.")
+ ** On entry to ZGESVD parameter number  6 had an illegal value
+NACE Internal work array size computation failed: -6
+NACO
+ ** On entry to ZGESDDM parameter number  5 had an illegal value
+ ** On entry to ZGESVD parameter number  6 had an illegal value
+NACO Internal work array size computation failed: -6
+NANE
+NANE -225.03337827390777
+NANO
+NANO -225.03337827390777
+NARE
+{'sqdiff': 10.171840993478376, 'iter_times': 11}
+{'sqdiff': 2.0993985844182504e+24, 'iter_times': 8}
+{'sqdiff': 9.581069555470788e-126, 'iter_times': 2}
+ ** On entry to ZGESDDM parameter number  5 had an illegal value
+../../tanuki/decomp.py:36: UserWarning: xp.linalg.svd failed with gesdd. retry with gesvd.
+  warnings.warn("xp.linalg.svd failed with gesdd. retry with gesvd.")
+ ** On entry to ZGESVD parameter number  6 had an illegal value
+NARE Internal work array size computation failed: -6
+NARO
+{'sqdiff': 2.4313135127927623, 'iter_times': 9}
+{'sqdiff': 4.267588326400151e+24, 'iter_times': 23}
+{'sqdiff': 4.1326177836620015e-124, 'iter_times': 2}
+ ** On entry to ZGESDDM parameter number  5 had an illegal value
+../../tanuki/decomp.py:36: UserWarning: xp.linalg.svd failed with gesdd. retry with gesvd.
+  warnings.warn("xp.linalg.svd failed with gesdd. retry with gesvd.")
+ ** On entry to ZGESVD parameter number  6 had an illegal value
+NARO Internal work array size computation failed: -6
+NAIE
+{'sqdiff': 6.522297226178402, 'iter_times': 14}
+{'sqdiff': 1.1562097321922236e+27, 'iter_times': 8}
+{'sqdiff': 1.947045397186313e-138, 'iter_times': 2}
+ ** On entry to ZGESDDM parameter number  5 had an illegal value
+../../tanuki/decomp.py:36: UserWarning: xp.linalg.svd failed with gesdd. retry with gesvd.
+  warnings.warn("xp.linalg.svd failed with gesdd. retry with gesvd.")
+ ** On entry to ZGESVD parameter number  6 had an illegal value
+NAIE Internal work array size computation failed: -6
+NAIO
+{'sqdiff': 194.20628291782901, 'iter_times': 8}
+{'sqdiff': 9.859125678114718e+19, 'iter_times': 13}
+{'sqdiff': 1.1790995039119031e-99, 'iter_times': 2}
+ ** On entry to ZGESDDM parameter number  5 had an illegal value
+../../tanuki/decomp.py:36: UserWarning: xp.linalg.svd failed with gesdd. retry with gesvd.
+  warnings.warn("xp.linalg.svd failed with gesdd. retry with gesvd.")
+ ** On entry to ZGESVD parameter number  6 had an illegal value
+NAIO Internal work array size computation failed: -6
+NBCE
+NBCE -215.64767227116803
+NBCO
+NBCO -225.0407737374249
+NBNE
+NBNE -225.02672601956004
+NBNO
+NBNO -225.02672601956004
+NBRE
+{'sqdiff': 2.609290561395028e-10, 'iter_times': 57}
+{'sqdiff': 0.00023136400795920053, 'iter_times': 200}
+{'sqdiff': 7.009954949843689e-09, 'iter_times': 17}
+{'sqdiff': 0.0940808723680675, 'iter_times': 200}
+NBRE -225.00669173017337
+NBRO
+{'sqdiff': 1.851780950801185e-10, 'iter_times': 46}
+{'sqdiff': 3.4904405765701085e-06, 'iter_times': 200}
+{'sqdiff': 2.2813143735200825e-11, 'iter_times': 4}
+{'sqdiff': 21713989361664.0, 'iter_times': 200}
+NBRO -224.95567995028492
+NBIE
+{'sqdiff': 1.1112177844552207e-10, 'iter_times': 34}
+{'sqdiff': 0.17352446648510522, 'iter_times': 200}
+{'sqdiff': 1.0556289477768029e-14, 'iter_times': 2}
+{'sqdiff': 2.2146349203455834e+47, 'iter_times': 200}
+NBIE -225.02222561103144
+NBIO
+{'sqdiff': 2.6145485776396526e-10, 'iter_times': 59}
+{'sqdiff': 0.0033499462942927494, 'iter_times': 200}
+{'sqdiff': 1.4298964373660183e-09, 'iter_times': 8}
+{'sqdiff': 270557523328.0, 'iter_times': 200}
+NBIO -225.03194410857034
+
+
+
+HACO -1792.337936856592
+HBCO -483.5006640539654
+HBCE -366.2714593977796
+
+HBIE -225.04327148461172
+NBCO -225.0407737374249
+HBRE -225.03680237472003
+HBIO -225.03421056373583
+NANE -225.03337827390777
+NANO -225.03337827390777
+HANE -225.0332112644968
+HANO -225.0332112644968
+NBIO -225.03194410857034
+HBNE -225.02899555243215
+HBNO -225.02899555243215
+HBRO -225.02769914157898
+NBNE -225.02672601956004
+NBNO -225.02672601956004
+NBIE -225.02222561103144
+
+NBRE -225.00669173017337
+NBRO -224.95567995028492
+HAIE -223.47145726552748
+HARE -217.8023010490545
+NBCE -215.64767227116803
+HARO -206.70616015733546
+HAIO -153.69790472579444
+HACE 114514
+NACE 114514
+NACO 114514
+NARE 114514
+NARO 114514
+NAIE 114514
+NAIO 114514
+[Ainished in 185.8s]
