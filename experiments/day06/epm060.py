@@ -101,11 +101,12 @@ def partition_function(beta, Jx, Jy, Lx, Ly):
 
 def epm0603():
     beta = 0.1
-    J = 1.0
-    scale = 4 # guusuu dato chigau katachi ni naru?
-    chi = 6
+    J = -0.5
+    width_scale = 3
+    height_scale = 3
+    chi = 8
 
-    print(f"beta:{beta}, scale:{scale}, chi:{chi}\n\n")
+    print(f"beta:{beta}, width_scale:{width_scale}, height_scale:{height_scale}, chi:{chi}\n\n")
 
     #push# make Ising model partition function TPK
     gate = zeros_tensor((2,2,2,2), ["ain","aout","bin","bout"])
@@ -128,7 +129,7 @@ def epm0603():
     A = A.trace("aout","ain")
     B = B.trace("bout","bin")
 
-    Z = twodim.Ptn2DCheckerBTPK(A,B,L,R,U,D, scale=scale)
+    Z_TPK = twodim.Ptn2DCheckerBTPK(A,B,L,R,U,D, width_scale=width_scale, height_scale=height_scale)
     #pop# make Ising model TPK
 
     symbols = ["otehon"] + [a+b+c+d for a in "HN" for b in "AB" for c in "CNRI" for d in "EO"]
@@ -136,20 +137,18 @@ def epm0603():
 
     results = []
     for symbol, kwargs in zip(symbols,kwargss):
-        #if kwargs!="otehon" and kwargs["loop_truncation_algname"] == "iterative": continue
+        #if kwargs!="otehon" and kwargs["loop_truncation_algname"] == "canonize": continue
         print(symbol)
         try:
             @timeout(20)
             def funi():
                 if kwargs == "otehon":
-                    return partition_function(beta,J,J,2**(scale//2+1),2**(scale-(scale//2)))
+                    return partition_function(beta,J,J,2**(width_scale),2**(height_scale))
                 else:
-                    return Z.calculate(chi=chi, **kwargs)
-            re = funi()
-            #Z_value = float(re)
-            F_value = -1.0 / beta * re.log
-            #print(F_value)
-            print(symbol, F_value)
+                    return Z_TPK.calculate(chi=chi, **kwargs)
+            Z = funi()
+            F_value = -1.0 / beta * Z.log
+            print(symbol, Z, F_value)
             results.append((symbol,F_value))
         except Exception as e:
             print(symbol, e)

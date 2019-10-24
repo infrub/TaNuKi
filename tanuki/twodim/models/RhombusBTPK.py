@@ -14,19 +14,24 @@ import numpy as np
 
 
 
-class Ptn2DCheckerBTPK:
+class Ptn2DRhombusBTPK:
     """
-    Contains 2**(width_scale+height_scale-1) of A, 2**(width_scale+height_scale-1) of B, so 2**(width_scale+height_scale) of A or B.
+    Similar to Checker.
+
+    Contains 2**(width_scale+height_scale) of A, 2**(width_scale+height_scale) of B, so 2**(width_scale+height_scale+1) of A or B.
 
     [width_scale=1, height_scale=1]
-          U   D
-        L A R B L
-          D   U
-        R B L A R
-          U   D
+       L   U   L   U
+         A       A
+       D   R   D   R
+             B       B
+       L   U   L   U
+         A       A
+       D   R   D   R
+             B       B
     """
     def __init__(self, A, B, L, R, U, D, width_scale=5, height_scale=5):
-        if width_scale<1 or height_scale<1: raise ValueError
+        if width_scale<0 or height_scale<0: raise ValueError
         self.A = A
         self.B = B
         self.L = L
@@ -48,19 +53,13 @@ class Ptn2DCheckerBTPK:
         dataStr += "height_scale=" + str(self.height_scale) + "\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Ptn2DCheckerTPK(\n" + dataStr + f")"
+        dataStr = f"Ptn2DRhombusTPK(\n" + dataStr + f")"
 
         return dataStr
 
 
 
     def renormalize(self, chi=10, normalize=True, env_choice="half", contract_before_truncate=False, loop_truncation_algname="canonize", drill_parity=0):
-        """
-        Loop optimization for tensor network renormalization
-        Shuo Yang, Zheng-Cheng Gu, Xiao-Gang Wen
-        https://arxiv.org/abs/1512.04938
-        """
-
         A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
 
         # O(chi^5)
@@ -68,17 +67,6 @@ class Ptn2DCheckerBTPK:
         A4,A5,A6 = A.svd(intersection_list(A.labels, R.labels+U.labels), chi=chi, svd_labels=2)
         B1,B2,B3 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=chi, svd_labels=2)
         B4,B5,B6 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=chi, svd_labels=2)
-        """
-                 U   D
-                A1 R B1
-               A2     B2
-            L A3       B3 L
-              D         U
-            R B4       A4 R
-               B5     A5  
-                B6 L A6    
-                 U   D
-        """
 
         if env_choice=="no":
             pass
@@ -95,17 +83,6 @@ class Ptn2DCheckerBTPK:
             A4 *= r1
             B3 *= l1
             B1 *= d2
-            """
-                     |   |
-                    A1 R B1
-                   A2     B2
-               -- A3       B3 --
-                  D         U
-               -- B4       A4 --
-                   B5     A5  
-                    B6 L A6    
-                     |   |
-            """
         else:
             raise ArgumentError
 
@@ -143,16 +120,6 @@ class Ptn2DCheckerBTPK:
             G = B6*L_*A6
             H = B3*U_*A4
 
-        """
-                  ||
-                   E
-                A2   B2   
-           == F         H ==
-                B5   A5   
-                   G
-                   ||
-        """
-
         # O(chi^6)
         if env_choice=="no":
             X = E*U*D*G
@@ -161,49 +128,85 @@ class Ptn2DCheckerBTPK:
             X = E*G
             Y = F*H
         """
-                  X
-               A2   B2
-              Y       Y 
-               B5   A5
-                  X
+            Y A2 X
+            B5  B2
+            X A5 Y
         """
-        """
-               B5   A5   B5   A5
-                  X         X
-               A2   B2   A2   B2
-                       Y         Y
-               B5   A5   B5   A5
-                  X         X
-               A2   B2   A2   B2
-                       Y         Y
-        """
-
         if drill_parity % 2 == 0:
-            A,B,L,R,U,D = X,Y,B5,B2,A5,A2
+            A,B,L,R,U,D = Y,X,A5,A2,B2,B5
         else:
-            A,B,L,R,U,D = Y,X,B2,B5,A2,A5
+            A,B,L,R,U,D = X,Y,A2,A5,B5,B2
 
 
-        from tanuki.twodim.models.RhombusBTPK import Ptn2DRhombusBTPK
+        from tanuki.twodim.models.CheckerBTPK import Ptn2DCheckerBTPK
         if normalize:
-            return Ptn2DRhombusBTPK(A,B,L,R,U,D, width_scale=self.width_scale-1, height_scale=self.height_scale-1), ef_pow(weight, 2**(self.width_scale+self.height_scale-1))
+            return Ptn2DCheckerBTPK(A,B,L,R,U,D, width_scale=self.width_scale, height_scale=self.height_scale), ef_pow(weight, 2**(self.width_scale+self.height_scale))
         else:
-            return Ptn2DRhombusBTPK(A,B,L,R,U,D, width_scale=self.width_scale-1, height_scale=self.height_scale-1)
+            return Ptn2DCheckerBTPK(A,B,L,R,U,D, width_scale=self.width_scale, height_scale=self.height_scale)
 
 
 
 
     def calculate(self, chi=10,  normalize=True, **kwargs):
+        A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
+
+        if self.height_scale==0:
+            """
+            [height_scale=0]
+               L   U   L   U   L   U   L   U
+                 A       A       A       A
+               D   R   D   R   D   R   D   R
+                     B       B       B       B
+            """
+            sev_labels = intersection_list(B.labels, L.labels+D.labels)
+            left_label = unique_label()
+            right_label = unique_label()
+            G = A*L*D
+            G = G.fuse_indices(sev_labels, left_label)
+            G = G*U*R*B
+            G = G.fuse_indices(sev_labels, right_label)
+
+            for _ in range(self.width_scale):
+                G = G[right_label]*G[left_label]
+
+            G = G.trace(left_label, right_label)
+
+            return ExpFloat( G.to_scalar() )
+
+        if self.width_scale==0:
+            """
+            [width_scale=0]
+               L   U
+                 A
+               D   R
+                     B
+               L   U
+                 A
+               D   R
+                     B
+            """
+            sev_labels = intersection_list(B.labels, L.labels+U.labels)
+            up_label = unique_label()
+            down_label = unique_label()
+            G = A*L*U
+            G = G.fuse_indices(sev_labels, up_label)
+            G = G*D*R*B
+            G = G.fuse_indices(sev_labels, down_label)
+
+            for _ in range(self.height_scale):
+                G = G[down_label]*G[up_label]
+
+            G = G.trace(up_label, down_label)
+
+            return ExpFloat( G.to_scalar() )
+
+
         if normalize:
             temp,w = self.renormalize(chi=chi, normalize=normalize, **kwargs)
             return temp.calculate(chi=chi, normalize=normalize, **kwargs) * w
         else:
             temp = self.renormalize(chi=chi, normalize=normalize, **kwargs)
             return temp.calculate(chi=chi, normalize=normalize, **kwargs)
-
-
-
-
 
 
 
