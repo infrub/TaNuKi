@@ -80,19 +80,18 @@ class Cyc1DBTPS(Inf1DBTPS):
                     self.tensors[bde-1] = self.tensors[bde-1] * U
                     self.bdts[bde] = S
                     self.tensors[bde] = V * self.tensors[bde]
-                return
+                return 1.0
 
         elif algname == "canonize":
             if normalize:
                 memo = {}
                 print("before",self.to_TMS().tensor.norm())
-                self.universally_canonize(chi=chi, transfer_normalize=True, memo=memo)
-                weight = sqrt(memo["w"])
+                weight = self.universally_canonize(chi=chi, transfer_normalize=True, memo=memo)
                 print("after",self.to_TMS().tensor.norm(), "*", weight, "==", self.to_TMS().tensor.norm() * weight)
                 return weight
             else:
                 self.universally_canonize(chi=chi, transfer_normalize=False)
-                return
+                return 1.0
 
         elif algname == "iterative":
             params = {
@@ -171,7 +170,7 @@ class Cyc1DBTPS(Inf1DBTPS):
                 return weight
             else:
                 self.universally_canonize(chi=None, transfer_normalize=False)
-                return
+                return 1.0
 
 
 

@@ -84,6 +84,7 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
         self.tensors[bde-1] = U/self.bdts[bde-1]
         self.bdts[bde] = S
         self.tensors[bde] = V*self.tensors[bde]
+        return 1.0
 
     # [Fin] bde = 1,..,len(self)-1
     # [bde=3]:
@@ -95,20 +96,23 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
         self.tensors[bde-1] = self.tensors[bde-1]*U
         self.bdts[bde] = S
         self.tensors[bde] = V/self.bdts[bde+1]
+        return 1.0
 
 
     def locally_left_canonize_around_right_end(self, chi=None, rtol=None, atol=None, end_dealing="normalize"):
         bde = len(self)
         if self.bdts[bde].size==1:
             if end_dealing=="no":
-                pass
+                return 1.0
             elif end_dealing=="normalize":
-                self.tensors[bde-1] /= (self.bdts[bde-1]*self.tensors[bde-1]).norm()
+                w = (self.bdts[bde-1]*self.tensors[bde-1]).norm()
+                self.tensors[bde-1] /= w
+                return w
             else:
                 raise UndecidedError
         else:
             if end_dealing=="no":
-                pass
+                return 1.0
             else:
                 raise UndecidedError
 
@@ -116,33 +120,35 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
         bde = 0
         if self.bdts[bde].size==1:
             if end_dealing=="no":
-                pass
+                return 1.0
             elif end_dealing=="normalize":
-                self.tensors[bde] /= (self.tensors[bde]*self.bdts[bde+1]).norm()
+                w = (self.tensors[bde]*self.bdts[bde+1]).norm()
+                self.tensors[bde] /= w
+                return w
             else:
                 raise UndecidedError
         else:
             if end_dealing=="no":
-                pass
+                return 1.0
             else:
                 raise UndecidedError
 
 
     def locally_left_canonize_around_bond(self, bde, chi=None, rtol=None, atol=None, end_dealing="normalize"):
         if bde==0:
-            pass
+            return 1.0
         elif bde==len(self):
-            self.locally_left_canonize_around_right_end(chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+            return self.locally_left_canonize_around_right_end(chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
         else:
-            self.locally_left_canonize_around_not_end_bond(bde, chi=chi, rtol=rtol, atol=atol)
+            return self.locally_left_canonize_around_not_end_bond(bde, chi=chi, rtol=rtol, atol=atol)
 
     def locally_right_canonize_around_bond(self, bde, chi=None, rtol=None, atol=None, end_dealing="normalize"):
         if bde==0:
             self.locally_right_canonize_around_left_end(chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
         elif bde==len(self):
-            pass
+            return 1.0
         else:
-            self.locally_right_canonize_around_not_end_bond(bde, chi=chi, rtol=rtol, atol=atol)
+            return self.locally_right_canonize_around_not_end_bond(bde, chi=chi, rtol=rtol, atol=atol)
 
 
     # [bde=2, already=0]
@@ -151,8 +157,10 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
     # \-(0)-[0]-      \-(1)-[1]-      \-
     def globally_left_canonize_upto(self, upto_bde=None, already_bde=0, chi=None, rtol=None, atol=None, end_dealing="normalize"):
         if upto_bde is None: upto_bde = len(self)
+        weight = 1.0
         for bde in range(already_bde+1, upto_bde+1):
-            self.locally_left_canonize_around_bond(bde, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+            weight *= self.locally_left_canonize_around_bond(bde, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+        return weight
 
     # [bde=4, already=6]
     # -[4]-(5)-\      -[5]-(6)-\      -\
@@ -160,13 +168,17 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
     # -[4]-(5)-/      -[5]-(6)-/      -/
     def globally_right_canonize_upto(self, upto_bde=0, already_bde=None, chi=None, rtol=None, atol=None, end_dealing="normalize"):
         if already_bde is None: already_bde = len(self)
+        weight = 1.0
         for bde in range(already_bde-1, upto_bde-1, -1):
-            self.locally_right_canonize_around_bond(bde, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+            weight *= self.locally_right_canonize_around_bond(bde, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+        return weight
 
     def universally_canonize(self, left_already=0, right_already=None, chi=None, rtol=None, atol=None, end_dealing="normalize"):
         if right_already is None: right_already = len(self)
-        self.globally_left_canonize_upto(right_already, left_already, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
-        self.globally_right_canonize_upto(left_already, right_already, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+        weight = 1.0
+        weight *= self.globally_left_canonize_upto(right_already, left_already, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+        weight *= self.globally_right_canonize_upto(left_already, right_already, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+        return weight
 
     canonize = universally_canonize
 

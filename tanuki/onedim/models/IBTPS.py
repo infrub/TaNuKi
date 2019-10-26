@@ -241,33 +241,36 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
             self.bdts[bde] = S
         self.tensors[bde] = N * self.tensors[bde]
         self.tensors[bde-1] = self.tensors[bde-1] * M
+        return sqrt(w)
 
     locally_left_canonize_around_right_end = NotImplemented
     locally_right_canonize_around_left_end = NotImplemented
 
     def locally_left_canonize_around_bond(self, bde, chi=None, rtol=None, atol=None):
-        self.locally_left_canonize_around_not_end_bond(bde, chi=chi, rtol=rtol, atol=atol)
+        return self.locally_left_canonize_around_not_end_bond(bde, chi=chi, rtol=rtol, atol=atol)
 
     def locally_right_canonize_around_bond(self, bde, chi=None, rtol=None, atol=None):
-        self.locally_right_canonize_around_not_end_bond(bde, chi=chi, rtol=rtol, atol=atol)
+        return self.locally_right_canonize_around_not_end_bond(bde, chi=chi, rtol=rtol, atol=atol)
 
 
     def universally_canonize(self, left_already=0, right_already=None, chi=None, rtol=None, atol=None, transfer_normalize=True, memo=None):
         if memo is None: memo={}
+        weight = 1.0
         if left_already == 0 and right_already is None:
-            self.universally_canonize_around_end_bond(0, chi=chi, rtol=rtol, atol=atol, transfer_normalize=transfer_normalize, memo=memo)
+            weight *= self.universally_canonize_around_end_bond(0, chi=chi, rtol=rtol, atol=atol, transfer_normalize=transfer_normalize, memo=memo)
             for i in range(1, len(self)):
-                self.locally_left_canonize_around_bond(i, chi=chi, rtol=rtol, atol=atol)
+                weight *= self.locally_left_canonize_around_bond(i, chi=chi, rtol=rtol, atol=atol)
             for i in range(len(self)-1,0,-1):
-                self.locally_right_canonize_around_bond(i, chi=chi, rtol=rtol, atol=atol)
+                weight *= self.locally_right_canonize_around_bond(i, chi=chi, rtol=rtol, atol=atol)
             """
             self.globally_left_canonize_upto(len(self)-1, 0, chi=chi, rtol=rtol, atol=atol, transfer_normalize=transfer_normalize)
             self.globally_right_canonize_upto(1, len(self), chi=chi, rtol=rtol, atol=atol, transfer_normalize=transfer_normalize)
             """
         else:
             if right_already is None: right_already = len(self)
-            self.globally_left_canonize_upto(right_already-1, left_already, chi=chi, rtol=rtol, atol=atol)
-            self.globally_right_canonize_upto(left_already+1, right_already, chi=chi, rtol=rtol, atol=atol)
+            weight *= self.globally_left_canonize_upto(right_already-1, left_already, chi=chi, rtol=rtol, atol=atol)
+            weight *= self.globally_right_canonize_upto(left_already+1, right_already, chi=chi, rtol=rtol, atol=atol)
+        return weight
 
     canonize = universally_canonize
 
