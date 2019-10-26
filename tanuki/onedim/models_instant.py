@@ -138,6 +138,6 @@ def random_cyc1DBTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_dims
     for site in range(length):
         tensors.append( tni.random_tensor( virt_dimss[site]+phys_dimss[site]+virt_dimss[(site+1)%length], virt_labelss[site]+phys_labelss[site]+virt_labelss[(site+1)%length] , dtype=dtype) )
 
-    return Cyc1DTPS(tensors, bdts, phys_labelss)
+    return Cyc1DBTPS(tensors, bdts, phys_labelss)
 
 
