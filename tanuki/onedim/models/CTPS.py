@@ -43,6 +43,14 @@ class Cyc1DTPS(Inf1DTPS):
         tensors = [self.get_bra_site(site) for site in range(len(self))]
         return Cyc1DTPS(tensors, self.phys_labelss)
 
+    def to_TMS(self):
+        result = self.tensors[0]
+        for i in range(1,len(self)):
+            result = result[self.get_right_labels_site(i-1)] * self.tensors[i][self.get_left_labels_site(i)]
+        result.trace(self.get_left_labels_site(0),self.get_right_labels_site(len(self)-1))
+        from tanuki.onedim.models.CTMS import Cyc1DTMS
+        return Cyc1DTMS(result, self.phys_labelss)
+
     def to_TPS(self):
         return self
 

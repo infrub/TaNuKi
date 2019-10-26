@@ -75,7 +75,8 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     # \-(0)-[0]-...-(len-1)-[len-1]-          \-
     #
     # O(chi^6)
-    def get_left_transfer_eigen_ver1(self, bde=0):
+    def get_left_transfer_eigen_ver1(self, bde=0, memo=None):
+        if memo is None: memo = {}
         inket_memo, inbra_memo, outket_memo, outbra_memo = {}, {}, {}, {}
 
         TF_L = self.get_ket_bond(bde).fuse_indices(self.get_ket_left_labels_bond(bde), fusedLabel=unique_label(), output_memo=inket_memo)
@@ -104,7 +105,8 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     # -[0]-...-(len-1)-[len-1]-(0)-/          -/
     #
     # O(chi^6)
-    def get_right_transfer_eigen_ver1(self, bde=0):
+    def get_right_transfer_eigen_ver1(self, bde=0, memo=None):
+        if memo is None: memo = {}
         inket_memo, inbra_memo, outket_memo, outbra_memo = {}, {}, {}, {}
 
         TF_R = self.get_ket_bond(bde).fuse_indices(self.get_ket_right_labels_bond(bde), fusedLabel=unique_label(), output_memo=inket_memo)
@@ -135,7 +137,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     # \Lh-(0)-[0]-...-(len-1)-[len-1]-          \Lh-
     #
     # O(chi^3 * w * repeat)
-    def get_left_transfer_eigen(self, bde=0, memo=None):
+    def get_left_transfer_eigen_ver2(self, bde=0, memo=None):
         if memo is None: memo = {}
         tshape = self.get_right_shape_site(bde-1)
         tlabels = self.get_ket_right_labels_site(bde-1)
@@ -169,7 +171,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     # -[0]-...-(len-1)-[len-1]-(0)-/          -/
     #
     # O(chi^3 * w * repeat)
-    def get_right_transfer_eigen(self, bde=0,  memo=None):
+    def get_right_transfer_eigen_ver2(self, bde=0,  memo=None):
         if memo is None: memo = {}
         tshape = self.get_left_shape_site(bde)
         tlabels = self.get_ket_left_labels_site(bde)
@@ -194,6 +196,9 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
 
         return w_R, V_R
 
+    get_left_transfer_eigen = get_left_transfer_eigen_ver2
+    get_right_transfer_eigen = get_right_transfer_eigen_ver2
+
 
     # ref: https://arxiv.org/abs/0711.3960
     #
@@ -215,8 +220,8 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
         w_L, V_L = self.get_left_transfer_eigen(bde=bde, memo=memo["left_transfer_eigen"])
         memo["right_transfer_eigen"] = {}
         w_R, V_R = self.get_right_transfer_eigen(bde=bde, memo=memo["right_transfer_eigen"])
-        w = (w_L+w_R)/2
-        #assert abs(w_L-w_R) < 1e-5*abs(w_L), f"transfer_eigen different. {w_L} != {w_R}"
+        w = sqrt(w_L*w_R)
+        #assert abs(w_L-w_R) < 1e-3*abs(w), f"transfer_eigen different. {w_L} != {w_R}"
         memo["w_L"] = w_L
         memo["w_R"] = w_R
         memo["w"] = w

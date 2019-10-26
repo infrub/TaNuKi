@@ -101,10 +101,10 @@ def partition_function(beta, Jx, Jy, Lx, Ly):
 
 def epm0603():
     beta = 1.0
-    J = 1.0
+    J = 0.5
     width_scale = 2
     height_scale = 2
-    chi = 8
+    chi = 4
 
     print(f"beta:{beta}, width_scale:{width_scale}, height_scale:{height_scale}, chi:{chi}\n\n")
 
@@ -133,12 +133,13 @@ def epm0603():
     #Z_TPK = twodim.Ptn2DRhombusBTPK(A,B,L,R,U,D, width_scale=width_scale, height_scale=height_scale)
     #pop# make Ising model TPK
 
-    symbols = ["otehon"] + [a+b+c+d for a in "HN" for b in "AB" for c in "CNRI" for d in "EO"]
-    kwargss = ["otehon"] + [dict(env_choice=env_choice, contract_before_truncate=contract_before_truncate, loop_truncation_algname=loop_truncation_algname, drill_parity=drill_parity) for env_choice in ["half","no"] for contract_before_truncate in [False,True] for loop_truncation_algname, initial_value in [("canonize",None), ("naive",None), ("iterative","random"), ("iterative", "naive_truncation")] for drill_parity in [0,1]]
+    symbols = ["otehon"] + [c+a+b+d for c in "NCRI" for a in "HN" for b in "AB" for d in "EO"]
+    kwargss = ["otehon"] + [dict(env_choice=env_choice, contract_before_truncate=contract_before_truncate, loop_truncation_algname=loop_truncation_algname, drill_parity=drill_parity) for loop_truncation_algname, initial_value in [("naive",None), ("canonize",None), ("iterative","random"), ("iterative", "naive_truncation")] for env_choice in ["half","no"] for contract_before_truncate in [False,True] for drill_parity in [0,1]]
 
     results = []
     for symbol, kwargs in zip(symbols,kwargss):
         #if kwargs!="otehon" and kwargs["loop_truncation_algname"] == "canonize": continue
+        print()
         print(symbol)
         try:
             @timeout(20)
@@ -161,6 +162,12 @@ def epm0603():
     results.sort(key=lambda a: a[1])
     for symbol, F_value in results:
         print(symbol, F_value)
+
+
+
+
+
+epm0603()
 
 
 
@@ -225,12 +232,6 @@ def epm0604():
         print()
 
 
-
-
-
-
-
-epm0603()
 
 
 

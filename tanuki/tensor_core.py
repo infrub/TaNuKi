@@ -1117,6 +1117,8 @@ class DiagonalTensor(TensorMixin):
     @inplacable_tensorMixin_method
     def truncate_index(self, index, fromto1, fromto2=None):
         index = self.normarg_index(index)
+        if index >= self.halfndim:
+            index = index - self.halfndim
         if fromto2 is None:
             fromto2 = fromto1
             fromto1 = 0

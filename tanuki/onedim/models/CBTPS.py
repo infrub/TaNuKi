@@ -48,6 +48,9 @@ class Cyc1DBTPS(Inf1DBTPS):
         bdts = [self.get_bra_bond(bondsite) for bondsite in range(len(self))]
         return Cyc1DBTPS(tensors, bdts, self.phys_labelss)
 
+    def to_TMS(self):
+        return self.to_TPS().to_TMS()
+
     def to_TPS(self):
         tensors = []
         for i in range(len(self)):
@@ -82,8 +85,10 @@ class Cyc1DBTPS(Inf1DBTPS):
         elif algname == "canonize":
             if normalize:
                 memo = {}
+                print("before",self.to_TMS().tensor.norm())
                 self.universally_canonize(chi=chi, transfer_normalize=True, memo=memo)
                 weight = sqrt(memo["w"])
+                print("after",self.to_TMS().tensor.norm(), "*", weight, "==", self.to_TMS().tensor.norm() * weight)
                 return weight
             else:
                 self.universally_canonize(chi=chi, transfer_normalize=False)
