@@ -100,10 +100,10 @@ def partition_function(beta, Jx, Jy, Lx, Ly):
 
 
 def epm0603():
-    beta = 0.1
-    J = -0.5
-    width_scale = 3
-    height_scale = 3
+    beta = 1.0
+    J = 1.0
+    width_scale = 2
+    height_scale = 2
     chi = 8
 
     print(f"beta:{beta}, width_scale:{width_scale}, height_scale:{height_scale}, chi:{chi}\n\n")
@@ -130,6 +130,7 @@ def epm0603():
     B = B.trace("bout","bin")
 
     Z_TPK = twodim.Ptn2DCheckerBTPK(A,B,L,R,U,D, width_scale=width_scale, height_scale=height_scale)
+    #Z_TPK = twodim.Ptn2DRhombusBTPK(A,B,L,R,U,D, width_scale=width_scale, height_scale=height_scale)
     #pop# make Ising model TPK
 
     symbols = ["otehon"] + [a+b+c+d for a in "HN" for b in "AB" for c in "CNRI" for d in "EO"]
@@ -165,7 +166,219 @@ def epm0603():
 
 
 
+
+def epm0604():
+    chi = 8
+
+    def calc_with_tn(beta, J, width_scale, height_scale):
+        #push# make Ising model partition function TPK
+        gate = zeros_tensor((2,2,2,2), ["ain","aout","bin","bout"])
+        gate.data[1,1,1,1] = np.exp(beta*J)
+        gate.data[0,0,0,0] = np.exp(beta*J)
+        gate.data[0,0,1,1] = np.exp(-beta*J)
+        gate.data[1,1,0,0] = np.exp(-beta*J)
+        gate = onedim.Obc1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
+        A = identity_tensor((2,), labels=["ain","aout"])
+        B = identity_tensor((2,), labels=["bin","bout"])
+
+        Ss = []
+        for _ in range(4):
+            funi = gate.to_BTPO()
+            a,S,b = funi.tensors[0], funi.bdts[1], funi.tensors[1]
+            A = A["aout"]*a["ain"]
+            Ss.append(S)
+            B = B["bout"]*b["bin"]
+        L,R,U,D = tuple(Ss)
+        A = A.trace("aout","ain")
+        B = B.trace("bout","bin")
+
+        Z_TPK = twodim.Ptn2DCheckerBTPK(A,B,L,R,U,D, width_scale=width_scale, height_scale=height_scale)
+        #Z_TPK = twodim.Ptn2DRhombusBTPK(A,B,L,R,U,D, width_scale=width_scale, height_scale=height_scale)
+        #pop# make Ising model TPK
+
+        kwargs = dict(env_choice="half", contract_before_truncate=False, loop_truncation_algname="naive", drill_parity=0)
+        
+        Z = Z_TPK.calculate(chi=chi, **kwargs)
+        F_value = -1.0 / beta * Z.log
+        return F_value
+
+
+    def calc_with_otehon(beta, J, width_scale, height_scale):
+        Z = partition_function(beta,J,J,2**(width_scale),2**(height_scale))
+        F_value = -1.0 / beta * Z.log
+        return F_value
+
+
+
+    beta = 0.1
+    J = 1.0
+
+    for width_scale in range(6):
+        for height_scale in range(6):
+            print(calc_with_otehon(beta, J, width_scale, height_scale), end=" | ")
+        print()
+
+    print()
+    for width_scale in range(1,7):
+        for height_scale in range(1,7):
+            print(calc_with_tn(beta, J, width_scale, height_scale), end=" | ")
+        print()
+
+
+
+
+
+
+
 epm0603()
 
 
-#print(partition_function(0.1,1,1,10,10))
+
+def epm0605():
+    beta = 0.5
+    J = 1.0
+    Lx = 2
+    Ly = 1
+    width_scale = 0
+    height_scale = 0
+    chi = 8
+
+
+    print("Checker1 Otehon")
+    for _ in range(1):
+        Z = partition_function(beta,J,J,Lx,Ly)
+        F_value = -1.0 / beta * Z.log
+        print(F_value)
+
+
+    print("Checker1 Tegaki")
+    for _ in range(1):
+        gate = zeros_tensor((2,2,2,2), ["ain","aout","bin","bout"])
+        gate.data[1,1,1,1] = np.exp(beta*J)
+        gate.data[0,0,0,0] = np.exp(beta*J)
+        gate.data[0,0,1,1] = np.exp(-beta*J)
+        gate.data[1,1,0,0] = np.exp(-beta*J)
+        A = identity_tensor((2,), labels=["ain","aout"])
+        B = identity_tensor((2,), labels=["bin","bout"])
+        G = A * B
+
+        G = G["aout","bout"]*gate["ain","bin"]
+        G = G["aout","bout"]*gate["ain","bin"]
+        #print(gate.trace("bout","ain").replace_labels("bin","ain", inplace=False), np.exp(beta*J))
+        G = G["aout"] * gate.trace("bout","ain").replace_labels("bin","ain", inplace=False)["ain"]
+        G = G["bout"] * gate.trace("bout","ain").replace_labels("aout","bout", inplace=False)["bin"]
+        G = G.trace(["aout","bout"],["ain","bin"])
+
+        Z = ExpFloat(G.to_scalar())
+        F_value = -1.0 / beta * Z.log
+        print(F_value)
+
+
+    print("Checker2 Otehon")
+    for _ in range(1):
+        Z = partition_function(beta,J,J,2,2)
+        F_value = -1.0 / beta * Z.log
+        print(F_value)
+
+
+    print("Checker2")
+    for _ in range(1):
+        gate = zeros_tensor((2,2,2,2), ["ain","aout","bin","bout"])
+        gate.data[1,1,1,1] = np.exp(beta*J)
+        gate.data[0,0,0,0] = np.exp(beta*J)
+        gate.data[0,0,1,1] = np.exp(-beta*J)
+        gate.data[1,1,0,0] = np.exp(-beta*J)
+        gate = onedim.Obc1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
+        A = identity_tensor((2,), labels=["ain","aout"])
+        B = identity_tensor((2,), labels=["bin","bout"])
+
+        Ss = []
+        for _ in range(4):
+            funi = gate.to_BTPO()
+            a,S,b = funi.tensors[0], funi.bdts[1], funi.tensors[1]
+            A = A["aout"]*a["ain"]
+            Ss.append(S)
+            B = B["bout"]*b["bin"]
+        L,R,U,D = tuple(Ss)
+        A = A.trace("aout","ain")
+        B = B.trace("bout","bin")
+
+        Z_TPK = twodim.Ptn2DCheckerBTPK(A,B,L,R,U,D, width_scale=1, height_scale=1)
+
+        kwargs = dict(env_choice="half", contract_before_truncate=False, loop_truncation_algname="naive", drill_parity=0)
+        
+        Z = Z_TPK.calculate(chi=chi, **kwargs)
+        F_value = -1.0 / beta * Z.log
+        print(F_value)
+
+
+
+
+
+    print("Rhombus Otehon")
+    for _ in range(1):
+        F_value = -1.0 / beta * np.log(4*np.cosh(4*beta))
+        print(F_value)
+
+
+
+    print("Rhombus Tegaki")
+    for _ in range(1):
+        gate = zeros_tensor((2,2,2,2), ["ain","aout","bin","bout"])
+        gate.data[1,1,1,1] = np.exp(beta*J)
+        gate.data[0,0,0,0] = np.exp(beta*J)
+        gate.data[0,0,1,1] = np.exp(-beta*J)
+        gate.data[1,1,0,0] = np.exp(-beta*J)
+        gate = onedim.Obc1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
+        A = identity_tensor((2,), labels=["ain","aout"])
+        B = identity_tensor((2,), labels=["bin","bout"])
+
+        Ss = []
+        for _ in range(4):
+            funi = gate.to_BTPO()
+            a,S,b = funi.tensors[0], funi.bdts[1], funi.tensors[1]
+            A = A["aout"]*a["ain"]
+            Ss.append(S)
+            B = B["bout"]*b["bin"]
+        L,R,U,D = tuple(Ss)
+        A = A.trace("aout","ain")
+        B = B.trace("bout","bin")
+
+        Z = ExpFloat((A*L*R*U*D*B).to_scalar())
+        F_value = -1.0 / beta * Z.log
+        print(F_value)
+
+
+    print("Rhombus")
+    for _ in range(1):
+        gate = zeros_tensor((2,2,2,2), ["ain","aout","bin","bout"])
+        gate.data[1,1,1,1] = np.exp(beta*J)
+        gate.data[0,0,0,0] = np.exp(beta*J)
+        gate.data[0,0,1,1] = np.exp(-beta*J)
+        gate.data[1,1,0,0] = np.exp(-beta*J)
+        gate = onedim.Obc1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
+        A = identity_tensor((2,), labels=["ain","aout"])
+        B = identity_tensor((2,), labels=["bin","bout"])
+
+        Ss = []
+        for _ in range(4):
+            funi = gate.to_BTPO()
+            a,S,b = funi.tensors[0], funi.bdts[1], funi.tensors[1]
+            A = A["aout"]*a["ain"]
+            Ss.append(S)
+            B = B["bout"]*b["bin"]
+        L,R,U,D = tuple(Ss)
+        A = A.trace("aout","ain")
+        B = B.trace("bout","bin")
+
+        Z_TPK = twodim.Ptn2DRhombusBTPK(A,B,L,R,U,D, width_scale=width_scale, height_scale=height_scale)
+        #pop# make Ising model TPK
+
+        kwargs = dict(env_choice="half", contract_before_truncate=False, loop_truncation_algname="naive", drill_parity=0)
+        
+        Z = Z_TPK.calculate(chi=chi, **kwargs)
+        F_value = -1.0 / beta * Z.log
+        print(F_value)
+
+
+

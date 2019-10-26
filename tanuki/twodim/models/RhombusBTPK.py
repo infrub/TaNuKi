@@ -140,7 +140,7 @@ class Ptn2DRhombusBTPK:
 
         from tanuki.twodim.models.CheckerBTPK import Ptn2DCheckerBTPK
         if normalize:
-            return Ptn2DCheckerBTPK(A,B,L,R,U,D, width_scale=self.width_scale, height_scale=self.height_scale), ef_pow(weight, 2**(self.width_scale+self.height_scale))
+            return Ptn2DCheckerBTPK(A,B,L,R,U,D, width_scale=self.width_scale, height_scale=self.height_scale), ef_pow(weight, 2**(self.width_scale+self.height_scale-1))
         else:
             return Ptn2DCheckerBTPK(A,B,L,R,U,D, width_scale=self.width_scale, height_scale=self.height_scale)
 
