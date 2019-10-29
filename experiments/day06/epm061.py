@@ -43,4 +43,16 @@ def epm0610():
 
 
 
-epm0610()
+#epm0610()
+
+
+def epm0611():
+    A = random_tensor((2,3),["a","b"])
+    Q,R = A.qr("a", force_diagonal_elements_positive=True)
+    print(Q)
+    print(Q.is_unitary("a"))
+    print(R)
+    print(R.is_tril("b"))
+    print(A==Q*R)
+
+epm0611()

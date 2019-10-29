@@ -18,7 +18,7 @@ def normarg_qr_labels(qr_labels):
     return qr_labels
 
 
-def tensor_qr(A, rows, cols=None, qr_labels=1, mode="economic"):
+def tensor_qr(A, rows, cols=None, qr_labels=1, mode="economic", force_diagonal_elements_positive=False):
     #A == Q*R
     rows, cols = A.normarg_complement_indices(rows, cols)
     qr_labels = normarg_qr_labels(qr_labels)
@@ -28,6 +28,16 @@ def tensor_qr(A, rows, cols=None, qr_labels=1, mode="economic"):
     a = A.to_matrix(rows, cols)
 
     q, r = xp.linalg.qr(a, mode=mode)
+
+    if force_diagonal_elements_positive:
+        d = r.diagonal()
+        d = d.real >= 0
+        d = d*2-1
+
+        q = q * d
+        r = r.transpose()
+        r = r * d
+        r = r.transpose()
 
     mid_dim = r.shape[0]
 
@@ -51,12 +61,12 @@ def normarg_lq_labels(lq_labels):
     return lq_labels
 
 
-def tensor_lq(A, rows, cols=None, lq_labels=1, mode="economic"):
+def tensor_lq(A, rows, cols=None, lq_labels=1, mode="economic", force_diagonal_elements_positive=False):
     #A == L*Q
     rows, cols = A.normarg_complement_indices(rows, cols)
     lq_labels = normarg_lq_labels(lq_labels)
 
-    Q, L = tensor_qr(A, cols, rows, qr_labels=[lq_labels[1],lq_labels[0]], mode=mode)
+    Q, L = tensor_qr(A, cols, rows, qr_labels=[lq_labels[1],lq_labels[0]], mode=mode, force_diagonal_elements_positive=force_diagonal_elements_positive)
 
     return L, Q
 
