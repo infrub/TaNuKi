@@ -132,11 +132,11 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     # ref: https://arxiv.org/abs/1512.04938
     #
     # [bde=0] get L s.t.
-    # /-L-(0)-[0]-...-(len-1)-[len-1]-          /-L-
-    # |        |                 |      ==  c * |
-    # \Lh-(0)-[0]-...-(len-1)-[len-1]-          \Lh-
+    # /-(0)-[0]-...-(len-1)-[len-1]-            /-
+    # L        |                 |      ==  W * L
+    # \-(0)-[0]-...-(len-1)-[len-1]-            \-
     #
-    # O(chi^3 * w * repeat)
+    # O(chi^3 * phys_dim * repeat)
     def get_left_transfer_eigen_ver2(self, bde=0, memo=None):
         if memo is None: memo = {}
         tshape = self.get_right_shape_site(bde-1)
@@ -155,7 +155,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
                 _,T = D.qr([trlabel]+self.get_phys_labels_site(e), self.get_ket_right_labels_site(e), qr_labels=trlabel)
 
             V_L = T * T.adjoint(tlabels)
-            temp = V_L.is_prop_to(old_V_L)
+            temp = V_L.is_prop_to(old_V_L, rtol=1e-14, atol=1e-14)
             W_L = np.real(temp["factor"])
             if temp:
                 break
@@ -167,10 +167,10 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     #
     # [bde=0] get R s.t.
     # -[0]-...-(len-1)-[len-1]-(0)-\          -\
-    #   |                 |        R  ==  c *  R
+    #   |                 |        R  ==  W *  R
     # -[0]-...-(len-1)-[len-1]-(0)-/          -/
     #
-    # O(chi^3 * w * repeat)
+    # O(chi^3 * phys_dim * repeat)
     def get_right_transfer_eigen_ver2(self, bde=0,  memo=None):
         if memo is None: memo = {}
         tshape = self.get_left_shape_site(bde)
@@ -198,6 +198,69 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
 
     get_left_transfer_eigen = get_left_transfer_eigen_ver2
     get_right_transfer_eigen = get_right_transfer_eigen_ver2
+
+
+    # ref: https://arxiv.org/abs/1512.04938
+    #
+    # [bde=0] get L s.t.
+    # /-L-(0)-[0]-...-(len-1)-[len-1]-                 /-L-
+    # |        |                 |      == w * (unitary tensor)
+    #
+    # O(chi^3 * phys_dim * repeat)
+    def get_left_half_transfer_eigen(self, bde=0, chi=None, memo=None):
+        if memo is None: memo = {}
+        tshape = self.get_right_shape_site(bde-1)
+        tlabels = self.get_ket_right_labels_site(bde-1)
+        if chi is None: chi = soujou(tshape)
+        trlabel = unique_label()
+        T = tni.random_tensor((chi,)+tshape, [trlabel]+tlabels)
+
+        for iteri in range(1,101):
+            T.normalize(inplace=True)
+            old_T = T
+
+            for e in range(bde,bde+len(self)):
+                D = T*self.get_ket_bond(e)*self.get_ket_site(e)
+                _,T = D.qr([trlabel]+self.get_phys_labels_site(e), self.get_ket_right_labels_site(e), qr_labels=trlabel, force_diagonal_elements_positive=True)
+
+            temp = T.is_prop_to(old_T, rtol=1e-14, atol=1e-14)
+            w = temp["factor"].real
+            if temp:
+                break
+        memo["iter_times"] = iteri
+
+        return w,T
+
+    # ref: https://arxiv.org/abs/1512.04938
+    #
+    # [bde=0] get R s.t.
+    # -[0]-...-(len-1)-[len-1]-(0)-R-\               -R-\
+    #   |                 |          |  ==  W *  (unitary tensor)
+    #
+    # O(chi^3 * phys_dim * repeat)
+    def get_right_half_transfer_eigen(self, bde=0, chi=None, memo=None):
+        if memo is None: memo = {}
+        tshape = self.get_left_shape_site(bde)
+        tlabels = self.get_ket_left_labels_site(bde)
+        if chi is None: chi = soujou(tshape)
+        trlabel = unique_label()
+        T = tni.random_tensor((chi,)+tshape, [trlabel]+tlabels)
+
+        for iteri in range(1,101):
+            T.normalize(inplace=True)
+            old_T = T
+
+            for e in range(bde+len(self)-1, bde-1, -1):
+                D = T*self.get_ket_bond(e+1)*self.get_ket_site(e)
+                T,_ = D.lq(self.get_ket_left_labels_site(e), self.get_phys_labels_site(e)+[trlabel], lq_labels=trlabel, force_diagonal_elements_positive=True)
+
+            temp = T.is_prop_to(old_T, rtol=1e-14, atol=1e-14)
+            w = temp["factor"].real
+            if temp:
+                break
+        memo["iter_times"] = iteri
+
+        return w,T
 
 
     # ref: https://arxiv.org/abs/0711.3960

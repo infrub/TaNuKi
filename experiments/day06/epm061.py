@@ -43,7 +43,6 @@ def epm0610():
 
 
 
-#epm0610()
 
 
 def epm0611():
@@ -55,4 +54,19 @@ def epm0611():
     print(R.is_tril("b"))
     print(A==Q*R)
 
-epm0611()
+
+
+
+
+def epm0612():
+    A = onedim.random_cyc1DBTPS(["p0","p1","p2","p3"], virt_labelss=["v0","v1","v2","v3"], chi=6, phys_dim=2)
+
+    memo={}
+    print(A.get_left_half_transfer_eigen(memo=memo))
+    print(memo)
+    memo={}
+    print(A.get_right_half_transfer_eigen(memo=memo))
+    print(memo)
+
+
+epm0612()
