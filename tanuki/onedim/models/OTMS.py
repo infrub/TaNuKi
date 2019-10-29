@@ -39,7 +39,7 @@ class Obc1DTMS: #Open boundary Tensor Mass State
         rev_tensors = []
         rev_bdts = []
         for i in range(len(self)-1,0,-1):
-            G, b, a = tnd.truncated_svd(G, sum(self.phys_labelss[:i],[]))
+            G, b, a = tnd.tensor_svd(G, sum(self.phys_labelss[:i],[]))
             rev_tensors.append(a)
             rev_bdts.append(b)
         rev_tensors.append(G)

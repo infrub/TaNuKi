@@ -80,7 +80,7 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
     # |      |        ==  |
     # \-(1)-[1]-(2)-      \-(2)-
     def locally_left_canonize_around_not_end_bond(self, bde, chi=None, rtol=None, atol=None):
-        U, S, V = tnd.truncated_svd(self.bdts[bde-1]*self.tensors[bde-1]*self.bdts[bde], self.get_left_labels_bond(bde-1)+self.get_phys_labels_site(bde-1), chi=chi, rtol=rtol, atol=atol)
+        U, S, V = tnd.tensor_svd(self.bdts[bde-1]*self.tensors[bde-1]*self.bdts[bde], self.get_left_labels_bond(bde-1)+self.get_phys_labels_site(bde-1), chi=chi, rtol=rtol, atol=atol)
         self.tensors[bde-1] = U/self.bdts[bde-1]
         self.bdts[bde] = S
         self.tensors[bde] = V*self.tensors[bde]
@@ -92,7 +92,7 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
     #       |      |  ==       |
     # -(3)-[3]-(4)-/      -(3)-/
     def locally_right_canonize_around_not_end_bond(self, bde, chi=None, rtol=None, atol=None):
-        U, S, V = tnd.truncated_svd(self.bdts[bde]*self.tensors[bde]*self.bdts[bde+1], self.get_left_labels_bond(bde), chi=chi, rtol=rtol, atol=atol)
+        U, S, V = tnd.tensor_svd(self.bdts[bde]*self.tensors[bde]*self.bdts[bde+1], self.get_left_labels_bond(bde), chi=chi, rtol=rtol, atol=atol)
         self.tensors[bde-1] = self.tensors[bde-1]*U
         self.bdts[bde] = S
         self.tensors[bde] = V/self.bdts[bde+1]

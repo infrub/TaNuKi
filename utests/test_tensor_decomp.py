@@ -37,9 +37,9 @@ class TestDecomp(unittest.TestCase):
         V2,S2,U2 = tensor_svd(A,["c","d","e"],svd_labels=["i","h"])
         self.assertEqual(S,S2)
 
-    def test_truncated_svd(self):
+    def test_tensor_svd(self):
         A = random_tensor((10,10,10,10),["a","b","c","d"])
-        U,S,V = truncated_svd(A,["a","b"],svd_labels="h",chi=99)
+        U,S,V = tensor_svd(A,["a","b"],svd_labels="h",chi=99)
         self.assertTrue(U.is_semi_unitary(["a","b"]))
         self.assertTrue(S.is_diagonal("h"))
         self.assertTrue(V.is_semi_unitary(["c","d"]))
@@ -47,7 +47,7 @@ class TestDecomp(unittest.TestCase):
         self.assertEqual(S.shape, (99,99))
         self.assertEqual(V.shape, (99,10,10))
         taikaNorm = (A-U*S*V).norm()
-        U,S,V = truncated_svd(A,["a","b"],svd_labels="h",chi=100)
+        U,S,V = tensor_svd(A,["a","b"],svd_labels="h",chi=100)
         notTaikaNorm = (A-U*S*V).norm()
         self.assertLess(taikaNorm, A.norm()/100)
         self.assertLess(notTaikaNorm, A.norm()/1000000)
@@ -57,7 +57,7 @@ class TestDecomp(unittest.TestCase):
         self.assertGreaterEqual(S.data[97],S.data[98])
         self.assertGreaterEqual(S.data[98],S.data[99])
         self.assertGreaterEqual(S.data[99],0)
-        U,S,V = truncated_svd(A,["a","b"],svd_labels="h",atol=1)
+        U,S,V = tensor_svd(A,["a","b"],svd_labels="h",atol=1)
         self.assertLess(S.halfsize, 100)
         self.assertGreater(S.halfsize, 80)
 

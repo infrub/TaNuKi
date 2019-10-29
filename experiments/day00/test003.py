@@ -16,7 +16,7 @@ def test0031():
 def test0032():
     A = Tensor(np.arange(64).reshape(8,8))
     print(A)
-    U,S,V = truncated_svd(A,A.labels[0],chi=2)
+    U,S,V = tensor_svd(A,A.labels[0],chi=2)
     print(U,S,V)
     B = U*S*V
     print(B)
@@ -48,13 +48,13 @@ def test0035():
     A = Tensor([[2,9,4],[7,5,3],[6,1,8]])
     print(A)
 
-    U,S,V = truncated_svd(A,A.labels[0],chi=3)
+    U,S,V = tensor_svd(A,A.labels[0],chi=3)
     print(U,S,V)
     B = U*S*V
     print(B)
     print(A==B)
 
-    U,S,V = truncated_svd(A,A.labels[0],chi=2)
+    U,S,V = tensor_svd(A,A.labels[0],chi=2)
     print(U,S,V)
     B = U*S*V
     print(B)

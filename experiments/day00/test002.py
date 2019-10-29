@@ -105,7 +105,7 @@ def test0027():
 def test0028():
     A = Tensor(np.arange(64).reshape(8,8),["al","ar"])
     print(A)
-    U,S,V = truncated_svd(A,"al","ar",chi=2)
+    U,S,V = tensor_svd(A,"al","ar",chi=2)
     print(U,S,V)
     A = (U["svd_ur"]*S["svd_sl"])["svd_sr"]*V["svd_vl"]
     print(A)

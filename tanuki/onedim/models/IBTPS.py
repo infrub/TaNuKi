@@ -232,7 +232,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
         Xh.unaster_labels(self.get_bra_right_labels_bond(bde), inplace=True)
         l0 = self.bdts[bde]
         G = d_L.sqrt() * Yh * l0 * X * d_R.sqrt()
-        U, S, V = tnd.truncated_svd(G, dl_label, dr_label, chi=chi, rtol=rtol, atol=atol)
+        U, S, V = tnd.tensor_svd(G, dl_label, dr_label, chi=chi, rtol=rtol, atol=atol)
         M = Y * d_L.inv().sqrt() * U
         N = V * d_R.inv().sqrt() * Xh
         # l0 == M*S*N

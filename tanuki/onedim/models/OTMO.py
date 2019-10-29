@@ -45,7 +45,7 @@ class Obc1DTMO: #Tensor Mass Operator
         rev_tensors = []
         rev_bdts = []
         for i in range(len(self)-1,0,-1):
-            G, b, a = tnd.truncated_svd(G, sum(self.physout_labelss[:i]+self.physin_labelss[:i],[]), chi=chi, rtol=rtol, atol=atol, svd_labels=2)
+            G, b, a = tnd.tensor_svd(G, sum(self.physout_labelss[:i]+self.physin_labelss[:i],[]), chi=chi, rtol=rtol, atol=atol, svd_labels=2)
             rev_tensors.append(a)
             rev_bdts.append(b)
         rev_tensors.append(G)

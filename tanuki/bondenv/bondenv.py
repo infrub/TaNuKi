@@ -59,7 +59,7 @@ class BridgeBondOptimalTruncator:
         # (((M*S*N)-A0)*H_L*H_R).norm() == 0 (ETA_L=H_L*H_L.adjoint, ETA_R=H_R*H_R.adjoint)
 
         G = d_L.sqrt() * Yh * self.A0 * X * d_R.sqrt()
-        P, S, Q = tnd.truncated_svd(G, dl_label, dr_label, chi=self.chi)
+        P, S, Q = tnd.tensor_svd(G, dl_label, dr_label, chi=self.chi)
         U = Y * d_L.sqrt().inv() * P
         V = Q * d_R.sqrt().inv() * Xh
 
@@ -132,7 +132,7 @@ class UnbridgeBondOptimalTruncator:
         self.ket_mn_label = unique_label()
         self.bra_mn_label = aster_label(self.ket_mn_label)
 
-        U,S,V = tnd.truncated_svd(self.A0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = self.ket_mn_label)
+        U,S,V = tnd.tensor_svd(self.A0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = self.ket_mn_label)
         M = U * S.sqrt()
         N = S.sqrt() * V
 
@@ -453,7 +453,7 @@ class UnbridgeBondOptimalTruncator:
 
     def recalc_USV(self):
         if self.last_USV_calced_iter_times != self.iter_times:
-            self._U,self._S,self._V = tnd.truncated_svd(self.M * self.N, self.ket_left_labels, self.ket_right_labels, chi=self.chi, svd_labels = self.ket_mn_label)
+            self._U,self._S,self._V = tnd.tensor_svd(self.M * self.N, self.ket_left_labels, self.ket_right_labels, chi=self.chi, svd_labels = self.ket_mn_label)
             self.last_USV_calced_iter_times = self.iter_times
 
     @property

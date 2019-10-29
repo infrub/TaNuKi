@@ -50,7 +50,7 @@ class TestingUnbridgeBondEnv:
             N = vector_to_tensor(N, Nshape, [ket_sn_label]+self.ket_right_labels)
             return N
 
-        M,S,N = truncated_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
+        M,S,N = tensor_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
 
         is_crazy_singular = False
         for iteri in range(maxiter):
@@ -88,7 +88,7 @@ class TestingUnbridgeBondEnv:
                 print("M", M, M.norm())
                 print("S", S)
                 print("N", N, N.norm())
-            M,S,N = truncated_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
+            M,S,N = tensor_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
             if funi==1:
                 print("M", M, M.norm())
                 print("S", S)
@@ -227,19 +227,19 @@ def test0122():
         print(N.norm())
         print()
 
-    M,S,N = truncated_svd(random_tensor_like(sigma0),ket_left_labels, chi=1, svd_labels=[ket_ms_label,ket_sn_label])
+    M,S,N = tensor_svd(random_tensor_like(sigma0),ket_left_labels, chi=1, svd_labels=[ket_ms_label,ket_sn_label])
     printer(M,S,N,"init")
     M = optimize_M_from_S_N(S,N)
     printer(M,S,N,"optimize M")
     N = optimize_N_from_M_S(M,S)
     printer(M,S,N,"optimize N")
-    M,S,N = truncated_svd(M*S*N,ket_left_labels, chi=1, svd_labels=[ket_ms_label,ket_sn_label])
+    M,S,N = tensor_svd(M*S*N,ket_left_labels, chi=1, svd_labels=[ket_ms_label,ket_sn_label])
     printer(M,S,N,"SVD")
     M = optimize_M_from_S_N(S,N)
     printer(M,S,N,"optimize M")
     N = optimize_N_from_M_S(M,S)
     printer(M,S,N,"optimize N")
-    M,S,N = truncated_svd(M*S*N,ket_left_labels, chi=1, svd_labels=[ket_ms_label,ket_sn_label])
+    M,S,N = tensor_svd(M*S*N,ket_left_labels, chi=1, svd_labels=[ket_ms_label,ket_sn_label])
     printer(M,S,N,"SVD",)
 
     #shokiti sigma0 demo random_tensor demo M3==M4==M5 !!

@@ -982,27 +982,23 @@ class Tensor(TensorMixin):
     to_vector = tensor_to_vector
     to_scalar = tensor_to_scalar
 
-    def svd(self, *args, **kwargs):
-        if "chi" in kwargs:
-            return truncated_svd(self, *args, **kwargs)
-        else:
-            return tensor_svd(self, *args, **kwargs)
-
     def qr(self, *args, **kwargs):
         return tensor_qr(self, *args, **kwargs)
 
     def lq(self, *args, **kwargs):
         return tensor_lq(self, *args, **kwargs)
 
+    def svd(self, *args, **kwargs):
+        return tensor_svd(self, *args, **kwargs)
+
     def eigh(self, *args, **kwargs):
-        if "chi" in kwargs:
-            return truncated_eigh(self, *args, **kwargs)
-        else:
-            return tensor_eigh(self, *args, **kwargs)
+        return tensor_eigh(self, *args, **kwargs)
 
     def eigsh(self, *args, **kwargs):
         return tensor_eigsh(self, *args, **kwargs)
 
+    def solve(self, *args, **kwargs):
+        return tensor_solve(self, *args, **kwargs)
 
 
 # A[i,j,k,l] = [i==k][j==l]A.data[i,j]

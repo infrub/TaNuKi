@@ -94,7 +94,7 @@ def optimal_truncate(self, sigma0, mfun, nfun, chi=20, maxiter=1000, conv_atol=1
 
 
 
-    M,S,N = tnd.truncated_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
+    M,S,N = tnd.tensor_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
 
     env_is_crazy_degenerated = False
     for iteri in range(maxiter):
@@ -124,7 +124,7 @@ def optimal_truncate(self, sigma0, mfun, nfun, chi=20, maxiter=1000, conv_atol=1
                     S.truncate_index(ket_ms_label,chi,inplace=True)
                     N.truncate_index(ket_sn_label,chi,inplace=True)
                     continue
-        M,S,N = tnd.truncated_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
+        M,S,N = tnd.tensor_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
         if S.__eq__(oldS, atol=conv_atol, rtol=conv_rtol):
             break
 
@@ -141,7 +141,7 @@ def optimal_truncate(self, sigma0, mfun, nfun, chi=20, maxiter=1000, conv_atol=1
         C = C.to_vector(extraction_label)
         M = xp.linalg.solve(B,C)
         M = tnc.vector_to_tensor(M, Mshape, self.ket_left_labels+[ket_ms_label])
-        M,S,N = tnd.truncated_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
+        M,S,N = tnd.tensor_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
 
 
     if memo is None:

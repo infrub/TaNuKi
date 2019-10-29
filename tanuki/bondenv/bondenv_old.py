@@ -41,7 +41,7 @@ class BridgeBondEnv:
         # (((M*S*N)-sigma0)*H_L*H_R).norm() == 0 (ETA_L=H_L*H_L.adjoint, ETA_R=H_R*H_R.adjoint)
 
         G = d_L.sqrt() * Yh * sigma0 * X * d_R.sqrt()
-        U, S, V = tnd.truncated_svd(G, dl_label, dr_label, chi=chi)
+        U, S, V = tnd.tensor_svd(G, dl_label, dr_label, chi=chi)
         M = Y * d_L.sqrt().inv() * U
         N = V * d_R.sqrt().inv() * Xh
 
@@ -92,7 +92,7 @@ class UnbridgeBondEnv:
         ETA = self.tensor
         Cbase = ETA * sigma0
 
-        M,S,N = tnd.truncated_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = ket_mn_label)
+        M,S,N = tnd.tensor_svd(sigma0, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = ket_mn_label)
         M = M * S.sqrt()
         N = S.sqrt() * N
         del S
@@ -368,7 +368,7 @@ class UnbridgeBondEnv:
             memo["iter_times"] = iteri+1
 
 
-        M,S,N = tnd.truncated_svd(M*N, self.ket_left_labels, self.ket_right_labels, chi=chi)
+        M,S,N = tnd.tensor_svd(M*N, self.ket_left_labels, self.ket_right_labels, chi=chi)
 
         memo["elapsed_time"] = time.time()-start_time
 

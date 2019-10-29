@@ -217,7 +217,7 @@ def test0083():
     print(t)
     
 
-    U, S, V = tnd.truncated_svd(G, dl_label, dr_label, chi=chi, relative_threshold=relative_threshold)
+    U, S, V = tnd.tensor_svd(G, dl_label, dr_label, chi=chi, relative_threshold=relative_threshold)
     M = Y * d_L.inv().sqrt() * U
     N = V * d_R.inv().sqrt() * Xh
     # l0 == M*S*N
