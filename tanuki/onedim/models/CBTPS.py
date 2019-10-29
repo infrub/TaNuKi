@@ -83,21 +83,13 @@ class Cyc1DBTPS(Inf1DBTPS):
                 return 1.0
 
         elif algname == "canonize":
-            if normalize:
-                memo = {}
-                print("before",self.to_TMS().tensor.norm())
-                weight = self.universally_canonize(chi=chi, transfer_normalize=True, memo=memo)
-                print("after",self.to_TMS().tensor.norm(), "*", weight, "==", self.to_TMS().tensor.norm() * weight)
-                return weight
-            else:
-                self.universally_canonize(chi=chi, transfer_normalize=False)
-                return 1.0
+            return self.universally_canonize(chi=chi, transfer_normalize=normalize)
 
         elif algname == "iterative":
             params = {
-                "conv_atol": kwargs.get("conv_atol", 1e-10),
-                "conv_rtol": kwargs.get("conv_rtol", 1e-10),
-                "max_iter": kwargs.get("max_iter", 200),
+                "conv_atol": kwargs.get("conv_atol", 1e-30),
+                "conv_rtol": kwargs.get("conv_rtol", 1e-30),
+                "max_iter": kwargs.get("max_iter", 600),
                 "initial_value": kwargs.get("initial_value", "random")
                 }
 
@@ -120,13 +112,14 @@ class Cyc1DBTPS(Inf1DBTPS):
             sqdiff = float("inf")
 
             for iteri in range(params["max_iter"]):
-                #print(iteri, sqdiff)
+                if iteri%10==0: print(iteri, sqdiff)
                 old_sqdiff = sqdiff
 
                 for e in range(len(ORIGIN)):
                     M = PHI.get_ket_site(e)
                     Mshape = M.dims(PHI.get_ket_left_labels_site(e)+PHI.get_ket_right_labels_site(e)+PHI.get_phys_labels_site(e))
                     Mlabels = PHI.get_ket_left_labels_site(e)+PHI.get_ket_right_labels_site(e)+PHI.get_phys_labels_site(e)
+                    M0 = M
 
                     B = 1
                     C = 1
@@ -145,6 +138,7 @@ class Cyc1DBTPS(Inf1DBTPS):
                         try:
                             Mdata = xp.linalg.solve(Bdata, Cdata, assume_a="pos")
                             M = tnc.matrix_to_tensor(Mdata, Mshape, Mlabels)
+                            M = M * 1.5 - M0 * 0.5
                             PHI.tensors[e] = M
                         except:
                             continue
@@ -163,14 +157,7 @@ class Cyc1DBTPS(Inf1DBTPS):
             self.bdts = PHI.bdts
             self.phys_labelss = PHI.phys_labelss
 
-            if normalize:
-                memo2 = {}
-                self.universally_canonize(chi=None, transfer_normalize=True, memo=memo2)
-                weight = sqrt(memo2["w"])
-                return weight
-            else:
-                self.universally_canonize(chi=None, transfer_normalize=False)
-                return 1.0
+            return self.universally_canonize(chi=None, transfer_normalize=normalize)
 
 
 

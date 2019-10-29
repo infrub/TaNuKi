@@ -89,13 +89,13 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
         TF_L *= self.get_ket_site(bde-1).fuse_indices(self.get_ket_right_labels_site(bde-1), fusedLabel=unique_label(), output_memo=outket_memo)
         TF_L *= self.get_bra_site(bde-1).fuse_indices(self.get_bra_right_labels_site(bde-1), fusedLabel=unique_label(), output_memo=outbra_memo)
 
-        w_L, V_L = tnd.tensor_eigsh(TF_L, [outket_memo["fusedLabel"], outbra_memo["fusedLabel"]], [inket_memo["fusedLabel"], inbra_memo["fusedLabel"]])
+        W_L, V_L = tnd.tensor_eigsh(TF_L, [outket_memo["fusedLabel"], outbra_memo["fusedLabel"]], [inket_memo["fusedLabel"], inbra_memo["fusedLabel"]])
 
         V_L.hermite(inket_memo["fusedLabel"], inbra_memo["fusedLabel"], assume_definite_and_if_negative_then_make_positive=True, inplace=True)
         V_L.split_index(input_memo=inket_memo, inplace=True)
         V_L.split_index(input_memo=inbra_memo, inplace=True)
 
-        return w_L, V_L
+        return W_L, V_L
 
     # ref: https://arxiv.org/abs/0711.3960
     #
@@ -119,13 +119,13 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
         TF_R *= self.get_ket_site(bde).fuse_indices(self.get_ket_left_labels_site(bde), fusedLabel=unique_label(), output_memo=outket_memo)
         TF_R *= self.get_bra_site(bde).fuse_indices(self.get_bra_left_labels_site(bde), fusedLabel=unique_label(), output_memo=outbra_memo)
 
-        w_R, V_R = tnd.tensor_eigsh(TF_R, [outket_memo["fusedLabel"], outbra_memo["fusedLabel"]], [inket_memo["fusedLabel"], inbra_memo["fusedLabel"]])
+        W_R, V_R = tnd.tensor_eigsh(TF_R, [outket_memo["fusedLabel"], outbra_memo["fusedLabel"]], [inket_memo["fusedLabel"], inbra_memo["fusedLabel"]])
 
         V_R.hermite(inbra_memo["fusedLabel"], inket_memo["fusedLabel"], assume_definite_and_if_negative_then_make_positive=True, inplace=True)
         V_R.split_index(input_memo=inket_memo, inplace=True)
         V_R.split_index(input_memo=inbra_memo, inplace=True)
         
-        return w_R, V_R
+        return W_R, V_R
 
 
 
@@ -156,12 +156,12 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
 
             V_L = T * T.adjoint(tlabels)
             temp = V_L.is_prop_to(old_V_L)
-            w_L = np.real(temp["factor"])
+            W_L = np.real(temp["factor"])
             if temp:
                 break
         memo["iter_times"] = iteri
 
-        return w_L, V_L
+        return W_L, V_L
 
     # ref: https://arxiv.org/abs/1512.04938
     #
@@ -189,12 +189,12 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
 
             V_R = T * T.adjoint(tlabels)
             temp = V_R.is_prop_to(old_V_R, rtol=1e-14, atol=1e-14)
-            w_R = np.real(temp["factor"])
+            W_R = np.real(temp["factor"])
             if temp:
                 break
         memo["iter_times"] = iteri
 
-        return w_R, V_R
+        return W_R, V_R
 
     get_left_transfer_eigen = get_left_transfer_eigen_ver2
     get_right_transfer_eigen = get_right_transfer_eigen_ver2
@@ -217,14 +217,15 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
         dl_label = unique_label()
         dr_label = unique_label()
         memo["left_transfer_eigen"] = {}
-        w_L, V_L = self.get_left_transfer_eigen(bde=bde, memo=memo["left_transfer_eigen"])
+        W_L, V_L = self.get_left_transfer_eigen(bde=bde, memo=memo["left_transfer_eigen"])
         memo["right_transfer_eigen"] = {}
-        w_R, V_R = self.get_right_transfer_eigen(bde=bde, memo=memo["right_transfer_eigen"])
-        w = sqrt(w_L*w_R)
-        #assert abs(w_L-w_R) < 1e-3*abs(w), f"transfer_eigen different. {w_L} != {w_R}"
-        memo["w_L"] = w_L
-        memo["w_R"] = w_R
-        memo["w"] = w
+        W_R, V_R = self.get_right_transfer_eigen(bde=bde, memo=memo["right_transfer_eigen"])
+        W = sqrt(W_L*W_R)
+        #assert abs(W_L-W_R) < 1e-3*abs(w), f"transfer_eigen different. {W_L} != {W_R}"
+        memo["W_L"] = W_L
+        memo["W_R"] = W_R
+        memo["W"] = W
+        w = sqrt(W)
         Yh, d_L, Y = tnd.tensor_eigh(V_L, self.get_ket_left_labels_bond(bde), self.get_bra_left_labels_bond(bde), eigh_labels=dl_label)
         Y.unaster_labels(self.get_bra_left_labels_bond(bde), inplace=True)
         X, d_R, Xh = tnd.tensor_eigh(V_R, self.get_ket_right_labels_bond(bde), self.get_bra_right_labels_bond(bde), eigh_labels=dr_label)
@@ -236,12 +237,12 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
         N = V * d_R.inv().sqrt() * Xh
         # l0 == M*S*N
         if transfer_normalize:
-            self.bdts[bde] = S / sqrt(w)
+            self.bdts[bde] = S / w
         else:
             self.bdts[bde] = S
         self.tensors[bde] = N * self.tensors[bde]
         self.tensors[bde-1] = self.tensors[bde-1] * M
-        return sqrt(w)
+        return w
 
     locally_left_canonize_around_right_end = NotImplemented
     locally_right_canonize_around_left_end = NotImplemented

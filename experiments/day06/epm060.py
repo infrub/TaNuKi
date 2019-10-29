@@ -133,8 +133,12 @@ def epm0603():
     #Z_TPK = twodim.Ptn2DRhombusBTPK(A,B,L,R,U,D, width_scale=width_scale, height_scale=height_scale)
     #pop# make Ising model TPK
 
-    symbols = ["otehon"] + [c+a+b+d for c in "NCRI" for a in "HN" for b in "AB" for d in "EO"]
-    kwargss = ["otehon"] + [dict(env_choice=env_choice, contract_before_truncate=contract_before_truncate, loop_truncation_algname=loop_truncation_algname, drill_parity=drill_parity) for loop_truncation_algname, initial_value in [("naive",None), ("canonize",None), ("iterative","random"), ("iterative", "naive_truncation")] for env_choice in ["half","no"] for contract_before_truncate in [False,True] for drill_parity in [0,1]]
+    #symbols = ["otehon"] + [a+b+c+d for a in "NCRI" for b in "HN" for c in "AB" for d in "EO"]
+    #kwargss = ["otehon"] + [dict(loop_truncation_algname=loop_truncation_algname, initial_value=initial_value, env_choice=env_choice, contract_before_truncate=contract_before_truncate, drill_parity=drill_parity) for loop_truncation_algname, initial_value in [("naive",None), ("canonize",None), ("iterative","random"), ("iterative", "naive_truncation")] for env_choice in ["half","no"] for contract_before_truncate in [False,True] for drill_parity in [0,1]]
+
+    symbols = ["otehon"] + [a+b+c+d for a in "NCI" for b in "HN" for c in "AB" for d in "EO"]
+    kwargss = ["otehon"] + [dict(loop_truncation_algname=loop_truncation_algname, env_choice=env_choice, contract_before_truncate=contract_before_truncate, drill_parity=drill_parity) for loop_truncation_algname in ["naive", "canonize", "iterative"] for env_choice in ["half","no"] for contract_before_truncate in [False,True] for drill_parity in [0,1]]
+
 
     results = []
     for symbol, kwargs in zip(symbols,kwargss):
@@ -238,16 +242,12 @@ def epm0604():
 def epm0605():
     beta = 0.5
     J = 1.0
-    Lx = 2
-    Ly = 1
-    width_scale = 0
-    height_scale = 0
     chi = 8
 
 
     print("Checker1 Otehon")
     for _ in range(1):
-        Z = partition_function(beta,J,J,Lx,Ly)
+        Z = partition_function(beta,J,J,2,1)
         F_value = -1.0 / beta * Z.log
         print(F_value)
 

@@ -8,6 +8,7 @@ from tanuki.onedim.models import *
 
 
 def random_fin1DTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_dimss=None, phys_dim=2, chi=3, dtype=complex):
+    phys_labelss = [p if type(p)==list else [p] for p in phys_labelss]
     length = len(phys_labelss)
     if phys_dimss is None:
         phys_dimss = [(phys_dim,)*len(phys_labels) for phys_labels in phys_labelss]
@@ -17,13 +18,16 @@ def random_fin1DTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_dimss
     if virt_dimss is not None and len(virt_dimss) == length-1:
         virt_dimss = [()] + virt_dimss + [()]
 
-    if virt_labelss is None and virt_dimss is None:
-        virt_labelss = [[]] + [[unique_label()] for _ in range(length-1)] + [[]]
-        virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
-    elif virt_dimss is None:
-        virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
-    elif virt_labelss is None:
-        virt_labelss = [[unique_label() for _ in virt_dimss[i]] for i in virt_dimss]
+    if virt_labelss is None:
+        if virt_dimss is None:
+            virt_labelss = [[]] + [[unique_label()] for _ in range(length-1)] + [[]]
+            virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
+        else:
+            virt_labelss = [[unique_label() for _ in virt_dimss[i]] for i in virt_dimss]
+    else:
+        virt_labelss = [v if type(v)==list else [v] for v in virt_labelss]
+        if virt_dimss is None:
+            virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
 
     tensors = []
     for site in range(length):
@@ -33,6 +37,7 @@ def random_fin1DTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_dimss
 
 
 def random_fin1DBTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_dimss=None, phys_dim=2, chi=3, dtype=complex):
+    phys_labelss = [p if type(p)==list else [p] for p in phys_labelss]
     length = len(phys_labelss)
     if phys_dimss is None:
         phys_dimss = [(phys_dim,)*len(phys_labels) for phys_labels in phys_labelss]
@@ -42,13 +47,16 @@ def random_fin1DBTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_dims
     if virt_dimss is not None and len(virt_dimss) == length-1:
         virt_dimss = [()] + virt_dimss + [()]
 
-    if virt_labelss is None and virt_dimss is None:
-        virt_labelss = [[]] + [[unique_label()] for _ in range(length-1)] + [[]]
-        virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
-    elif virt_dimss is None:
-        virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
-    elif virt_labelss is None:
-        virt_labelss = [[unique_label() for _ in virt_dimss[i]] for i in virt_dimss]
+    if virt_labelss is None:
+        if virt_dimss is None:
+            virt_labelss = [[]] + [[unique_label()] for _ in range(length-1)] + [[]]
+            virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
+        else:
+            virt_labelss = [[unique_label() for _ in virt_dimss[i]] for i in virt_dimss]
+    else:
+        virt_labelss = [v if type(v)==list else [v] for v in virt_labelss]
+        if virt_dimss is None:
+            virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
 
     bdts = []
     for bondsite in range(length+1):
@@ -66,17 +74,21 @@ def random_fin1DBTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_dims
 
 
 def random_inf1DBTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_dimss=None, phys_dim=2, chi=3, dtype=complex):
+    phys_labelss = [p if type(p)==list else [p] for p in phys_labelss]
     length = len(phys_labelss)
     if phys_dimss is None:
         phys_dimss = [(phys_dim,)*len(phys_labels) for phys_labels in phys_labelss]
 
-    if virt_labelss is None and virt_dimss is None:
-        virt_labelss = [[unique_label()] for _ in range(length)]
-        virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
-    elif virt_dimss is None:
-        virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
-    elif virt_labelss is None:
-        virt_labelss = [[unique_label() for _ in virt_dimss[i]] for i in virt_dimss]
+    if virt_labelss is None:
+        if virt_dimss is None:
+            virt_labelss = [[]] + [[unique_label()] for _ in range(length-1)] + [[]]
+            virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
+        else:
+            virt_labelss = [[unique_label() for _ in virt_dimss[i]] for i in virt_dimss]
+    else:
+        virt_labelss = [v if type(v)==list else [v] for v in virt_labelss]
+        if virt_dimss is None:
+            virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
 
     bdts = []
     for bondsite in range(length):
@@ -94,17 +106,21 @@ def random_inf1DBTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_dims
 
 
 def random_cyc1DTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_dimss=None, phys_dim=2, chi=3, dtype=complex):
+    phys_labelss = [p if type(p)==list else [p] for p in phys_labelss]
     length = len(phys_labelss)
     if phys_dimss is None:
         phys_dimss = [(phys_dim,)*len(phys_labels) for phys_labels in phys_labelss]
 
-    if virt_labelss is None and virt_dimss is None:
-        virt_labelss = [[unique_label()] for _ in range(length)]
-        virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
-    elif virt_dimss is None:
-        virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
-    elif virt_labelss is None:
-        virt_labelss = [[unique_label() for _ in virt_dimss[i]] for i in virt_dimss]
+    if virt_labelss is None:
+        if virt_dimss is None:
+            virt_labelss = [[]] + [[unique_label()] for _ in range(length-1)] + [[]]
+            virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
+        else:
+            virt_labelss = [[unique_label() for _ in virt_dimss[i]] for i in virt_dimss]
+    else:
+        virt_labelss = [v if type(v)==list else [v] for v in virt_labelss]
+        if virt_dimss is None:
+            virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
 
     tensors = []
     for site in range(length):
@@ -115,18 +131,22 @@ def random_cyc1DTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_dimss
 
     
 def random_cyc1DBTPS(phys_labelss, phys_dimss=None, virt_labelss=None, virt_dimss=None, phys_dim=2, chi=3, dtype=complex):
+    phys_labelss = [p if type(p)==list else [p] for p in phys_labelss]
     length = len(phys_labelss)
     if phys_dimss is None:
         phys_dimss = [(phys_dim,)*len(phys_labels) for phys_labels in phys_labelss]
 
-    if virt_labelss is None and virt_dimss is None:
-        virt_labelss = [[unique_label()] for _ in range(length)]
-        virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
-    elif virt_dimss is None:
-        virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
-    elif virt_labelss is None:
-        virt_labelss = [[unique_label() for _ in virt_dimss[i]] for i in virt_dimss]
-
+    if virt_labelss is None:
+        if virt_dimss is None:
+            virt_labelss = [[]] + [[unique_label()] for _ in range(length-1)] + [[]]
+            virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
+        else:
+            virt_labelss = [[unique_label() for _ in virt_dimss[i]] for i in virt_dimss]
+    else:
+        virt_labelss = [v if type(v)==list else [v] for v in virt_labelss]
+        if virt_dimss is None:
+            virt_dimss = [(chi,)*len(virt_labels) for virt_labels in virt_labelss]
+            
     bdts = []
     for bondsite in range(length):
         if len(virt_dimss[bondsite])==0:

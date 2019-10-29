@@ -24,9 +24,23 @@ tnc.display_max_size = float("inf")
 
 
 def epm0610():
-    A = onedim.random_cyc1DBTPS([["p0"], ["p1"], ["p2"]], virt_labelss=[["v0"],["v1"],["v2"]])
-    print(A.to_TMS())
-    A.canonize()
-    print(A.to_TMS())
+    A_ = onedim.random_cyc1DBTPS(["p0","p1","p2","p3"], virt_labelss=["v0","v1","v2","v3"], chi=6, phys_dim=2)
+
+    A = A_
+    print(A.to_TMS().tensor)
+
+    A = onedim.Cyc1DBTPS(A_.tensors, A_.bdts)
+    w = A.truncate(chi=5, algname="iterative")
+    print(A.to_TMS().tensor*w)
+
+    A = onedim.Cyc1DBTPS(A_.tensors, A_.bdts)
+    w = A.truncate(chi=4, algname="iterative")
+    print(A.to_TMS().tensor*w)
+
+    A = onedim.Cyc1DBTPS(A_.tensors, A_.bdts)
+    w = A.truncate(chi=5, algname="canonize")
+    print(A.to_TMS().tensor*w)
+
+
 
 epm0610()
