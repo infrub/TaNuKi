@@ -78,6 +78,9 @@ class TestDecomp(unittest.TestCase):
         self.assertTrue(L.is_tril(["a","b"],"uni"))
         self.assertFalse(L.is_triu(["a","b"],"uni"))
         self.assertAlmostEqual(A.norm(), L.norm())
+        A = random_tensor((10,9,8,7),["a","b","c","d"])
+        L, Q = tensor_lq(A, ["a","b"], lq_labels="uni", force_diagonal_elements_positive=True)
+        self.assertTrue(np.all(np.diagonal(L.to_matrix("uni")) > 0))
 
     def test_eigh(self):
         A = random_tensor((7,8,8,7),["a","b","c","d"])
@@ -98,9 +101,10 @@ class TestDecomp(unittest.TestCase):
         self.assertAlmostEqual(abs(V.data[1]), 1/sqrt(5))
         V = random_tensor((100,),["a"])
         V.normalize(inplace=True)
-        A = direct_product(V, V)
+        A = direct_product(V, V.conjugate())
         A.data[0,0]=0
         w, V = tensor_eigsh(A, ["a"])
+        self.assertEqual(A*V,w*V)
         self.assertNotEqual(1,w)
         self.assertAlmostEqual(1,w,3)
 
