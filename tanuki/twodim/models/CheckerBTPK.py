@@ -54,7 +54,7 @@ class Ptn2DCheckerBTPK:
 
 
 
-    def renormalize(self, chi=10, normalize=True, env_choice="half", contract_before_truncate=False, loop_truncation_algname="canonize", drill_parity=0):
+    def renormalize(self, chi=10, normalize=True, env_choice="no", contract_before_truncate=False, loop_truncation_algname="canonize", drill_parity=1):
         """
         Loop optimization for tensor network renormalization
         Shuo Yang, Zheng-Cheng Gu, Xiao-Gang Wen

@@ -112,7 +112,7 @@ class Cyc1DBTPS(Inf1DBTPS):
             sqdiff = float("inf")
 
             for iteri in range(params["max_iter"]):
-                if iteri%10==0: print(iteri, sqdiff)
+                if iteri%10==0: pass#print(iteri, sqdiff)
                 old_sqdiff = sqdiff
 
                 for e in range(len(ORIGIN)):
