@@ -63,7 +63,7 @@ def epm0620_core(symbol):
     gate.data[0,0,0,0] = np.exp(beta*J)
     gate.data[0,0,1,1] = np.exp(-beta*J)
     gate.data[1,1,0,0] = np.exp(-beta*J)
-    gate = onedim.Obc1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
+    gate = onedim.Opn1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
     A = identity_tensor((2,), labels=["ain","aout"])
     B = identity_tensor((2,), labels=["bin","bout"])
 
@@ -116,7 +116,7 @@ def epm0620():
         except Exception as e:
             print(symbol, e)
             results.append((symbol,114514))
-            #raise e
+            raise e
 
     print("\n\n")
 
@@ -128,6 +128,6 @@ def epm0620():
 
 
 
-#epm0620_core("CHBE")
-epm0620()
+epm0620_core("IHAE")
+#epm0620()
 

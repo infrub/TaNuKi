@@ -5,7 +5,7 @@ from tanuki.onedim.models._mixins import *
 # ██    ██    ██    ██ ████ ██ ██    ██ 
 # ██    ██    ██    ██  ██  ██ ██    ██ 
 #  ██████     ██    ██      ██  ██████  
-class Obc1DTMO: #Tensor Mass Operator
+class Opn1DTMO: #Tensor Mass Operator
     def __init__(self, tensor, physout_labelss, physin_labelss, is_unitary=False, is_hermite=False):
         self.tensor = tensor
         self.physout_labelss = list(physout_labelss)
@@ -14,7 +14,7 @@ class Obc1DTMO: #Tensor Mass Operator
         self.is_hermite = is_hermite
 
     def __repr__(self):
-        return f"Obc1DTMO(tensor={self.tensor}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
+        return f"Opn1DTMO(tensor={self.tensor}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
 
     def __str__(self):
         dataStr = f"{self.tensor},\n"
@@ -24,7 +24,7 @@ class Obc1DTMO: #Tensor Mass Operator
         dataStr += f"is_hermite={self.is_hermite},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Obc1DTMO(\n" + dataStr + f")"
+        dataStr = f"Opn1DTMO(\n" + dataStr + f")"
 
         return dataStr
 
@@ -51,8 +51,8 @@ class Obc1DTMO: #Tensor Mass Operator
         rev_tensors.append(G)
         rev_tensors.reverse()
         rev_bdts.reverse()
-        from tanuki.onedim.models.OBTPO import Obc1DBTPO
-        return Obc1DBTPO(rev_tensors, rev_bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
+        from tanuki.onedim.models.OBTPO import Opn1DBTPO
+        return Opn1DBTPO(rev_tensors, rev_bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
 
     def exp(self, coeff=1):
         G = self.tensor
@@ -65,6 +65,6 @@ class Obc1DTMO: #Tensor Mass Operator
             is_unitary = True
         if self.is_hermite and np.imag(coeff)==0:
             is_hermite = True
-        return Obc1DTMO(G, self.physout_labelss, self.physin_labelss, is_unitary=is_unitary, is_hermite=is_hermite)
+        return Opn1DTMO(G, self.physout_labelss, self.physin_labelss, is_unitary=is_unitary, is_hermite=is_hermite)
 
 

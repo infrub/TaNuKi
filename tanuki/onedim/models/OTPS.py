@@ -6,7 +6,7 @@ from tanuki.onedim.models._mixins import *
 # ██    ██    ██    ██           ██ 
 #  ██████     ██    ██      ███████ 
 # tensors[0] -- tensors[1] -- ... -- tensors[len-1]
-class Obc1DTPS(Mixin_1DSim_PS, MixinObc1DTP_):
+class Opn1DTPS(Mixin_1DSim_PS, MixinOpn1DTP_):
     def __init__(self, tensors, phys_labelss=None):
         self.tensors = list(tensors)
         if phys_labelss is None:
@@ -15,7 +15,7 @@ class Obc1DTPS(Mixin_1DSim_PS, MixinObc1DTP_):
             self.phys_labelss = list(phys_labelss)
 
     def __repr__(self):
-        return f"Obc1DTPS(tensors={self.tensors}, phys_labelss={self.phys_labelss})"
+        return f"Opn1DTPS(tensors={self.tensors}, phys_labelss={self.phys_labelss})"
 
     def __str__(self):
         if len(self) > 20:
@@ -32,7 +32,7 @@ class Obc1DTPS(Mixin_1DSim_PS, MixinObc1DTP_):
         dataStr += f"phys_labelss={self.phys_labelss},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Obc1DTPS(\n" + dataStr + f")"
+        dataStr = f"Opn1DTPS(\n" + dataStr + f")"
 
         return dataStr
 
@@ -41,8 +41,8 @@ class Obc1DTPS(Mixin_1DSim_PS, MixinObc1DTP_):
 
     def adjoint(self):
         tensors = [self.get_bra_site(site) for site in range(len(self))]
-        from tanuki.onedim.models.OTPS import Obc1DTPS
-        return Obc1DTPS(tensors, self.phys_labelss)
+        from tanuki.onedim.models.OTPS import Opn1DTPS
+        return Opn1DTPS(tensors, self.phys_labelss)
 
     def to_tensor(self):
         return self.to_TMS().to_tensor()
@@ -51,8 +51,8 @@ class Obc1DTPS(Mixin_1DSim_PS, MixinObc1DTP_):
         t = 1
         for i in range(len(self)):
             t *= self.tensors[i]
-        from tanuki.onedim.models.OTMS import Obc1DTMS
-        return Obc1DTMS(t, self.phys_labelss)
+        from tanuki.onedim.models.OTMS import Opn1DTMS
+        return Opn1DTMS(t, self.phys_labelss)
 
     def to_TPS(self):
         return self
@@ -65,6 +65,6 @@ class Obc1DTPS(Mixin_1DSim_PS, MixinObc1DTP_):
             bdt = tni.identity_diagonalTensor(shape, labels)
             bdts.append(bdt)
         bdts.append(tni.dummy_diagonalTensor())
-        from tanuki.onedim.models.OBTPS import Obc1DBTPS
-        return Obc1DBTPS(self.tensors, bdts, self.phys_labelss)
+        from tanuki.onedim.models.OBTPS import Opn1DBTPS
+        return Opn1DBTPS(self.tensors, bdts, self.phys_labelss)
 

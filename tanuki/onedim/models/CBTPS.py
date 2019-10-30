@@ -108,6 +108,7 @@ class Cyc1DBTPS(Inf1DBTPS):
             elif params["initial_value"] == "random":
                 from tanuki.onedim.models_instant import random_cyc1DTPS
                 PHI = random_cyc1DTPS(self.phys_labelss, phys_dimss=[self.tensors[e].dims(self.phys_labelss[e]) for e in range(len(self))], chi=chi)
+            #print("PHI",PHI)
             
             sqdiff = float("inf")
 
@@ -157,6 +158,11 @@ class Cyc1DBTPS(Inf1DBTPS):
             self.bdts = PHI.bdts
             self.phys_labelss = PHI.phys_labelss
 
+            #print("to uc", self)
+            """
+            w = self.universally_canonize(chi=None, transfer_normalize=normalize)
+            print("af uc", self)
+            return w"""
             return self.universally_canonize(chi=None, transfer_normalize=normalize)
 
 

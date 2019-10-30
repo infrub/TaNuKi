@@ -5,7 +5,7 @@ from tanuki.onedim.models._mixins import *
 # ██    ██ ██████     ██    ██████  ██    ██ 
 # ██    ██ ██   ██    ██    ██      ██    ██ 
 #  ██████  ██████     ██    ██       ██████  
-class Obc1DBTPO(MixinObc1DBTP_):
+class Opn1DBTPO(MixinOpn1DBTP_):
     def __init__(self, tensors, bdts, physout_labelss, physin_labelss, is_unitary=False, is_hermite=False):
         self.tensors = list(tensors)
         self.bdts = list(bdts)
@@ -17,7 +17,7 @@ class Obc1DBTPO(MixinObc1DBTP_):
         self.is_hermite = is_hermite
 
     def __repr__(self):
-        return f"Obc1DBTPO(tensors={self.tensors}, bdts={self.bdts}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
+        return f"Opn1DBTPO(tensors={self.tensors}, bdts={self.bdts}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
 
     def __str__(self):
         if len(self) > 20:
@@ -43,7 +43,7 @@ class Obc1DBTPO(MixinObc1DBTP_):
         dataStr += f"is_hermite={self.is_hermite},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Obc1DBTPO(\n" + dataStr + f")"
+        dataStr = f"Opn1DBTPO(\n" + dataStr + f")"
 
         return dataStr
 
@@ -61,8 +61,8 @@ class Obc1DBTPO(MixinObc1DBTP_):
         for i in range(len(self)):
             tensors.append( self.bdts[i][self.get_right_labels_bond(i)] * self.tensors[i][self.get_left_labels_site(i)] )
         tensors[-1] = tensors[-1][self.get_right_labels_site(len(self)-1)] * self.bdts[len(self)][self.get_left_labels_bond(len(self))]
-        from tanuki.onedim.models.OTPO import Obc1DTPO
-        return Obc1DTPO(tensors, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
+        from tanuki.onedim.models.OTPO import Opn1DTPO
+        return Opn1DTPO(tensors, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
 
     def to_BTPO(self):
         return self

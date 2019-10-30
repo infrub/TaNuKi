@@ -6,7 +6,7 @@ from tanuki.onedim.models._mixins import *
 # ██    ██ ██   ██    ██    ██           ██ 
 #  ██████  ██████     ██    ██      ███████ 
 # bdts[0] -- tensors[0] -- bdts[1] -- tensors[1] -- ... -- tensors[len-1] -- bdts[len]
-class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
+class Opn1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinOpn1DBTP_):
     def __init__(self, tensors, bdts, phys_labelss=None):
         self.tensors = list(tensors)
         self.bdts = list(bdts)
@@ -18,7 +18,7 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
             self.phys_labelss = list(phys_labelss)
 
     def __repr__(self):
-        return f"Obc1DBTPS(tensors={self.tensors}, bdts={self.bdts}, phys_labelss={self.phys_labelss})"
+        return f"Opn1DBTPS(tensors={self.tensors}, bdts={self.bdts}, phys_labelss={self.phys_labelss})"
 
     def __str__(self):
         if len(self) > 20:
@@ -41,7 +41,7 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
         dataStr += f"phys_labelss={self.phys_labelss},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Obc1DBTPS(\n" + dataStr + f")"
+        dataStr = f"Opn1DBTPS(\n" + dataStr + f")"
 
         return dataStr
 
@@ -51,7 +51,7 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
     def adjoint(self):
         tensors = [self.get_bra_site(site) for site in range(len(self))]
         bdts = [self.get_bra_bond(bondsite) for bondsite in range(len(self)+1)]
-        return Obc1DBTPS(tensors, bdts, self.phys_labelss)
+        return Opn1DBTPS(tensors, bdts, self.phys_labelss)
 
     def to_tensor(self):
         return self.to_TPS().to_TMS().to_tensor()
@@ -64,8 +64,8 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
         for i in range(len(self)):
             tensors.append( self.bdts[i][self.get_right_labels_bond(i)] * self.tensors[i][self.get_left_labels_site(i)] )
         tensors[-1] = tensors[-1][self.get_right_labels_site(len(self)-1)] * self.bdts[len(self)][self.get_left_labels_bond(len(self))]
-        from tanuki.onedim.models.OTPS import Obc1DTPS
-        return Obc1DTPS(tensors, self.phys_labelss)
+        from tanuki.onedim.models.OTPS import Opn1DTPS
+        return Opn1DTPS(tensors, self.phys_labelss)
 
     def to_BTPS(self):
         return self
@@ -234,10 +234,10 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
 
     # applying methods
     def apply(self, gate, offset=0, chi=None, keep_universal_canonicality=True, keep_phys_labels=True):
-        from tanuki.onedim.models.OBTPO import Obc1DBTPO
-        from tanuki.onedim.models.OTPO import Obc1DTPO
-        from tanuki.onedim.models.OTMO import Obc1DTMO
-        if type(gate) in [Obc1DBTPO, Obc1DTPO, Obc1DTMO]:
+        from tanuki.onedim.models.OBTPO import Opn1DBTPO
+        from tanuki.onedim.models.OTPO import Opn1DTPO
+        from tanuki.onedim.models.OTMO import Opn1DTMO
+        if type(gate) in [Opn1DBTPO, Opn1DTPO, Opn1DTMO]:
             gate = gate.to_BTPO()
         else: # list of gates
             for reallygate in gate:
@@ -246,10 +246,10 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
         tnop.apply_fin1DSimBTPS_fin1DSimBTPO(self,gate,offset=offset,chi=chi,keep_universal_canonicality=keep_universal_canonicality,keep_phys_labels=keep_phys_labels)
 
     def apply_everyplace(self, gate, chi=None, keep_universal_canonicality=True, gating_order="grissand"):
-        from tanuki.onedim.models.OBTPO import Obc1DBTPO
-        from tanuki.onedim.models.OTPO import Obc1DTPO
-        from tanuki.onedim.models.OTMO import Obc1DTMO
-        if type(gate) in [Obc1DBTPO, Obc1DTPO, Obc1DTMO]:
+        from tanuki.onedim.models.OBTPO import Opn1DBTPO
+        from tanuki.onedim.models.OTPO import Opn1DTPO
+        from tanuki.onedim.models.OTMO import Opn1DTMO
+        if type(gate) in [Opn1DBTPO, Opn1DTPO, Opn1DTMO]:
             gate = gate.to_BTPO()
         else:
             for reallygate in gate:

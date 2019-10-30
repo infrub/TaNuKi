@@ -99,7 +99,7 @@ class Mixin_1DSimBTPS:
 
 
 
-class MixinObc1DTP_:
+class MixinOpn1DTP_:
     def get_left_labels_site(self, site):
         if site==0:
             return []
@@ -115,7 +115,7 @@ class MixinObc1DTP_:
 
 
 
-class MixinObc1DBTP_:
+class MixinOpn1DBTP_:
     def get_left_labels_site(self, site):
         return tnc.intersection_list(self.bdts[site].labels, self.tensors[site].labels)
     def get_right_labels_site(self, site):

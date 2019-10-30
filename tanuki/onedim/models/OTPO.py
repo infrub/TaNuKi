@@ -5,7 +5,7 @@ from tanuki.onedim.models._mixins import *
 # ██    ██    ██    ██████  ██    ██ 
 # ██    ██    ██    ██      ██    ██ 
 #  ██████     ██    ██       ██████  
-class Obc1DTPO(Mixin_1DSim_PO, MixinObc1DTP_):
+class Opn1DTPO(Mixin_1DSim_PO, MixinOpn1DTP_):
     def __init__(self, tensors, physout_labelss, physin_labelss, is_unitary=False, is_hermite=False):
         self.tensors = list(tensors)
         self.physout_labelss = list(physout_labelss)
@@ -14,7 +14,7 @@ class Obc1DTPO(Mixin_1DSim_PO, MixinObc1DTP_):
         self.is_hermite = is_hermite
 
     def __repr__(self):
-        return f"Obc1DTPO(tensors={self.tensors}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
+        return f"Opn1DTPO(tensors={self.tensors}, physout_labelss={self.physout_labelss}, physin_labelss={self.physin_labelss}, is_unitary={self.is_unitary}, is_hermite={self.is_hermite})"
 
     def __str__(self):
         if len(self) > 20:
@@ -34,7 +34,7 @@ class Obc1DTPO(Mixin_1DSim_PO, MixinObc1DTP_):
         dataStr += f"is_hermite={self.is_hermite},\n"
         dataStr = textwrap.indent(dataStr, "    ")
 
-        dataStr = f"Obc1DTPO(\n" + dataStr + f")"
+        dataStr = f"Opn1DTPO(\n" + dataStr + f")"
 
         return dataStr
 
@@ -50,8 +50,8 @@ class Obc1DTPO(Mixin_1DSim_PO, MixinObc1DTP_):
         t = 1
         for i in range(len(self)):
             t *= self.tensors[i]
-        from tanuki.onedim.models.OTMO import Obc1DTMO
-        return Obc1DTMO(t, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
+        from tanuki.onedim.models.OTMO import Opn1DTMO
+        return Opn1DTMO(t, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
 
     def to_TPO(self):
         return self
@@ -64,5 +64,5 @@ class Obc1DTPO(Mixin_1DSim_PO, MixinObc1DTP_):
             bdt = tni.identity_diagonalTensor(shape, labels)
             bdts.append(bdt)
         bdts.append(tni.dummy_diagonalTensor())
-        from tanuki.onedim.models.OBTPO import Obc1DBTPO
-        return Obc1DBTPO(self.tensors, bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
+        from tanuki.onedim.models.OBTPO import Opn1DBTPO
+        return Opn1DBTPO(self.tensors, bdts, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)

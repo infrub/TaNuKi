@@ -9,8 +9,8 @@ import copy
 
 class TestProduct(unittest.TestCase):
     def test_inner(self):
-        A = random_fin1DTPS([["p0"],["p1"],["p2"]])
-        B = random_fin1DTPS([["q0"],["q1"],["q2"]])
+        A = random_opn1DTPS([["p0"],["p1"],["p2"]])
+        B = random_opn1DTPS([["q0"],["q1"],["q2"]])
         a = A.to_tensor()
         b = B.to_tensor()
         C = inner_product_fin1DSimTPS_fin1DSimTPS(A,B)
@@ -19,8 +19,8 @@ class TestProduct(unittest.TestCase):
 
     def test_abs_sub(self):
         phys_labelss = [["p0"],["p1"],["p2"]]
-        A = random_fin1DTPS(phys_labelss)
-        B = random_fin1DTPS(phys_labelss)
+        A = random_opn1DTPS(phys_labelss)
+        B = random_opn1DTPS(phys_labelss)
         C = abs_sub_fin1DSimTPS_fin1DSimTPS(A,B)
         a = A.to_tensor()
         b = B.to_tensor()

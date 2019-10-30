@@ -114,7 +114,7 @@ def epm0603():
     gate.data[0,0,0,0] = np.exp(beta*J)
     gate.data[0,0,1,1] = np.exp(-beta*J)
     gate.data[1,1,0,0] = np.exp(-beta*J)
-    gate = onedim.Obc1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
+    gate = onedim.Opn1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
     A = identity_tensor((2,), labels=["ain","aout"])
     B = identity_tensor((2,), labels=["bin","bout"])
 
@@ -188,7 +188,7 @@ def epm0604():
         gate.data[0,0,0,0] = np.exp(beta*J)
         gate.data[0,0,1,1] = np.exp(-beta*J)
         gate.data[1,1,0,0] = np.exp(-beta*J)
-        gate = onedim.Obc1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
+        gate = onedim.Opn1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
         A = identity_tensor((2,), labels=["ain","aout"])
         B = identity_tensor((2,), labels=["bin","bout"])
 
@@ -289,7 +289,7 @@ def epm0605():
         gate.data[0,0,0,0] = np.exp(beta*J)
         gate.data[0,0,1,1] = np.exp(-beta*J)
         gate.data[1,1,0,0] = np.exp(-beta*J)
-        gate = onedim.Obc1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
+        gate = onedim.Opn1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
         A = identity_tensor((2,), labels=["ain","aout"])
         B = identity_tensor((2,), labels=["bin","bout"])
 
@@ -330,7 +330,7 @@ def epm0605():
         gate.data[0,0,0,0] = np.exp(beta*J)
         gate.data[0,0,1,1] = np.exp(-beta*J)
         gate.data[1,1,0,0] = np.exp(-beta*J)
-        gate = onedim.Obc1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
+        gate = onedim.Opn1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
         A = identity_tensor((2,), labels=["ain","aout"])
         B = identity_tensor((2,), labels=["bin","bout"])
 
@@ -357,7 +357,7 @@ def epm0605():
         gate.data[0,0,0,0] = np.exp(beta*J)
         gate.data[0,0,1,1] = np.exp(-beta*J)
         gate.data[1,1,0,0] = np.exp(-beta*J)
-        gate = onedim.Obc1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
+        gate = onedim.Opn1DTMO(gate, [["aout"],["bout"]], [["ain"],["bin"]])
         A = identity_tensor((2,), labels=["ain","aout"])
         B = identity_tensor((2,), labels=["bin","bout"])
 

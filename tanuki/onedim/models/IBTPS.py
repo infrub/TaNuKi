@@ -1,5 +1,5 @@
 from tanuki.onedim.models._mixins import *
-from tanuki.onedim.models.OBTPS import Obc1DBTPS
+from tanuki.onedim.models.OBTPS import Opn1DBTPS
 
 # ██ ██████  ████████ ██████  ███████ 
 # ██ ██   ██    ██    ██   ██ ██      
@@ -7,7 +7,7 @@ from tanuki.onedim.models.OBTPS import Obc1DBTPS
 # ██ ██   ██    ██    ██           ██ 
 # ██ ██████     ██    ██      ███████ 
 # )-- bdts[0] -- tensors[0] -- bdts[1] -- tensors[1] -- ... -- bdts[-1] -- tensors[-1] --(
-class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
+class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
     def __init__(self, tensors, bdts, phys_labelss=None):
         self.tensors = CyclicList(tensors)
         self.bdts = CyclicList(bdts)
@@ -381,7 +381,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     def apply(self, gate, offset=0, chi=None, keep_universal_canonicality=True, keep_phys_labels=True):
         if type(gate)==Inf1DSImBTPO:
             tnop.apply_inf1DSimBTPS_inf1DSimBTPO(self,gate,offset=offset,chi=chi,keep_universal_canonicality=keep_universal_canonicality,keep_phys_labels=keep_phys_labels)
-        elif type(gate) in [Obc1DBTPO, Obc1DTPO, Obc1DTMO]:
+        elif type(gate) in [Opn1DBTPO, Opn1DTPO, Opn1DTMO]:
             gate = gate.to_BTPO()
             tnop.apply_inf1DSimBTPS_fin1DSimBTPO(self,gate,offset=offset,chi=chi,keep_universal_canonicality=keep_universal_canonicality,keep_phys_labels=keep_phys_labels)
         else: # list of gates
@@ -392,7 +392,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     def apply_everyplace(self, gate, chi=None, keep_universal_canonicality=True, gating_order="grissand"):
         if type(gate)==Inf1DSImBTPO:
             pass
-        elif type(gate) in [Obc1DBTPO, Obc1DTPO, Obc1DTMO]:
+        elif type(gate) in [Opn1DBTPO, Opn1DTPO, Opn1DTMO]:
             gate = gate.to_BTPO()
         else:
             for reallygate in gate:

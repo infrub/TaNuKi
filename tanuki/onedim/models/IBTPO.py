@@ -1,5 +1,5 @@
 from tanuki.onedim.models._mixins import *
-from tanuki.onedim.models.OBTPO import Obc1DBTPO
+from tanuki.onedim.models.OBTPO import Opn1DBTPO
 
 # ██ ██████  ████████ ██████   ██████  
 # ██ ██   ██    ██    ██   ██ ██    ██ 
@@ -7,7 +7,7 @@ from tanuki.onedim.models.OBTPO import Obc1DBTPO
 # ██ ██   ██    ██    ██      ██    ██ 
 # ██ ██████     ██    ██       ██████  
 # )-- bdts[0] -- tensors[0] -- bdts[1] -- tensors[1] -- ... -- bdts[-1] -- tensors[-1] --(
-class Inf1DBTPO(MixinInf1DBTP_, Obc1DBTPO):
+class Inf1DBTPO(MixinInf1DBTP_, Opn1DBTPO):
     def __init__(self, tensors, bdts, physout_labelss, physin_labelss, is_unitary=False, is_hermite=False):
         self.tensors = CyclicList(tensors)
         self.bdts = CyclicList(bdts)
@@ -51,7 +51,7 @@ class Inf1DBTPO(MixinInf1DBTP_, Obc1DBTPO):
         tensors = []
         for i in range(len(self)):
             tensors.append( self.bdts[i][self.get_right_labels_bond(i)] * self.tensors[i][self.get_left_labels_site(i)] )
-        from tanuki.onedim.models.OTPO import Obc1DTPO
+        from tanuki.onedim.models.OTPO import Opn1DTPO
         return Inf1DTPO(tensors, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
 
     def to_BTPO(self):
