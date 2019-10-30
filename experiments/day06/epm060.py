@@ -102,9 +102,9 @@ def partition_function(beta, Jx, Jy, Lx, Ly):
 def epm0603():
     beta = 1.0
     J = 0.5
-    width_scale = 2
-    height_scale = 2
-    chi = 4
+    width_scale = 4
+    height_scale = 4
+    chi = 8
 
     print(f"beta:{beta}, width_scale:{width_scale}, height_scale:{height_scale}, chi:{chi}\n\n")
 

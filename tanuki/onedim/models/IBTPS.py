@@ -327,10 +327,11 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
         memo["w_R"] = w_R
         memo["w"] = w
         l0 = self.bdts[bde]
-        G = T_L * l0 * T_R
-        U, S, V = tnd.tensor_svd(G, dl_label, dr_label, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
-        M = U / T_L #T_L.inv() * U
-        N = V / T_R #V * T_R.inv()
+        U, S, V = tnd.tensor_svd(T_L*l0*T_R, dl_label, dr_label, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
+
+        M = l0 * T_R * V.conjugate() * S.inv()
+        N = S.inv() * U.conjugate() * T_L * l0
+
         # l0 == M*S*N
         self.tensors[bde] = N * self.tensors[bde]
         self.tensors[bde-1] = self.tensors[bde-1] * M
