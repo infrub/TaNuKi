@@ -27,7 +27,10 @@ def tensor_qr(A, rows, cols=None, qr_labels=1, mode="economic", force_diagonal_e
 
     a = A.to_matrix(rows, cols)
 
-    q, r = xp.linalg.qr(a, mode=mode)
+    try:
+        q, r = xp.linalg.qr(a, mode=mode)
+    except ValueError as e:
+        raise ValueError(f"tensor_qr(A={A}, rows={rows}, cols={cols}) aborted with xp-ValueError({e})")
 
     if force_diagonal_elements_positive:
         d = r.diagonal()
@@ -96,7 +99,11 @@ def tensor_eigh(A, rows, cols=None, decomp_rtol=1e-30, decomp_atol=1e-50, eigh_l
     row_dims, col_dims = A.dims(rows), A.dims(cols)
     dim = soujou(row_dims)
     a = A.to_matrix(rows, cols)
-    w_diag,v = xp.linalg.eigh(a)
+
+    try:
+        w_diag,v = xp.linalg.eigh(a)
+    except ValueError as e:
+        raise ValueError(f"tensor_eigh(A={A}, rows={rows}, cols={cols}) aborted with xp-ValueError({e})")
 
     if decomp_rtol is None:
         decomp_rtol = 0.0
@@ -147,8 +154,8 @@ def tensor_svd(A, rows, cols=None, chi=None, decomp_rtol=1e-30, decomp_atol=1e-5
         warnings.warn("xp.linalg.svd failed with gesdd. retry with gesvd.")
         try:
             u, s_diag, v = xp.linalg.svd(a, full_matrices=False, lapack_driver="gesvd")
-        except ValueError:
-            raise
+        except ValueError as e:
+            raise ValueError(f"tensor_svd(A={A}, rows={rows}, cols={cols}) aborted with xp-ValueError({e})")
 
     if chi:
         s_diag = s_diag[:chi]
@@ -177,7 +184,12 @@ def tensor_eigsh(A, rows, cols=None):
     row_labels, col_labels = A.labels_of_indices(rows), A.labels_of_indices(cols)
     row_dims, col_dims = A.dims(rows), A.dims(cols)
     a = A.to_matrix(rows, cols)
-    w,v = xp.sparse.linalg.eigsh(a, k=1)
+
+    try:
+        w_diag,v = xp.linalg.eigh(a)
+    except ValueError as e:
+        raise ValueError(f"tensor_eigsh(A={A}, rows={rows}, cols={cols}) aborted with xp-ValueError({e})")
+
     w = w[0]
     v = v[:,0]
     V = tnc.vector_to_tensor(v, col_dims, col_labels)
@@ -207,7 +219,11 @@ def tensor_solve(A, B, rows_of_A=None, cols_of_A=None, rows_of_B=None, cols_of_B
 
     Adata = A.to_matrix(rows_of_A, cols_of_A)
     Bdata = B.to_matrix(rows_of_B, cols_of_B)
-    Xdata = xp.linalg.solve(Adata, Bdata, assume_a=assume_a)
+
+    try:
+        Xdata = xp.linalg.solve(Adata, Bdata, assume_a=assume_a)
+    except ValueError as e:
+        raise ValueError(f"tensor_eigh(A={A}, B={B}, rows_of_A={rows_of_A}, rows_of_B={rows_of_B}, cols_of_A={cols_of_A}, cols_of_B={cols_of_B}, assume_a={assume_a}) aborted with xp-ValueError({e})")
     X = tnc.matrix_to_tensor(Xdata, shape_of_X, labels_of_X)
 
     return X

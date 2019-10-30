@@ -329,8 +329,8 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
         l0 = self.bdts[bde]
         U, S, V = tnd.tensor_svd(T_L*l0*T_R, dl_label, dr_label, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
 
-        M = l0 * T_R * V.conjugate() * S.inv()
-        N = S.inv() * U.conjugate() * T_L * l0
+        M = l0 * T_R * V.conjugate() * S.inv() # == T_L.inv() * U
+        N = S.inv() * U.conjugate() * T_L * l0 # == V * T_R.inv()
 
         # l0 == M*S*N
         self.tensors[bde] = N * self.tensors[bde]
