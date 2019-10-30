@@ -49,9 +49,9 @@ def partition_function(beta, Jx, Jy, Lx, Ly):
 
 beta = 1.0
 J = 0.5
-width_scale = 4
-height_scale = 4
-chi = 8
+width_scale = 2
+height_scale = 2
+chi = 4
 
 print(f"beta:{beta}, width_scale:{width_scale}, height_scale:{height_scale}, chi:{chi}\n\n")
 
@@ -116,7 +116,7 @@ def epm0620():
         except Exception as e:
             print(symbol, e)
             results.append((symbol,114514))
-            raise e
+            #raise e
 
     print("\n\n")
 
@@ -128,5 +128,6 @@ def epm0620():
 
 
 
-epm0620_core("CHBE")
+#epm0620_core("CHBE")
+epm0620()
 

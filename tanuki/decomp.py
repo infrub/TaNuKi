@@ -109,7 +109,9 @@ def tensor_eigh(A, rows, cols=None, decomp_rtol=1e-30, decomp_atol=1e-50, eigh_l
         decomp_rtol = 0.0
     if decomp_atol is None:
         decomp_atol = 0.0
-    threshold = decomp_atol + decomp_rtol * w_diag[-1]
+
+    largest = max(abs(w_diag[0]), abs(w_diag[-1]))
+    threshold = min(largest, decomp_atol + decomp_rtol * largest)
     selector = xp.fabs(w_diag) >= threshold
     w_diag = w_diag[selector]
     v = v[:,selector]
@@ -164,7 +166,7 @@ def tensor_svd(A, rows, cols=None, chi=None, decomp_rtol=1e-30, decomp_atol=1e-5
         decomp_rtol = 0.0
     if decomp_atol is None:
         decomp_atol = 0.0
-    threshold = decomp_atol + decomp_rtol * s_diag[0]
+    threshold = min(s_diag[0], decomp_atol + decomp_rtol * s_diag[0])
     s_diag = s_diag[s_diag >= threshold]
 
     chi = len(s_diag)
