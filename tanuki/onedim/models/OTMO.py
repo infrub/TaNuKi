@@ -40,7 +40,7 @@ class Obc1DTMO: #Tensor Mass Operator
     def to_TPO(self):
         return self.to_BTPO().to_TPO()
 
-    def to_BTPO(self, chi=None, rtol=None, atol=None):
+    def to_BTPO(self, chi=None, rtol=1e-15, atol=1e-20):
         G = self.tensor.copy()
         rev_tensors = []
         rev_bdts = []
