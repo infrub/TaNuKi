@@ -529,7 +529,9 @@ class TensorMixin(TensorLabelingMixin):
         return NotImplemented
 
     def __truediv__(self, other):
-        if isinstance(other, DiagonalTensor):
+        if isinstance(other, Tensor):
+            return other.solve(self)
+        elif isinstance(other, DiagonalTensor):
             return self * other.inv()
         elif xp.isscalar(other):
             return self.__class__(self.data/other, labels=self.labels)

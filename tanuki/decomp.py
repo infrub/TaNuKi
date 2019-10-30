@@ -203,7 +203,7 @@ def tensor_solve(A, B, rows_of_A=None, cols_of_A=None, rows_of_B=None, cols_of_B
         rows_of_A, cols_of_A = A.normarg_complement_indices(rows_of_A, cols_of_A)
         rows_of_B, cols_of_B = B.normarg_complement_indices(rows_of_B, cols_of_B)
     labels_of_X = A.labels_of_indices(cols_of_A) + B.labels_of_indices(cols_of_B)
-    shape_of_X = A.dims_of_indices(cols_of_A) + B.dims_of_indices(cols_of_B)
+    shape_of_X = A.dims(cols_of_A) + B.dims(cols_of_B)
 
     Adata = A.to_matrix(rows_of_A, cols_of_A)
     Bdata = B.to_matrix(rows_of_B, cols_of_B)

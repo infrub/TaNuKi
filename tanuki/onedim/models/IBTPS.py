@@ -207,13 +207,13 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     # |        |                 |      == w * (unitary tensor)
     #
     # O(chi^3 * phys_dim * repeat)
-    def get_left_half_transfer_eigen(self, bde=0, chi=None, memo=None):
+    def get_left_half_transfer_eigen(self, bde=0, memo=None, edge_label=None):
         if memo is None: memo = {}
         tshape = self.get_right_shape_site(bde-1)
         tlabels = self.get_ket_right_labels_site(bde-1)
-        if chi is None: chi = soujou(tshape)
-        trlabel = unique_label()
-        T = tni.random_tensor((chi,)+tshape, [trlabel]+tlabels)
+        trdim = soujou(tshape)
+        trlabel = unique_label() if edge_label is None else edge_label
+        T = tni.random_tensor((trdim,)+tshape, [trlabel]+tlabels)
 
         for iteri in range(1,101):
             T.normalize(inplace=True)
@@ -238,13 +238,13 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     #   |                 |          |  ==  W *  (unitary tensor)
     #
     # O(chi^3 * phys_dim * repeat)
-    def get_right_half_transfer_eigen(self, bde=0, chi=None, memo=None):
+    def get_right_half_transfer_eigen(self, bde=0, memo=None, edge_label=None):
         if memo is None: memo = {}
         tshape = self.get_left_shape_site(bde)
         tlabels = self.get_ket_left_labels_site(bde)
-        if chi is None: chi = soujou(tshape)
-        trlabel = unique_label()
-        T = tni.random_tensor((chi,)+tshape, [trlabel]+tlabels)
+        trdim = soujou(tshape)
+        trlabel = unique_label() if edge_label is None else edge_label
+        T = tni.random_tensor((trdim,)+tshape, [trlabel]+tlabels)
 
         for iteri in range(1,101):
             T.normalize(inplace=True)
@@ -275,7 +275,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     # -[0]-...-(len-1)-[len-1]-(0)-/          -/
     #
     # O(chi^6) + O(chi^6)
-    def universally_canonize_around_end_bond(self, bde=0, chi=None, rtol=None, atol=None, transfer_normalize=True, memo=None):
+    def universally_canonize_around_end_bond_ver1(self, bde=0, chi=None, rtol=None, atol=None, transfer_normalize=True, memo=None):
         if memo is None: memo = {}
         dl_label = unique_label()
         dr_label = unique_label()
@@ -306,6 +306,36 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
         self.tensors[bde] = N * self.tensors[bde]
         self.tensors[bde-1] = self.tensors[bde-1] * M
         return w
+
+
+    # ref: https://arxiv.org/abs/1512.04938
+    def universally_canonize_around_end_bond(self, bde=0, chi=None, rtol=None, atol=None, transfer_normalize=True, memo=None):
+        if memo is None: memo = {}
+        dl_label = unique_label()
+        dr_label = unique_label()
+        memo["left_half_transfer_eigen"] = {}
+        w_L, T_L = self.get_left_half_transfer_eigen(bde=bde, memo=memo["left_half_transfer_eigen"],edge_label=dl_label)
+        memo["right_half_transfer_eigen"] = {}
+        w_R, T_R = self.get_right_half_transfer_eigen(bde=bde, memo=memo["right_half_transfer_eigen"],edge_label=dr_label)
+        w = sqrt(w_L*w_R)
+        #assert abs(W_L-W_R) < 1e-3*abs(w), f"transfer_eigen different. {W_L} != {W_R}"
+        memo["w_L"] = w_L
+        memo["w_R"] = w_R
+        memo["w"] = w
+        l0 = self.bdts[bde]
+        G = T_L * l0 * T_R
+        U, S, V = tnd.tensor_svd(G, dl_label, dr_label, chi=chi, rtol=rtol, atol=atol)
+        M = U / T_L #T_L.inv() * U
+        N = V / T_R #V * T_R.inv()
+        # l0 == M*S*N
+        if transfer_normalize:
+            self.bdts[bde] = S / w
+        else:
+            self.bdts[bde] = S
+        self.tensors[bde] = N * self.tensors[bde]
+        self.tensors[bde-1] = self.tensors[bde-1] * M
+        return w
+
 
     locally_left_canonize_around_right_end = NotImplemented
     locally_right_canonize_around_left_end = NotImplemented
