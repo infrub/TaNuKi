@@ -49,8 +49,8 @@ def partition_function(beta, Jx, Jy, Lx, Ly):
 
 beta = 1.0
 J = 0.5
-width_scale = 5
-height_scale = 5
+width_scale = 10
+height_scale = 10
 chi = 10
 
 print(f"beta:{beta}, width_scale:{width_scale}, height_scale:{height_scale}, chi:{chi}\n\n")

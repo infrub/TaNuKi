@@ -24,3 +24,6 @@ class CantKeepDiagonalityError(Exception):
 
 class ArgumentError(Exception):
     pass
+
+class InternalError(Exception):
+    pass

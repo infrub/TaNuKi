@@ -83,7 +83,7 @@ class Cyc1DBTPS(Inf1DBTPS):
                 return 1.0
 
         elif algname == "canonize":
-            return self.universally_canonize(chi=chi, transfer_normalize=normalize)
+            return self.universally_canonize(chi=chi, elements_normalize=normalize, transfer_normalize=False)
 
         elif algname == "iterative":
             params = {
@@ -157,7 +157,7 @@ class Cyc1DBTPS(Inf1DBTPS):
             self.bdts = PHI.bdts
             self.phys_labelss = PHI.phys_labelss
 
-            return self.universally_canonize(chi=None, transfer_normalize=normalize)
+            return self.universally_canonize(chi=None, elements_normalize=normalize, transfer_normalize=False)
 
 
 

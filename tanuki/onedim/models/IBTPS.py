@@ -67,6 +67,19 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
 
 
 
+    def elements_normalize(self):
+        return 1.0
+        weight = 1.0
+        for i in range(len(self)):
+            w = self.tensors[i].normalize(inplace=True)
+            #print("element_normalize",w)
+            weight *= w
+            w = self.bdts[i].normalize(inplace=True)
+            weight *= w
+            #print("element_normalize",w)
+        #print("elements_normalize finally",weight)
+        return weight
+
     # ref: https://arxiv.org/abs/0711.3960
     #
     # [bde=0] get L s.t.
@@ -323,7 +336,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
         w_R, T_R = self.get_right_half_transfer_eigen(bde=bde, memo=memo["right_half_transfer_eigen"],edge_label=dr_label)
         print("wlr",w_L, w_R)
         if w_L<0 or w_R<0:
-            print("OH NO w negative\n",self)
+            raise InternalError(f"In universally_canonize_around_end_bond, internal calculation conflicted: w_L={w_L}, w_R={w_R}) (both must be positive)")
         w = sqrt(w_L*w_R)
         #assert abs(W_L-W_R) < 1e-3*abs(w), f"transfer_eigen different. {W_L} != {W_R}"
         memo["w_L"] = w_L
@@ -356,9 +369,11 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
         return self.locally_right_canonize_around_not_end_bond(bde, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
 
 
-    def universally_canonize(self, left_already=0, right_already=None, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30, transfer_normalize=True, memo=None):
+    def universally_canonize(self, left_already=0, right_already=None, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30, elements_normalize=True, transfer_normalize=True, memo=None):
         if memo is None: memo={}
         weight = 1.0
+        if elements_normalize: weight *= self.elements_normalize()
+
         if left_already == 0 and right_already is None:
             weight *= self.universally_canonize_around_end_bond(0, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, transfer_normalize=transfer_normalize, memo=memo)
             for i in range(1, len(self)):
@@ -373,6 +388,8 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
             if right_already is None: right_already = len(self)
             weight *= self.globally_left_canonize_upto(right_already-1, left_already, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
             weight *= self.globally_right_canonize_upto(left_already+1, right_already, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
+
+        if elements_normalize: weight *= self.elements_normalize()
         return weight
 
     canonize = universally_canonize
