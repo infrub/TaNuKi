@@ -222,12 +222,34 @@ def tensor_solve(A, B, rows_of_A=None, cols_of_A=None, rows_of_B=None, cols_of_B
     Adata = A.to_matrix(rows_of_A, cols_of_A)
     Bdata = B.to_matrix(rows_of_B, cols_of_B)
 
-    with warnings.catch_warnings():
-        warnings.simplefilter(warnings_treatment)
-        try:
-            Xdata = xp.linalg.solve(Adata, Bdata, assume_a=assume_a)
-        except ValueError as e:
-            raise ValueError(f"tensor_eigh(A={A}, B={B}, rows_of_A={rows_of_A}, rows_of_B={rows_of_B}, cols_of_A={cols_of_A}, cols_of_B={cols_of_B}, assume_a={assume_a}) aborted with xp-ValueError({e})")
+    success_flag = False
+    if assume_a in ["pos","sym"]:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            try:
+                Xdata = xp.linalg.solve(Adata, Bdata, assume_a=assume_a)
+                success_flag = True
+            except:
+                pass
+
+    if not success_flag and assume_a in ["her","pos"]:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error")
+            try:
+                Xdata = xp.linalg.solve(Adata, Bdata, assume_a="her")
+                success_flag = True
+            except:
+                pass
+
+    if not success_flag:
+        with warnings.catch_warnings():
+            warnings.simplefilter(warnings_treatment)
+            try:
+                Xdata = xp.linalg.solve(Adata, Bdata, assume_a="gen")
+                success_flag = True
+            except ValueError as e:
+                raise ValueError(f"tensor_eigh(A={A}, B={B}, rows_of_A={rows_of_A}, rows_of_B={rows_of_B}, cols_of_A={cols_of_A}, cols_of_B={cols_of_B}, assume_a={assume_a}) aborted with xp-ValueError({e})")
+                
     X = tnc.matrix_to_tensor(Xdata, shape_of_X, labels_of_X)
 
     return X
