@@ -155,7 +155,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
                 _,T = D.qr([trlabel]+self.get_phys_labels_site(e), self.get_ket_right_labels_site(e), qr_labels=trlabel)
 
             V_L = T * T.adjoint(tlabels)
-            temp = V_L.is_prop_to(old_V_L, rtol=1e-14, atol=1e-14)
+            temp = V_L.is_prop_to(old_V_L, check_rtol=1e-14, check_atol=1e-14)
             W_L = np.real(temp["factor"])
             if temp:
                 break
@@ -188,7 +188,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
                 T,_ = D.lq(self.get_ket_left_labels_site(e), self.get_phys_labels_site(e)+[trlabel], lq_labels=trlabel)
 
             V_R = T * T.adjoint(tlabels)
-            temp = V_R.is_prop_to(old_V_R, rtol=1e-14, atol=1e-14)
+            temp = V_R.is_prop_to(old_V_R, check_rtol=1e-14, check_atol=1e-14)
             W_R = np.real(temp["factor"])
             if temp:
                 break
@@ -223,8 +223,10 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
                 D = T*self.get_ket_bond(e)*self.get_ket_site(e)
                 _,T = D.qr([trlabel]+self.get_phys_labels_site(e), self.get_ket_right_labels_site(e), qr_labels=trlabel, force_diagonal_elements_positive=True)
 
-            temp = T.is_prop_to(old_T, rtol=1e-14, atol=1e-14)
-            w = temp["factor"].real
+            temp = T.is_prop_to(old_T, check_rtol=1e-14, check_atol=1e-14)
+
+            if temp or temp["reason"]=="NOT_PROP_TO":
+                w = temp["factor"].real
             if temp:
                 break
         memo["iter_times"] = iteri
@@ -254,8 +256,9 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
                 D = T*self.get_ket_bond(e+1)*self.get_ket_site(e)
                 T,_ = D.lq(self.get_ket_left_labels_site(e), self.get_phys_labels_site(e)+[trlabel], lq_labels=trlabel, force_diagonal_elements_positive=True)
 
-            temp = T.is_prop_to(old_T, rtol=1e-14, atol=1e-14)
-            w = temp["factor"].real
+            temp = T.is_prop_to(old_T, check_rtol=1e-14, check_atol=1e-14)
+            if temp or temp["reason"]=="NOT_PROP_TO":
+                w = temp["factor"].real
             if temp:
                 break
         memo["iter_times"] = iteri
@@ -275,7 +278,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
     # -[0]-...-(len-1)-[len-1]-(0)-/          -/
     #
     # O(chi^6) + O(chi^6)
-    def universally_canonize_around_end_bond_ver1(self, bde=0, chi=None, rtol=None, atol=None, transfer_normalize=True, memo=None):
+    def universally_canonize_around_end_bond_ver1(self, bde=0, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30, transfer_normalize=True, memo=None):
         if memo is None: memo = {}
         dl_label = unique_label()
         dr_label = unique_label()
@@ -295,21 +298,22 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
         Xh.unaster_labels(self.get_bra_right_labels_bond(bde), inplace=True)
         l0 = self.bdts[bde]
         G = d_L.sqrt() * Yh * l0 * X * d_R.sqrt()
-        U, S, V = tnd.tensor_svd(G, dl_label, dr_label, chi=chi, rtol=rtol, atol=atol)
+        U, S, V = tnd.tensor_svd(G, dl_label, dr_label, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
         M = Y * d_L.inv().sqrt() * U
         N = V * d_R.inv().sqrt() * Xh
         # l0 == M*S*N
-        if transfer_normalize:
-            self.bdts[bde] = S / w
-        else:
-            self.bdts[bde] = S
         self.tensors[bde] = N * self.tensors[bde]
         self.tensors[bde-1] = self.tensors[bde-1] * M
-        return w
+        if transfer_normalize:
+            self.bdts[bde] = S / w
+            return w
+        else:
+            self.bdts[bde] = S
+            return 1.0
 
 
     # ref: https://arxiv.org/abs/1512.04938
-    def universally_canonize_around_end_bond(self, bde=0, chi=None, rtol=None, atol=None, transfer_normalize=True, memo=None):
+    def universally_canonize_around_end_bond(self, bde=0, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30, transfer_normalize=True, memo=None):
         if memo is None: memo = {}
         dl_label = unique_label()
         dr_label = unique_label()
@@ -324,46 +328,47 @@ class Inf1DBTPS(MixinInf1DBTP_, Obc1DBTPS):
         memo["w"] = w
         l0 = self.bdts[bde]
         G = T_L * l0 * T_R
-        U, S, V = tnd.tensor_svd(G, dl_label, dr_label, chi=chi, rtol=rtol, atol=atol)
+        U, S, V = tnd.tensor_svd(G, dl_label, dr_label, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
         M = U / T_L #T_L.inv() * U
         N = V / T_R #V * T_R.inv()
         # l0 == M*S*N
-        if transfer_normalize:
-            self.bdts[bde] = S / w
-        else:
-            self.bdts[bde] = S
         self.tensors[bde] = N * self.tensors[bde]
         self.tensors[bde-1] = self.tensors[bde-1] * M
-        return w
+        if transfer_normalize:
+            self.bdts[bde] = S / w
+            return w
+        else:
+            self.bdts[bde] = S
+            return 1.0
 
 
     locally_left_canonize_around_right_end = NotImplemented
     locally_right_canonize_around_left_end = NotImplemented
 
-    def locally_left_canonize_around_bond(self, bde, chi=None, rtol=None, atol=None):
-        return self.locally_left_canonize_around_not_end_bond(bde, chi=chi, rtol=rtol, atol=atol)
+    def locally_left_canonize_around_bond(self, bde, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30):
+        return self.locally_left_canonize_around_not_end_bond(bde, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
 
-    def locally_right_canonize_around_bond(self, bde, chi=None, rtol=None, atol=None):
-        return self.locally_right_canonize_around_not_end_bond(bde, chi=chi, rtol=rtol, atol=atol)
+    def locally_right_canonize_around_bond(self, bde, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30):
+        return self.locally_right_canonize_around_not_end_bond(bde, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
 
 
-    def universally_canonize(self, left_already=0, right_already=None, chi=None, rtol=None, atol=None, transfer_normalize=True, memo=None):
+    def universally_canonize(self, left_already=0, right_already=None, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30, transfer_normalize=True, memo=None):
         if memo is None: memo={}
         weight = 1.0
         if left_already == 0 and right_already is None:
-            weight *= self.universally_canonize_around_end_bond(0, chi=chi, rtol=rtol, atol=atol, transfer_normalize=transfer_normalize, memo=memo)
+            weight *= self.universally_canonize_around_end_bond(0, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, transfer_normalize=transfer_normalize, memo=memo)
             for i in range(1, len(self)):
-                weight *= self.locally_left_canonize_around_bond(i, chi=chi, rtol=rtol, atol=atol)
+                weight *= self.locally_left_canonize_around_bond(i, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
             for i in range(len(self)-1,0,-1):
-                weight *= self.locally_right_canonize_around_bond(i, chi=chi, rtol=rtol, atol=atol)
+                weight *= self.locally_right_canonize_around_bond(i, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
             """
-            self.globally_left_canonize_upto(len(self)-1, 0, chi=chi, rtol=rtol, atol=atol, transfer_normalize=transfer_normalize)
-            self.globally_right_canonize_upto(1, len(self), chi=chi, rtol=rtol, atol=atol, transfer_normalize=transfer_normalize)
+            self.globally_left_canonize_upto(len(self)-1, 0, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, transfer_normalize=transfer_normalize)
+            self.globally_right_canonize_upto(1, len(self), chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, transfer_normalize=transfer_normalize)
             """
         else:
             if right_already is None: right_already = len(self)
-            weight *= self.globally_left_canonize_upto(right_already-1, left_already, chi=chi, rtol=rtol, atol=atol)
-            weight *= self.globally_right_canonize_upto(left_already+1, right_already, chi=chi, rtol=rtol, atol=atol)
+            weight *= self.globally_left_canonize_upto(right_already-1, left_already, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
+            weight *= self.globally_right_canonize_upto(left_already+1, right_already, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
         return weight
 
     canonize = universally_canonize

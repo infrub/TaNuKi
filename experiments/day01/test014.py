@@ -85,7 +85,7 @@ def alg01(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, 
                     N.truncate_index(ket_sn_label,chi,inplace=True)
                     continue
         M,S,N = tnd.tensor_svd(M*S*N, self.ket_left_labels, self.ket_right_labels, chi=chi, svd_labels = [ket_ms_label, ket_sn_label])
-        if S.__eq__(oldS, atol=conv_atol, rtol=conv_rtol):
+        if S.__eq__(oldS, check_atol=conv_atol, check_rtol=conv_rtol):
             break
 
     if env_is_crazy_degenerated:
@@ -93,7 +93,7 @@ def alg01(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, 
         # However fortunately, when b>=n, decomposition ETA=HTA*_*_ (HTA:Matrix(b^2,n))) can be done and HTA*(M*S*N-sigma0)==0 can be achieved only by once M-optimizing.
         # it is done by solve( Matrix(n, b), Vector(b) ), but the calling is scared as "not square!" by numpy, add waste element in HTA to make it solve( Matrix(b, b), Vector(b) ).
         extraction_label = unique_label()
-        HTA,_,_ = tnd.truncated_eigh(ETA, self.ket_left_labels+self.ket_right_labels, chi=maxchi, atol=0, rtol=0, eigh_labels=extraction_label) #TODO sometimes segmentation fault occurs (why?)
+        HTA,_,_ = tnd.tensor_eigh(ETA, self.ket_left_labels+self.ket_right_labels, chi=maxchi, decomp_atol=0, decomp_rtol=0, eigh_labels=extraction_label) #TODO sometimes segmentation fault occurs (why?)
         Mshape = M.shape
         B = S * N * HTA
         B = B.to_matrix(extraction_label, self.ket_left_labels+[ket_ms_label])
@@ -190,7 +190,7 @@ def alg02(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, 
                     M.truncate_index(ket_mn_label,chi,inplace=True)
                     N.truncate_index(ket_mn_label,chi,inplace=True)
                     continue
-        if M.__eq__(oldM, atol=conv_atol, rtol=conv_rtol):
+        if M.__eq__(oldM, check_atol=conv_atol, check_rtol=conv_rtol):
             break
 
 
@@ -199,7 +199,7 @@ def alg02(self, sigma0, chi=20, maxiter=1000, conv_atol=1e-10, conv_rtol=1e-10, 
         # However fortunately, when b>=n, decomposition ETA=HTA*_*_ (HTA:Matrix(b^2,n))) can be done and HTA*(M*S*N-sigma0)==0 can be achieved only by once M-optimizing.
         # it is done by solve( Matrix(n, b), Vector(b) ), but the calling is scared as "not square!" by numpy, add waste element in HTA to make it solve( Matrix(b, b), Vector(b) ).
         extraction_label = unique_label()
-        HTA,_,_ = tnd.truncated_eigh(ETA, self.ket_left_labels+self.ket_right_labels, chi=maxchi, atol=0, rtol=0, eigh_labels=extraction_label) #TODO sometimes segmentation fault occurs (why?)
+        HTA,_,_ = tnd.tensor_eigh(ETA, self.ket_left_labels+self.ket_right_labels, chi=maxchi, decomp_atol=0, decomp_rtol=0, eigh_labels=extraction_label) #TODO sometimes segmentation fault occurs (why?)
         Mshape = M.shape
         B = N * HTA
         B = B.to_matrix(extraction_label, self.ket_left_labels+[ket_mn_label])

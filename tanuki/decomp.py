@@ -89,7 +89,7 @@ def normarg_eigh_labels(eigh_labels):
 
 
 # A == V*W*Vh
-def tensor_eigh(A, rows, cols=None, rtol=1e-30, atol=1e-50, eigh_labels=1):
+def tensor_eigh(A, rows, cols=None, decomp_rtol=1e-30, decomp_atol=1e-50, eigh_labels=1):
     rows, cols = A.normarg_complement_indices(rows, cols)
     eigh_labels = normarg_eigh_labels(eigh_labels)
     row_labels, col_labels = A.labels_of_indices(rows), A.labels_of_indices(cols)
@@ -98,11 +98,11 @@ def tensor_eigh(A, rows, cols=None, rtol=1e-30, atol=1e-50, eigh_labels=1):
     a = A.to_matrix(rows, cols)
     w_diag,v = xp.linalg.eigh(a)
 
-    if rtol is None:
-        rtol = 0.0
-    if atol is None:
-        atol = 0.0
-    threshold = atol + rtol * w_diag[-1]
+    if decomp_rtol is None:
+        decomp_rtol = 0.0
+    if decomp_atol is None:
+        decomp_atol = 0.0
+    threshold = decomp_atol + decomp_rtol * w_diag[-1]
     selector = xp.fabs(w_diag) >= threshold
     w_diag = w_diag[selector]
     v = v[:,selector]
@@ -133,7 +133,7 @@ def normarg_svd_labels(svd_labels):
     return svd_labels
 
 
-def tensor_svd(A, rows, cols=None, chi=None, rtol=1e-30, atol=1e-50, svd_labels=2):
+def tensor_svd(A, rows, cols=None, chi=None, decomp_rtol=1e-30, decomp_atol=1e-50, svd_labels=2):
     rows, cols = A.normarg_complement_indices(rows, cols)
     svd_labels = normarg_svd_labels(svd_labels)
     row_labels, col_labels = A.labels_of_indices(rows), A.labels_of_indices(cols)
@@ -153,11 +153,11 @@ def tensor_svd(A, rows, cols=None, chi=None, rtol=1e-30, atol=1e-50, svd_labels=
     if chi:
         s_diag = s_diag[:chi]
 
-    if rtol is None:
-        rtol = 0.0
-    if atol is None:
-        atol = 0.0
-    threshold = atol + rtol * s_diag[0]
+    if decomp_rtol is None:
+        decomp_rtol = 0.0
+    if decomp_atol is None:
+        decomp_atol = 0.0
+    threshold = decomp_atol + decomp_rtol * s_diag[0]
     s_diag = s_diag[s_diag >= threshold]
 
     chi = len(s_diag)

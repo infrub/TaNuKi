@@ -79,8 +79,8 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
     # /-(1)-[1]-(2)-      /-(2)-
     # |      |        ==  |
     # \-(1)-[1]-(2)-      \-(2)-
-    def locally_left_canonize_around_not_end_bond(self, bde, chi=None, rtol=None, atol=None):
-        U, S, V = tnd.tensor_svd(self.bdts[bde-1]*self.tensors[bde-1]*self.bdts[bde], self.get_left_labels_bond(bde-1)+self.get_phys_labels_site(bde-1), chi=chi, rtol=rtol, atol=atol)
+    def locally_left_canonize_around_not_end_bond(self, bde, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30):
+        U, S, V = tnd.tensor_svd(self.bdts[bde-1]*self.tensors[bde-1]*self.bdts[bde], self.get_left_labels_bond(bde-1)+self.get_phys_labels_site(bde-1), chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
         self.tensors[bde-1] = U/self.bdts[bde-1]
         self.bdts[bde] = S
         self.tensors[bde] = V*self.tensors[bde]
@@ -91,15 +91,15 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
     # -(3)-[3]-(4)-\      -(3)-\
     #       |      |  ==       |
     # -(3)-[3]-(4)-/      -(3)-/
-    def locally_right_canonize_around_not_end_bond(self, bde, chi=None, rtol=None, atol=None):
-        U, S, V = tnd.tensor_svd(self.bdts[bde]*self.tensors[bde]*self.bdts[bde+1], self.get_left_labels_bond(bde), chi=chi, rtol=rtol, atol=atol)
+    def locally_right_canonize_around_not_end_bond(self, bde, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30):
+        U, S, V = tnd.tensor_svd(self.bdts[bde]*self.tensors[bde]*self.bdts[bde+1], self.get_left_labels_bond(bde), chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
         self.tensors[bde-1] = self.tensors[bde-1]*U
         self.bdts[bde] = S
         self.tensors[bde] = V/self.bdts[bde+1]
         return 1.0
 
 
-    def locally_left_canonize_around_right_end(self, chi=None, rtol=None, atol=None, end_dealing="normalize"):
+    def locally_left_canonize_around_right_end(self, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30, end_dealing="normalize"):
         bde = len(self)
         if self.bdts[bde].size==1:
             if end_dealing=="no":
@@ -116,7 +116,7 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
             else:
                 raise UndecidedError
 
-    def locally_right_canonize_around_left_end(self, chi=None, rtol=None, atol=None, end_dealing="normalize"):
+    def locally_right_canonize_around_left_end(self, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30, end_dealing="normalize"):
         bde = 0
         if self.bdts[bde].size==1:
             if end_dealing=="no":
@@ -134,98 +134,98 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
                 raise UndecidedError
 
 
-    def locally_left_canonize_around_bond(self, bde, chi=None, rtol=None, atol=None, end_dealing="normalize"):
+    def locally_left_canonize_around_bond(self, bde, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30, end_dealing="normalize"):
         if bde==0:
             return 1.0
         elif bde==len(self):
-            return self.locally_left_canonize_around_right_end(chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+            return self.locally_left_canonize_around_right_end(chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, end_dealing=end_dealing)
         else:
-            return self.locally_left_canonize_around_not_end_bond(bde, chi=chi, rtol=rtol, atol=atol)
+            return self.locally_left_canonize_around_not_end_bond(bde, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
 
-    def locally_right_canonize_around_bond(self, bde, chi=None, rtol=None, atol=None, end_dealing="normalize"):
+    def locally_right_canonize_around_bond(self, bde, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30, end_dealing="normalize"):
         if bde==0:
-            self.locally_right_canonize_around_left_end(chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+            return self.locally_right_canonize_around_left_end(chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, end_dealing=end_dealing)
         elif bde==len(self):
             return 1.0
         else:
-            return self.locally_right_canonize_around_not_end_bond(bde, chi=chi, rtol=rtol, atol=atol)
+            return self.locally_right_canonize_around_not_end_bond(bde, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
 
 
     # [bde=2, already=0]
     # /-(0)-[0]-      /-(1)-[1]-      /-
     # |      |    ==  |      |    ==  |
     # \-(0)-[0]-      \-(1)-[1]-      \-
-    def globally_left_canonize_upto(self, upto_bde=None, already_bde=0, chi=None, rtol=None, atol=None, end_dealing="normalize"):
+    def globally_left_canonize_upto(self, upto_bde=None, already_bde=0, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30, end_dealing="normalize"):
         if upto_bde is None: upto_bde = len(self)
         weight = 1.0
         for bde in range(already_bde+1, upto_bde+1):
-            weight *= self.locally_left_canonize_around_bond(bde, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+            weight *= self.locally_left_canonize_around_bond(bde, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, end_dealing=end_dealing)
         return weight
 
     # [bde=4, already=6]
     # -[4]-(5)-\      -[5]-(6)-\      -\
     #   |      |  ==    |      |  ==   |
     # -[4]-(5)-/      -[5]-(6)-/      -/
-    def globally_right_canonize_upto(self, upto_bde=0, already_bde=None, chi=None, rtol=None, atol=None, end_dealing="normalize"):
+    def globally_right_canonize_upto(self, upto_bde=0, already_bde=None, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30, end_dealing="normalize"):
         if already_bde is None: already_bde = len(self)
         weight = 1.0
         for bde in range(already_bde-1, upto_bde-1, -1):
-            weight *= self.locally_right_canonize_around_bond(bde, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+            weight *= self.locally_right_canonize_around_bond(bde, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, end_dealing=end_dealing)
         return weight
 
-    def universally_canonize(self, left_already=0, right_already=None, chi=None, rtol=None, atol=None, end_dealing="normalize"):
+    def universally_canonize(self, left_already=0, right_already=None, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30, end_dealing="normalize"):
         if right_already is None: right_already = len(self)
         weight = 1.0
-        weight *= self.globally_left_canonize_upto(right_already, left_already, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
-        weight *= self.globally_right_canonize_upto(left_already, right_already, chi=chi, rtol=rtol, atol=atol, end_dealing=end_dealing)
+        weight *= self.globally_left_canonize_upto(right_already, left_already, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, end_dealing=end_dealing)
+        weight *= self.globally_right_canonize_upto(left_already, right_already, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, end_dealing=end_dealing)
         return weight
 
     canonize = universally_canonize
 
 
 
-    def is_locally_left_canonical_around_bond(self, bde, rtol=1e-5, atol=1e-8):
+    def is_locally_left_canonical_around_bond(self, bde, check_rtol=1e-5, check_atol=1e-8):
         if bde == 0:
             return CollateralBool(True, {"factor":1.0})
         S = self.bdts[bde-1]
         V = self.tensors[bde-1]
         SV = S*V
-        re = SV.is_prop_semi_unitary(self.get_left_labels_bond(bde-1)+self.get_phys_labels_site(bde-1), rtol=rtol, atol=atol)
+        re = SV.is_prop_semi_unitary(self.get_left_labels_bond(bde-1)+self.get_phys_labels_site(bde-1), check_rtol=check_rtol, check_atol=check_atol)
         return re
 
-    def is_locally_right_canonical_around_bond(self, bde, rtol=1e-5, atol=1e-8):
+    def is_locally_right_canonical_around_bond(self, bde, check_rtol=1e-5, check_atol=1e-8):
         if bde == len(self):
             return CollateralBool(True, {"factor":1.0})
         U = self.tensors[bde]
         S = self.bdts[bde+1]
         US = U*S
-        re = US.is_prop_semi_unitary(self.get_phys_labels_site(bde)+self.get_right_labels_bond(bde+1), rtol=rtol, atol=atol)
+        re = US.is_prop_semi_unitary(self.get_phys_labels_site(bde)+self.get_right_labels_bond(bde+1), check_rtol=check_rtol, check_atol=check_atol)
         return re
 
-    def is_grobally_left_canonical_upto_bond(self, upto_bde=None, rtol=1e-5, atol=1e-8):
+    def is_grobally_left_canonical_upto_bond(self, upto_bde=None, check_rtol=1e-5, check_atol=1e-8):
         if upto_bde is None: upto_bde = len(self)
         ok = True
         res = {}
         for bde in range(0, upto_bde+1):
-            re = self.is_locally_left_canonical_around_bond(bde, rtol=rtol, atol=atol)
+            re = self.is_locally_left_canonical_around_bond(bde, check_rtol=check_rtol, check_atol=check_atol)
             res[bde] = re
             if not re: ok = False
         return CollateralBool(ok, res)
 
-    def is_grobally_right_canonical_upto_bond(self, upto_bde=0, rtol=1e-5, atol=1e-8):
+    def is_grobally_right_canonical_upto_bond(self, upto_bde=0, check_rtol=1e-5, check_atol=1e-8):
         ok = True
         res = {}
         for bde in range(len(self), upto_bde-1, -1):
-            re = self.is_locally_right_canonical_around_bond(bde, rtol=rtol, atol=atol)
+            re = self.is_locally_right_canonical_around_bond(bde, check_rtol=check_rtol, check_atol=check_atol)
             res[bde] = re
             if not re: ok = False
         return CollateralBool(ok, res)
 
-    def is_globally_both_canonical_upto_bond(self, upto_bde, rtol=1e-5, atol=1e-8):
-        return self.is_grobally_left_canonical_upto_bond(upto_bde, rtol=rtol, atol=atol) & self.is_grobally_right_canonical_upto_bond(upto_bde, rtol=rtol, atol=atol)
+    def is_globally_both_canonical_upto_bond(self, upto_bde, check_rtol=1e-5, check_atol=1e-8):
+        return self.is_grobally_left_canonical_upto_bond(upto_bde, check_rtol=check_rtol, check_atol=check_atol) & self.is_grobally_right_canonical_upto_bond(upto_bde, check_rtol=check_rtol, check_atol=check_atol)
 
-    def is_universally_canonical(self, bde_start=None, bde_end=None, rtol=1e-5, atol=1e-8):
-        return self.is_grobally_left_canonical_upto_bond(rtol=rtol, atol=atol) & self.is_grobally_right_canonical_upto_bond(rtol=rtol, atol=atol)
+    def is_universally_canonical(self, bde_start=None, bde_end=None, check_rtol=1e-5, check_atol=1e-8):
+        return self.is_grobally_left_canonical_upto_bond(check_rtol=check_rtol, check_atol=check_atol) & self.is_grobally_right_canonical_upto_bond(check_rtol=check_rtol, check_atol=check_atol)
 
     is_canonical = is_universally_canonical
 
@@ -234,6 +234,9 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
 
     # applying methods
     def apply(self, gate, offset=0, chi=None, keep_universal_canonicality=True, keep_phys_labels=True):
+        from tanuki.onedim.models.OBTPO import Obc1DBTPO
+        from tanuki.onedim.models.OTPO import Obc1DTPO
+        from tanuki.onedim.models.OTMO import Obc1DTMO
         if type(gate) in [Obc1DBTPO, Obc1DTPO, Obc1DTMO]:
             gate = gate.to_BTPO()
         else: # list of gates
@@ -243,6 +246,9 @@ class Obc1DBTPS(Mixin_1DSim_PS, Mixin_1DSimBTPS, MixinObc1DBTP_):
         tnop.apply_fin1DSimBTPS_fin1DSimBTPO(self,gate,offset=offset,chi=chi,keep_universal_canonicality=keep_universal_canonicality,keep_phys_labels=keep_phys_labels)
 
     def apply_everyplace(self, gate, chi=None, keep_universal_canonicality=True, gating_order="grissand"):
+        from tanuki.onedim.models.OBTPO import Obc1DBTPO
+        from tanuki.onedim.models.OTPO import Obc1DTPO
+        from tanuki.onedim.models.OTMO import Obc1DTMO
         if type(gate) in [Obc1DBTPO, Obc1DTPO, Obc1DTMO]:
             gate = gate.to_BTPO()
         else:

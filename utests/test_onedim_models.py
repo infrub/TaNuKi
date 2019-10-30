@@ -84,8 +84,8 @@ class TestInf1DBTPS(unittest.TestCase):
         a2 = A.to_tensor()
         w_L, V_L = A.get_left_transfer_eigen()
         w_R, V_R = A.get_right_transfer_eigen()
-        self.assertTrue(V_L.is_prop_identity(A.get_ket_left_labels_bond(0), rtol=1e-4, atol=1e-4))
-        self.assertTrue(V_R.is_prop_identity(A.get_ket_right_labels_bond(0), rtol=1e-4, atol=1e-4))
+        self.assertTrue(V_L.is_prop_identity(A.get_ket_left_labels_bond(0), check_rtol=1e-4, check_atol=1e-4))
+        self.assertTrue(V_R.is_prop_identity(A.get_ket_right_labels_bond(0), check_rtol=1e-4, check_atol=1e-4))
         self.assertEqual(a2, a1)
 
         A = random_inf1DBTPS([["p0"], ["p1"], ["p2"]], virt_labelss=[["v0"],["v10","v11"],["v2"]])
@@ -101,8 +101,8 @@ class TestInf1DBTPS(unittest.TestCase):
         a2 = A.to_tensor()
         w_L, V_L = A.get_left_transfer_eigen()
         w_R, V_R = A.get_right_transfer_eigen()
-        self.assertTrue(V_L.is_prop_identity(A.get_ket_left_labels_bond(0), rtol=1e-4, atol=1e-4))
-        self.assertTrue(V_R.is_prop_identity(A.get_ket_right_labels_bond(0), rtol=1e-4, atol=1e-4))
+        self.assertTrue(V_L.is_prop_identity(A.get_ket_left_labels_bond(0), check_rtol=1e-4, check_atol=1e-4))
+        self.assertTrue(V_R.is_prop_identity(A.get_ket_right_labels_bond(0), check_rtol=1e-4, check_atol=1e-4))
         self.assertAlmostEqual(w_L, 1, 5)
         self.assertAlmostEqual(w_R, 1, 5)
         self.assertEqual(a2*sqrt(w_L1), a1)
@@ -114,7 +114,7 @@ class TestInf1DBTPS(unittest.TestCase):
         A.canonize(transfer_normalize=True)
         a2 = A.to_tensor()
         self.assertEqual(a2*sqrt(w_L1), a1)
-        re = A.is_canonical(rtol=1e-4,atol=1e-6)
+        re = A.is_canonical(check_rtol=1e-4,check_atol=1e-6)
         self.assertTrue(re)
         for lr in ["left","right"]:
             for i in range(len(A)):

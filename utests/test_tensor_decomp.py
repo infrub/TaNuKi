@@ -57,7 +57,7 @@ class TestDecomp(unittest.TestCase):
         self.assertGreaterEqual(S.data[97],S.data[98])
         self.assertGreaterEqual(S.data[98],S.data[99])
         self.assertGreaterEqual(S.data[99],0)
-        U,S,V = tensor_svd(A,["a","b"],svd_labels="h",atol=1)
+        U,S,V = tensor_svd(A,["a","b"],svd_labels="h",decomp_atol=1)
         self.assertLess(S.halfsize, 100)
         self.assertGreater(S.halfsize, 80)
 

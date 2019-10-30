@@ -32,11 +32,11 @@ class BridgeBondEnv:
         V_L = self.leftTensor
         V_R = self.rightTensor
 
-        Yh, d_L, Y = tnd.truncated_eigh(V_L, self.ket_left_labels, self.bra_left_labels, eigh_labels=dl_label)
+        Yh, d_L, Y = tnd.tensor_eigh(V_L, self.ket_left_labels, self.bra_left_labels, eigh_labels=dl_label)
         Y.replace_labels(self.bra_left_labels, self.ket_left_labels, inplace=True)
-        X, d_R, Xh = tnd.truncated_eigh(V_R, self.ket_right_labels, self.bra_right_labels, eigh_labels=dr_label)
+        X, d_R, Xh = tnd.tensor_eigh(V_R, self.ket_right_labels, self.bra_right_labels, eigh_labels=dr_label)
         Xh.replace_labels(self.bra_right_labels, self.ket_right_labels, inplace=True)
-        # if truncated, it means "no sufficient terms to decide M,S,N", so that 
+        # if tensor, it means "no sufficient terms to decide M,S,N", so that 
         # ((M*S*N)-sigma0).norm() != 0
         # (((M*S*N)-sigma0)*H_L*H_R).norm() == 0 (ETA_L=H_L*H_L.adjoint, ETA_R=H_R*H_R.adjoint)
 
@@ -103,7 +103,7 @@ class UnbridgeBondEnv:
             # this case includes max_chi_can_use_iterating_method==0 case. (Because if n<b: exactly_solvable_chi==1).
 
             extraction_label = unique_label()
-            HTA,HTAw,_ = tnd.truncated_eigh(ETA, self.ket_left_labels+self.ket_right_labels, chi=chi*b, atol=0, rtol=0, eigh_labels=extraction_label) #TODO sometimes segmentation fault occurs (why?)
+            HTA,HTAw,_ = tnd.tensor_eigh(ETA, self.ket_left_labels+self.ket_right_labels, chi=chi*b, decomp_atol=0, decomp_rtol=0, eigh_labels=extraction_label) #TODO sometimes segmentation fault occurs (why?)
             #print(HTAw)
             Mshape = M.shape
             B = N * HTA

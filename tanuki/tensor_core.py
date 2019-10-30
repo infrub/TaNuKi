@@ -144,69 +144,69 @@ def scalar_to_diagonalTensor(scalar):
 
 
 #confirming functions
-def matrix_is_diagonal(M, rtol=1e-5, atol=1e-8):
+def matrix_is_diagonal(M, check_rtol=1e-5, check_atol=1e-8):
     if M.ndim != 2:
         return CollateralBool(False, {"reason":"NOT_MATRIX"})
     zeros = xp.zeros(M.shape)
     eye = xp.eye(*M.shape)
     notDiagonals = xp.where(eye==zeros, M, zeros)
-    if not xp.allclose(notDiagonals, zeros, rtol=rtol, atol=atol):
+    if not xp.allclose(notDiagonals, zeros, rtol=check_rtol, atol=check_atol):
         return CollateralBool(False, {"reason":"NOT_DIAGONAL"})
     return CollateralBool(True, {})
 
-def matrix_is_identity(M, rtol=1e-5, atol=1e-8):
+def matrix_is_identity(M, check_rtol=1e-5, check_atol=1e-8):
     if M.ndim != 2:
         return CollateralBool(False, {"reason":"NOT_MATRIX"})
     eye = xp.eye(*M.shape)
-    if not xp.allclose(M, eye, rtol=rtol, atol=atol):
+    if not xp.allclose(M, eye, rtol=check_rtol, atol=check_atol):
         return CollateralBool(False, {"reason":"NOT_IDENTITY"})
     return CollateralBool(True, {})
 
-def matrix_is_prop_identity(M, rtol=1e-5, atol=1e-8):
-    hoge = matrix_is_diagonal(M, rtol=rtol, atol=atol)
+def matrix_is_prop_identity(M, check_rtol=1e-5, check_atol=1e-8):
+    hoge = matrix_is_diagonal(M, check_rtol=check_rtol, check_atol=check_atol)
     if not hoge: return hoge
     d = xp.diagonal(M)
     factor = xp.average(d)
     ones = xp.ones_like(d)
-    if not xp.allclose(d, factor*ones, rtol=rtol, atol=atol):
+    if not xp.allclose(d, factor*ones, rtol=check_rtol, atol=check_atol):
         return CollateralBool(False, {"reason":"NOT_PROP_IDENTITY"})
     return CollateralBool(True, {"factor":factor})
 
-def matrix_is_left_semi_unitary(M, rtol=1e-5, atol=1e-8):
+def matrix_is_left_semi_unitary(M, check_rtol=1e-5, check_atol=1e-8):
     N = xp.dot(M.conj().transpose(), M)
-    return matrix_is_identity(N, rtol=rtol, atol=atol)
+    return matrix_is_identity(N, check_rtol=check_rtol, check_atol=check_atol)
 
-def matrix_is_right_semi_unitary(M, rtol=1e-5, atol=1e-8):
+def matrix_is_right_semi_unitary(M, check_rtol=1e-5, check_atol=1e-8):
     N = xp.dot(M, M.conj().transpose())
-    return matrix_is_identity(N, rtol=rtol, atol=atol)
+    return matrix_is_identity(N, check_rtol=check_rtol, check_atol=check_atol)
 
-def matrix_is_unitary(M, rtol=1e-5, atol=1e-8):
-    return matrix_is_left_semi_unitary(M, rtol=rtol, atol=atol) & matrix_is_right_semi_unitary(M, rtol=rtol, atol=atol)
+def matrix_is_unitary(M, check_rtol=1e-5, check_atol=1e-8):
+    return matrix_is_left_semi_unitary(M, check_rtol=check_rtol, check_atol=check_atol) & matrix_is_right_semi_unitary(M, check_rtol=check_rtol, check_atol=check_atol)
 
-def matrix_is_prop_left_semi_unitary(M, rtol=1e-5, atol=1e-8):
+def matrix_is_prop_left_semi_unitary(M, check_rtol=1e-5, check_atol=1e-8):
     N = xp.dot(M.conj().transpose(), M)
-    return matrix_is_prop_identity(N, rtol=rtol, atol=atol)
+    return matrix_is_prop_identity(N, check_rtol=check_rtol, check_atol=check_atol)
 
-def matrix_is_prop_right_semi_unitary(M, rtol=1e-5, atol=1e-8):
+def matrix_is_prop_right_semi_unitary(M, check_rtol=1e-5, check_atol=1e-8):
     N = xp.dot(M, M.conj().transpose())
-    return matrix_is_prop_identity(N, rtol=rtol, atol=atol)
+    return matrix_is_prop_identity(N, check_rtol=check_rtol, check_atol=check_atol)
 
-def matrix_is_prop_unitary(M, rtol=1e-5, atol=1e-8):
-    return matrix_is_prop_left_semi_unitary(M, rtol=rtol, atol=atol) & matrix_is_prop_right_semi_unitary(M, rtol=rtol, atol=atol)
+def matrix_is_prop_unitary(M, check_rtol=1e-5, check_atol=1e-8):
+    return matrix_is_prop_left_semi_unitary(M, check_rtol=check_rtol, check_atol=check_atol) & matrix_is_prop_right_semi_unitary(M, check_rtol=check_rtol, check_atol=check_atol)
 
-def matrix_is_triu(M, rtol=1e-5, atol=1e-8):
-    return CollateralBool(xp.allclose(M, xp.triu(M), rtol=rtol, atol=atol), {})
+def matrix_is_triu(M, check_rtol=1e-5, check_atol=1e-8):
+    return CollateralBool(xp.allclose(M, xp.triu(M), rtol=check_rtol, atol=check_atol), {})
 
-def matrix_is_tril(M, rtol=1e-5, atol=1e-8):
-    return CollateralBool(xp.allclose(M, xp.tril(M), rtol=rtol, atol=atol), {})
+def matrix_is_tril(M, check_rtol=1e-5, check_atol=1e-8):
+    return CollateralBool(xp.allclose(M, xp.tril(M), rtol=check_rtol, atol=check_atol), {})
 
-def ndarray_is_prop_to(M, I, rtol=1e-5, atol=1e-8):
+def ndarray_is_prop_to(M, I, check_rtol=1e-5, check_atol=1e-8):
     if M.shape != I.shape:
         return CollateralBool(False, {"reason":"WRONG_SHAPE"})
     Ih = I.conj()
     c = xp.sum(M*Ih) / xp.sum(I*Ih)
 
-    if not xp.allclose(M, I*c, rtol=rtol, atol=atol):
+    if not xp.allclose(M, I*c, rtol=check_rtol, atol=check_atol):
         return CollateralBool(False, {"reason":"NOT_PROP_TO", "factor":c})
 
     return CollateralBool(True, {"factor":c})
@@ -537,13 +537,13 @@ class TensorMixin(TensorLabelingMixin):
             return self.__class__(self.data/other, labels=self.labels)
         return NotImplemented
 
-    def __eq__(self, other, skipLabelSort=False, rtol=1e-5, atol=1e-8):
+    def __eq__(self, other, skipLabelSort=False, check_rtol=1e-5, check_atol=1e-8):
         if isinstance(other, TensorMixin):
             if isinstance(self, DiagonalTensor) and isinstance(other, DiagonalTensor):
                 try:
                     if not skipLabelSort:
                         other = other.move_all_indices(self.labels)
-                    return xp.allclose(self.data, other.data, rtol=rtol, atol=atol)
+                    return xp.allclose(self.data, other.data, rtol=check_rtol, atol=check_atol)
                 except:
                     pass
             if isinstance(self, DiagonalTensor):
@@ -557,10 +557,10 @@ class TensorMixin(TensorLabelingMixin):
                     return False
             if self.shape != other.shape:
                 return False
-            return xp.allclose(self.data, other.data, rtol=rtol, atol=atol)
+            return xp.allclose(self.data, other.data, rtol=check_rtol, atol=check_atol)
         elif xp.isscalar(other):
             if self.ndim == 0:
-                return xp.allclose(self.to_scalar(), other, rtol=rtol, atol=atol)
+                return xp.allclose(self.to_scalar(), other, rtol=check_rtol, atol=check_atol)
             else:
                 return False
         return NotImplemented
@@ -598,53 +598,53 @@ class TensorMixin(TensorLabelingMixin):
 
 
     #confirming methods
-    def is_diagonal(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_diagonal(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+    def is_diagonal(T, rows, cols=None, check_rtol=1e-5, check_atol=1e-8):
+        return matrix_is_diagonal(T.to_matrix(rows, cols), check_rtol=check_rtol, check_atol=check_atol)
 
-    def is_identity(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_identity(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+    def is_identity(T, rows, cols=None, check_rtol=1e-5, check_atol=1e-8):
+        return matrix_is_identity(T.to_matrix(rows, cols), check_rtol=check_rtol, check_atol=check_atol)
 
-    def is_prop_identity(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_prop_identity(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+    def is_prop_identity(T, rows, cols=None, check_rtol=1e-5, check_atol=1e-8):
+        return matrix_is_prop_identity(T.to_matrix(rows, cols), check_rtol=check_rtol, check_atol=check_atol)
 
-    def is_left_semi_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_left_semi_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+    def is_left_semi_unitary(T, rows, cols=None, check_rtol=1e-5, check_atol=1e-8):
+        return matrix_is_left_semi_unitary(T.to_matrix(rows, cols), check_rtol=check_rtol, check_atol=check_atol)
 
-    def is_right_semi_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_right_semi_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+    def is_right_semi_unitary(T, rows, cols=None, check_rtol=1e-5, check_atol=1e-8):
+        return matrix_is_right_semi_unitary(T.to_matrix(rows, cols), check_rtol=check_rtol, check_atol=check_atol)
 
-    def is_semi_unitary(T, inds, rtol=1e-5, atol=1e-8):
-        return matrix_is_left_semi_unitary(T.to_matrix(inds, None), rtol=rtol, atol=atol)
+    def is_semi_unitary(T, inds, check_rtol=1e-5, check_atol=1e-8):
+        return matrix_is_left_semi_unitary(T.to_matrix(inds, None), check_rtol=check_rtol, check_atol=check_atol)
 
-    def is_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+    def is_unitary(T, rows, cols=None, check_rtol=1e-5, check_atol=1e-8):
+        return matrix_is_unitary(T.to_matrix(rows, cols), check_rtol=check_rtol, check_atol=check_atol)
 
-    def is_prop_left_semi_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_prop_left_semi_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+    def is_prop_left_semi_unitary(T, rows, cols=None, check_rtol=1e-5, check_atol=1e-8):
+        return matrix_is_prop_left_semi_unitary(T.to_matrix(rows, cols), check_rtol=check_rtol, check_atol=check_atol)
 
-    def is_prop_right_semi_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_prop_right_semi_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+    def is_prop_right_semi_unitary(T, rows, cols=None, check_rtol=1e-5, check_atol=1e-8):
+        return matrix_is_prop_right_semi_unitary(T.to_matrix(rows, cols), check_rtol=check_rtol, check_atol=check_atol)
 
-    def is_prop_semi_unitary(T, inds, rtol=1e-5, atol=1e-8):
-        return matrix_is_prop_left_semi_unitary(T.to_matrix(inds, None), rtol=rtol, atol=atol)
+    def is_prop_semi_unitary(T, inds, check_rtol=1e-5, check_atol=1e-8):
+        return matrix_is_prop_left_semi_unitary(T.to_matrix(inds, None), check_rtol=check_rtol, check_atol=check_atol)
 
-    def is_prop_unitary(T, rows, cols=None, rtol=1e-5, atol=1e-8):
-        return matrix_is_prop_unitary(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+    def is_prop_unitary(T, rows, cols=None, check_rtol=1e-5, check_atol=1e-8):
+        return matrix_is_prop_unitary(T.to_matrix(rows, cols), check_rtol=check_rtol, check_atol=check_atol)
 
-    def is_triu(T, rows, cols=None, rtol=1e-5, atol=1e-8): # row_index <= col_index
-        return matrix_is_triu(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+    def is_triu(T, rows, cols=None, check_rtol=1e-5, check_atol=1e-8): # row_index <= col_index
+        return matrix_is_triu(T.to_matrix(rows, cols), check_rtol=check_rtol, check_atol=check_atol)
 
-    def is_tril(T, rows, cols=None, rtol=1e-5, atol=1e-8): # row_index >= col_index
-        return matrix_is_tril(T.to_matrix(rows, cols), rtol=rtol, atol=atol)
+    def is_tril(T, rows, cols=None, check_rtol=1e-5, check_atol=1e-8): # row_index >= col_index
+        return matrix_is_tril(T.to_matrix(rows, cols), check_rtol=check_rtol, check_atol=check_atol)
 
-    def is_hermite(T, rows, cols=None, rtol=1e-5, atol=1e-8):
+    def is_hermite(T, rows, cols=None, check_rtol=1e-5, check_atol=1e-8):
         Th = T.adjoint(rows, cols, style="transpose")
-        return T.__eq__(Th, rtol=rtol, atol=atol)
+        return T.__eq__(Th, check_rtol=check_rtol, check_atol=check_atol)
 
-    def is_prop_to(self, other, skipLabelSort=False, rtol=1e-5, atol=1e-8):
+    def is_prop_to(self, other, skipLabelSort=False, check_rtol=1e-5, check_atol=1e-8):
         if not skipLabelSort:
             other = other.move_all_indices(self.labels)
-        return ndarray_is_prop_to(self.data, other.data, rtol=rtol, atol=atol)
+        return ndarray_is_prop_to(self.data, other.data, check_rtol=check_rtol, check_atol=check_atol)
 
 
 

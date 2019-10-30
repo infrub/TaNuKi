@@ -40,12 +40,12 @@ class Obc1DTMO: #Tensor Mass Operator
     def to_TPO(self):
         return self.to_BTPO().to_TPO()
 
-    def to_BTPO(self, chi=None, rtol=1e-15, atol=1e-20):
+    def to_BTPO(self, chi=None, decomp_rtol=1e-15, decomp_atol=1e-20):
         G = self.tensor.copy()
         rev_tensors = []
         rev_bdts = []
         for i in range(len(self)-1,0,-1):
-            G, b, a = tnd.tensor_svd(G, sum(self.physout_labelss[:i]+self.physin_labelss[:i],[]), chi=chi, rtol=rtol, atol=atol, svd_labels=2)
+            G, b, a = tnd.tensor_svd(G, sum(self.physout_labelss[:i]+self.physin_labelss[:i],[]), chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, svd_labels=2)
             rev_tensors.append(a)
             rev_bdts.append(b)
         rev_tensors.append(G)

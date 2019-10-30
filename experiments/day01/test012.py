@@ -97,7 +97,7 @@ class TestingUnbridgeBondEnv:
                 print("M", M, M.norm())
                 #print("S", S)
                 #print("N", N, N.norm())
-            if S.__eq__(oldS, atol=conv_atol, rtol=conv_rtol):
+            if S.__eq__(oldS, check_atol=conv_atol, check_rtol=conv_rtol):
                 break
 
         if memo is None:
