@@ -1,0 +1,154 @@
+beta:1.0, width_scale:2, height_scale:2, chi:4
+
+
+
+otehon
+otehon -17.105367118731582
+
+NHAE
+NHAE -17.105367118731586
+
+NHAO
+NHAO -17.105367118731586
+
+NHBE
+NHBE -17.105367118731586
+
+NHBO
+NHBO -17.105367118731586
+
+NNAE
+NNAE -17.105367118731586
+
+NNAO
+NNAO -17.10536711873159
+
+NNBE
+NNBE -17.105367118731586
+
+NNBO
+NNBO -17.105367118731586
+
+CHAE
+wlr 79.28029907949431 79.28029907949436
+wlr 0.7362236136496028 0.7362236136496029
+wlr 0.7878343821688125 0.7878343821688122
+CHAE -17.10536711873158
+
+CHAO
+wlr 79.28029907949431 79.28029907949436
+wlr 0.7362236136496033 0.7362236136496039
+wlr 0.7878343821688103 0.7878343821688107
+CHAO -17.105367118731575
+
+CHBE
+wlr 79.28029907949431 79.2802990794943
+wlr 0.03373433189439162 0.033734331894392657
+wlr 0.5593264805609975 0.5593264805609974
+CHBE -9.986629331714585
+
+CHBO
+wlr 79.28029907949431 79.2802990794943
+wlr 0.7362236136496042 0.7362236136496049
+wlr 0.7878343821688132 0.7878343821688125
+CHBO -17.10536711873158
+
+CNAE
+wlr 9.52439138216726 9.524391382167256
+wlr 0.32790919930240575 0.3279091993024059
+wlr 2430907.581878492 2430907.5818784903
+CNAE -17.105367118731575
+
+CNAO
+wlr 9.52439138216726 9.524391382167256
+wlr 0.07407442241165024 0.07407442241165027
+wlr 25775134440.578655 25775134440.578644
+CNAO -17.105367118731582
+
+CNBE
+wlr 9.524391382167257 9.52439138216726
+wlr 33.4334519323248 33.4334519323248
+wlr 4.512685328285287e-05 4.5126853284065124e-05
+CNBE -16.498300936229533
+
+CNBO
+wlr 9.524391382167257 9.52439138216726
+wlr 13.691972700464405 13.691972700464408
+wlr 0.011558737668352626 0.011558737668350805
+CNBO -17.10536711873158
+
+IHAE
+wlr 79.0951948095286 79.09519480952885
+wlr 0.000808912017858532 0.0008089120178584996
+wlr 0.0001729621824242821 0.0001729621824274409
+IHAE 8.13168092124561
+
+IHAO
+wlr 64.75541687354057 64.75541687354057
+wlr 1.1906327381204986 1.1906327381205013
+wlr 0.6782959434145422 0.678295943414544
+IHAO -17.105367395079075
+
+IHBE
+wlr 77.3978807543236 77.39788075432357
+wlr 0.01887132774929062 0.018871327749292184
+wlr 0.019729664922287667 0.01972966492228383
+IHBE -2.958777424452993
+
+IHBO
+wlr 68.63009425181308 68.63009425181295
+wlr 1.2971502123726735 1.2971502123726733
+wlr 0.458143423481352 0.4581434234813504
+IHBO -17.10634371327149
+
+INAE
+wlr 8.784548213985191 8.784548213989073
+wlr 1794638826328.9143 1794638826313.6804
+wlr 7.462702917001566e-19 1.998098909529782e-19
+INAE -104.93725418779712
+
+INAO
+wlr 87.33390624976597 87.33390624944212
+wlr 7779826.331727687 7779826.3317165915
+wlr -8.99204617260557e-19 -4.727558561304733e-19
+INAO -42.11901804932436
+
+INBE
+wlr 9.735480188348589 9.735480188348564
+wlr 2800.3162475401723 2800.3162475401728
+wlr 1.1452297083103879e-18 -6.712152543955807e-19
+INBE math domain error
+Traceback (most recent call last):
+  File "/Users/unyu/infrub/tanuki/experiments/day06/epm062.py", line 132, in <module>
+    epm0620()
+  File "/Users/unyu/infrub/tanuki/experiments/day06/epm062.py", line 119, in epm0620
+    raise e
+  File "/Users/unyu/infrub/tanuki/experiments/day06/epm062.py", line 113, in epm0620
+    F_value = epm0620_core(symbol)
+  File "/Users/unyu/infrub/tanuki/experiments/day06/epm062.py", line 100, in epm0620_core
+    return calc_F_value(symbol)
+  File "/Users/unyu/.pyenv/versions/3.7.3/lib/python3.7/site-packages/timeout_decorator/timeout_decorator.py", line 81, in new_function
+    return function(*args, **kwargs)
+  File "/Users/unyu/infrub/tanuki/experiments/day06/epm062.py", line 97, in calc_F_value
+    Z = calc_Z(symbol)
+  File "/Users/unyu/infrub/tanuki/experiments/day06/epm062.py", line 93, in calc_Z
+    return Z_TPK.calculate(chi=chi, **kwargs)
+  File "../../tanuki/twodim/models/CheckerBTPK.py", line 199, in calculate
+    return temp.calculate(chi=chi, normalize=normalize, **kwargs) * w
+  File "../../tanuki/twodim/models/RhombusBTPK.py", line 206, in calculate
+    return temp.calculate(chi=chi, normalize=normalize, **kwargs) * w
+  File "../../tanuki/twodim/models/CheckerBTPK.py", line 198, in calculate
+    temp,w = self.renormalize(chi=chi, normalize=normalize, **kwargs)
+  File "../../tanuki/twodim/models/CheckerBTPK.py", line 123, in renormalize
+    weight = CBTPS.truncate(chi=chi, normalize=True, algname=loop_truncation_algname)
+  File "../../tanuki/onedim/models/CBTPS.py", line 160, in truncate
+    return self.universally_canonize(chi=None, transfer_normalize=normalize)
+  File "../../tanuki/onedim/models/IBTPS.py", line 361, in universally_canonize
+    weight *= self.universally_canonize_around_end_bond(0, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, transfer_normalize=transfer_normalize, memo=memo)
+  File "../../tanuki/onedim/models/IBTPS.py", line 325, in universally_canonize_around_end_bond
+    w = sqrt(w_L*w_R)
+ValueError: math domain error
+[Finished in 83.3s with exit code 1]
+[shell_cmd: python -u "/Users/unyu/infrub/tanuki/experiments/day06/epm062.py"]
+[dir: /Users/unyu/infrub/tanuki/experiments/day06]
+[path: /Users/unyu/.sdkman/candidates/gradle/current/bin:/Users/unyu/.nimble/bin:/Users/unyu/.nodebrew/current/bin:/Users/unyu/.pyenv/shims:/Users/unyu/.pyenv/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Library/TeX/texbin:/gradle-2.9/bin:/Users/unyu/School/ManyBody/HPhi-release/build/src:/Users/Unyu/.nodebrew/current/bin:/Users/Unyu/.nodebrew/current/bin]

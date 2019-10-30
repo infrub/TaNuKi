@@ -49,9 +49,9 @@ def partition_function(beta, Jx, Jy, Lx, Ly):
 
 beta = 1.0
 J = 0.5
-width_scale = 2
-height_scale = 2
-chi = 4
+width_scale = 5
+height_scale = 5
+chi = 10
 
 print(f"beta:{beta}, width_scale:{width_scale}, height_scale:{height_scale}, chi:{chi}\n\n")
 
@@ -92,7 +92,7 @@ def epm0620_core(symbol):
         kwargs["drill_parity"] = {"E":0,"O":1}[d]
         return Z_TPK.calculate(chi=chi, **kwargs)
 
-    @timeout(20)
+    @timeout(60)
     def calc_F_value(symbol):
         Z = calc_Z(symbol)
         return -1.0 / beta * Z.log
@@ -116,7 +116,7 @@ def epm0620():
         except Exception as e:
             print(symbol, e)
             results.append((symbol,114514))
-            raise e
+            #raise e
 
     print("\n\n")
 
@@ -128,6 +128,6 @@ def epm0620():
 
 
 
-epm0620_core("IHAE")
-#epm0620()
+#epm0620_core("INBO")
+epm0620()
 

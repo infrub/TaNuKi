@@ -89,7 +89,7 @@ class Cyc1DBTPS(Inf1DBTPS):
             params = {
                 "conv_atol": kwargs.get("conv_atol", 1e-30),
                 "conv_rtol": kwargs.get("conv_rtol", 1e-30),
-                "max_iter": kwargs.get("max_iter", 600),
+                "max_iter": kwargs.get("max_iter", 200),
                 "initial_value": kwargs.get("initial_value", "random")
                 }
 
@@ -113,7 +113,6 @@ class Cyc1DBTPS(Inf1DBTPS):
             sqdiff = float("inf")
 
             for iteri in range(params["max_iter"]):
-                if iteri%10==0: pass#print(iteri, sqdiff)
                 old_sqdiff = sqdiff
 
                 for e in range(len(ORIGIN)):
@@ -158,11 +157,6 @@ class Cyc1DBTPS(Inf1DBTPS):
             self.bdts = PHI.bdts
             self.phys_labelss = PHI.phys_labelss
 
-            #print("to uc", self)
-            """
-            w = self.universally_canonize(chi=None, transfer_normalize=normalize)
-            print("af uc", self)
-            return w"""
             return self.universally_canonize(chi=None, transfer_normalize=normalize)
 
 

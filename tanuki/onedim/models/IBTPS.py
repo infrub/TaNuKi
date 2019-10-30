@@ -322,6 +322,8 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
         memo["right_half_transfer_eigen"] = {}
         w_R, T_R = self.get_right_half_transfer_eigen(bde=bde, memo=memo["right_half_transfer_eigen"],edge_label=dr_label)
         print("wlr",w_L, w_R)
+        if w_L<0 or w_R<0:
+            print("OH NO w negative\n",self)
         w = sqrt(w_L*w_R)
         #assert abs(W_L-W_R) < 1e-3*abs(w), f"transfer_eigen different. {W_L} != {W_R}"
         memo["w_L"] = w_L
