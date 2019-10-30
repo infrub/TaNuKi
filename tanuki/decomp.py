@@ -200,7 +200,7 @@ def tensor_eigsh(A, rows, cols=None):
 
 
 # A*X == B
-def tensor_solve(A, B, rows_of_A=None, cols_of_A=None, rows_of_B=None, cols_of_B=None, assume_a="gen"):
+def tensor_solve(A, B, rows_of_A=None, cols_of_A=None, rows_of_B=None, cols_of_B=None, assume_a="gen", warnings_treatment="ignore"):
     if rows_of_A is None and rows_of_B is None:
         row_labels = intersection_list(A.labels, B.labels)
         rows_of_A,cols_of_A = A.normarg_complement_indices(row_labels, cols_of_A)
@@ -222,10 +222,12 @@ def tensor_solve(A, B, rows_of_A=None, cols_of_A=None, rows_of_B=None, cols_of_B
     Adata = A.to_matrix(rows_of_A, cols_of_A)
     Bdata = B.to_matrix(rows_of_B, cols_of_B)
 
-    try:
-        Xdata = xp.linalg.solve(Adata, Bdata, assume_a=assume_a)
-    except ValueError as e:
-        raise ValueError(f"tensor_eigh(A={A}, B={B}, rows_of_A={rows_of_A}, rows_of_B={rows_of_B}, cols_of_A={cols_of_A}, cols_of_B={cols_of_B}, assume_a={assume_a}) aborted with xp-ValueError({e})")
+    with warnings.catch_warnings():
+        warnings.simplefilter(warnings_treatment)
+        try:
+            Xdata = xp.linalg.solve(Adata, Bdata, assume_a=assume_a)
+        except ValueError as e:
+            raise ValueError(f"tensor_eigh(A={A}, B={B}, rows_of_A={rows_of_A}, rows_of_B={rows_of_B}, cols_of_A={cols_of_A}, cols_of_B={cols_of_B}, assume_a={assume_a}) aborted with xp-ValueError({e})")
     X = tnc.matrix_to_tensor(Xdata, shape_of_X, labels_of_X)
 
     return X

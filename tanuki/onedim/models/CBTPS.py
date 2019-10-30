@@ -116,10 +116,7 @@ class Cyc1DBTPS(Inf1DBTPS):
                 old_sqdiff = sqdiff
 
                 for e in range(len(ORIGIN)):
-                    M = PHI.get_ket_site(e)
-                    Mshape = M.dims(PHI.get_ket_left_labels_site(e)+PHI.get_ket_right_labels_site(e)+PHI.get_phys_labels_site(e))
-                    Mlabels = PHI.get_ket_left_labels_site(e)+PHI.get_ket_right_labels_site(e)+PHI.get_phys_labels_site(e)
-                    M0 = M
+                    M0 = PHI.get_ket_site(e)
 
                     B = 1
                     C = 1
@@ -130,18 +127,10 @@ class Cyc1DBTPS(Inf1DBTPS):
                         C *= PHI.get_bra_site(e+i)
                     C *= ORIGIN.get_ket_site(e)
 
-                    Bdata = B.to_matrix(PHI.get_bra_left_labels_site(e)+PHI.get_bra_right_labels_site(e), PHI.get_ket_left_labels_site(e)+PHI.get_ket_right_labels_site(e))
-                    Cdata = C.to_matrix(PHI.get_bra_left_labels_site(e)+PHI.get_bra_right_labels_site(e), PHI.get_phys_labels_site(e))
+                    M = B.solve(C, rows_of_A=PHI.get_bra_left_labels_site(e)+PHI.get_bra_right_labels_site(e), rows_of_B=PHI.get_bra_left_labels_site(e)+PHI.get_bra_right_labels_site(e), assume_a="gen")
 
-                    with warnings.catch_warnings():
-                        warnings.filterwarnings('error')
-                        try:
-                            Mdata = xp.linalg.solve(Bdata, Cdata, assume_a="pos")
-                            M = tnc.matrix_to_tensor(Mdata, Mshape, Mlabels)
-                            M = M * 1.5 - M0 * 0.5
-                            PHI.tensors[e] = M
-                        except:
-                            continue
+                    M = M * 1.5 - M0 * 0.5
+                    PHI.tensors[e] = M
 
                 sqdiff = ( (B * PHI.get_ket_site(e) * PHI.get_bra_site(e)).real() - (C * PHI.get_bra_site(e)).real()*2 + ORIGIN_SQ ).to_scalar()
 
