@@ -121,21 +121,24 @@ class Cyc1DBTPS(Inf1DBTPS):
                 for e in range(len(ORIGIN)):
                     M0 = PHI.get_ket_site(e)
 
+                    A = 1
                     B = 1
-                    C = 1
                     for i in range(1,len(ORIGIN)):
-                        B *= PHI.get_ket_site(e+i)
+                        A *= PHI.get_ket_site(e+i)
+                        A *= PHI.get_bra_site(e+i)
+                        B *= ORIGIN.get_ket_site(e+i)
                         B *= PHI.get_bra_site(e+i)
-                        C *= ORIGIN.get_ket_site(e+i)
-                        C *= PHI.get_bra_site(e+i)
-                    C *= ORIGIN.get_ket_site(e)
+                    B *= ORIGIN.get_ket_site(e)
 
-                    M = B.solve(C, rows_of_A=PHI.get_bra_left_labels_site(e)+PHI.get_bra_right_labels_site(e), rows_of_B=PHI.get_bra_left_labels_site(e)+PHI.get_bra_right_labels_site(e), assume_a="gen")
+                    M = A.solve(B, rows_of_A=PHI.get_bra_left_labels_site(e)+PHI.get_bra_right_labels_site(e), rows_of_B=PHI.get_bra_left_labels_site(e)+PHI.get_bra_right_labels_site(e), assume_a="gen")
+
+                    #print("M0",M0)
+                    #print("M",M)
 
                     M = M * 1.5 - M0 * 0.5
                     PHI.tensors[e] = M
 
-                sqdiff = ( (B * PHI.get_ket_site(e) * PHI.get_bra_site(e)).real() - (C * PHI.get_bra_site(e)).real()*2 + ORIGIN_SQ ).to_scalar()
+                sqdiff = ( (A * PHI.get_ket_site(e) * PHI.get_bra_site(e)).real() - (B * PHI.get_bra_site(e)).real()*2 + ORIGIN_SQ ).to_scalar()
 
                 if abs(sqdiff-old_sqdiff) <= sqdiff*params["conv_rtol"] + params["conv_atol"]:
                     break
