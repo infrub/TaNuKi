@@ -148,6 +148,7 @@ class Ptn2DRhombusBTPK:
 
 
     def calculate(self, chi=10,  normalize=True, **kwargs):
+        #print("AL",self.A.norm(), self.L.norm())
         A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
 
         if self.height_scale==0:

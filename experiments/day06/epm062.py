@@ -49,9 +49,9 @@ def partition_function(beta, Jx, Jy, Lx, Ly):
 
 beta = 1.0
 J = 0.5
-width_scale = 2
-height_scale = 2
-chi = 16
+width_scale = 3
+height_scale = 3
+chi = 4
 
 print(f"beta:{beta}, width_scale:{width_scale}, height_scale:{height_scale}, chi:{chi}\n\n")
 
@@ -102,7 +102,7 @@ def epm0620_core(symbol):
 
 
 def epm0620():
-    symbols = ["othn"] + [a+b+c+d for a in "I" for b in "HN" for c in "AB" for d in "EO"]
+    symbols = ["othn"] + [a+b+c+d for a in "NCI" for b in "HN" for c in "AB" for d in "EO"]
 
     results = []
     for symbol in symbols:

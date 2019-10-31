@@ -142,7 +142,7 @@ def normarg_svd_labels(svd_labels):
     return svd_labels
 
 
-def tensor_svd(A, rows, cols=None, chi=None, decomp_rtol=1e-30, decomp_atol=1e-50, svd_labels=2):
+def tensor_svd(A, rows, cols=None, chi=None, decomp_rtol=1e-16, decomp_atol=1e-20, svd_labels=2):
     rows, cols = A.normarg_complement_indices(rows, cols)
     svd_labels = normarg_svd_labels(svd_labels)
     row_labels, col_labels = A.labels_of_indices(rows), A.labels_of_indices(cols)

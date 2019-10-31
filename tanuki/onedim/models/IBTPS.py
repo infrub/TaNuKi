@@ -321,7 +321,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
         w_L, T_L = self.get_left_half_transfer_eigen(bde=bde, memo=memo["left_half_transfer_eigen"],edge_label=dl_label)
         memo["right_half_transfer_eigen"] = {}
         w_R, T_R = self.get_right_half_transfer_eigen(bde=bde, memo=memo["right_half_transfer_eigen"],edge_label=dr_label)
-        print("wlr",w_L, w_R)
+        #print("wlr",w_L, w_R)
         if w_L<0 or w_R<0:
             raise InternalError(f"In universally_canonize_around_end_bond, internal calculation conflicted: w_L={w_L}, w_R={w_R}) (both must be positive)")
         w = sqrt(w_L*w_R)
@@ -340,17 +340,17 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
         self.bdts[bde] = S
         self.tensors[bde] = N * self.tensors[bde]
         if transfer_normalize:
-            """
+            #"""
             mo = 1.0
             for i in range(len(self)):
                 mo *= self.tensors[i].normalize(inplace=True)
                 mo *= self.bdts[i].normalize(inplace=True)
-            hon = (mo*w) ** (0.5/len(self))
+            hon = (mo/w) ** (0.5/len(self))
             for i in range(len(self)):
-                self.tensors[i] /= hon
-                self.bdts[i] /= hon
-            """
-            self.bdts[bde] /= w
+                self.tensors[i] *= hon
+                self.bdts[i] *= hon
+            #"""
+            #self.bdts[bde] /= w
             return w
         else:
             return 1.0

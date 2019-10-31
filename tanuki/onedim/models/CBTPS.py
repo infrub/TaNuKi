@@ -92,7 +92,9 @@ class Cyc1DBTPS(Inf1DBTPS):
                 "max_iter": kwargs.get("max_iter", 200),
                 "initial_value": kwargs.get("initial_value", "naive_truncation")
                 }
-            chi = min(chi, soujou(self.get_ket_site(0).dims(self.get_phys_labels_site(0)))**(len(self)//2))
+            enough_chi = soujou(self.get_ket_site(0).dims(self.get_phys_labels_site(0)))**(len(self)//2)
+            if chi is None or chi > enough_chi:
+                chi = enough_chi
 
             ORIGIN = self.to_TPS()
 

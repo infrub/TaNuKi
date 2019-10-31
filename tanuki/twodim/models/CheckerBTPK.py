@@ -195,6 +195,7 @@ class Ptn2DCheckerBTPK:
 
 
     def calculate(self, chi=10,  normalize=True, **kwargs):
+        #print("AL",self.A.norm(), self.L.norm())
         if normalize:
             temp,w = self.renormalize(chi=chi, normalize=normalize, **kwargs)
             return temp.calculate(chi=chi, normalize=normalize, **kwargs) * w
