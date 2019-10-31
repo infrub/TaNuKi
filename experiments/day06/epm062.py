@@ -49,9 +49,9 @@ def partition_function(beta, Jx, Jy, Lx, Ly):
 
 beta = 1.0
 J = 0.5
-width_scale = 10
-height_scale = 10
-chi = 10
+width_scale = 2
+height_scale = 2
+chi = 16
 
 print(f"beta:{beta}, width_scale:{width_scale}, height_scale:{height_scale}, chi:{chi}\n\n")
 
@@ -82,7 +82,7 @@ def epm0620_core(symbol):
 
 
     def calc_Z(symbol):
-        if symbol == "otehon":
+        if symbol == "othn":
             return partition_function(beta,J,J,2**(width_scale),2**(height_scale))
         a,b,c,d = symbol[0],symbol[1],symbol[2],symbol[3]
         kwargs = {}
@@ -92,7 +92,7 @@ def epm0620_core(symbol):
         kwargs["drill_parity"] = {"E":0,"O":1}[d]
         return Z_TPK.calculate(chi=chi, **kwargs)
 
-    @timeout(60)
+    #@timeout(120)
     def calc_F_value(symbol):
         Z = calc_Z(symbol)
         return -1.0 / beta * Z.log
@@ -102,11 +102,11 @@ def epm0620_core(symbol):
 
 
 def epm0620():
-    symbols = ["otehon"] + [a+b+c+d for a in "NCI" for b in "HN" for c in "AB" for d in "EO"]
+    symbols = ["othn"] + [a+b+c+d for a in "I" for b in "HN" for c in "AB" for d in "EO"]
 
     results = []
     for symbol in symbols:
-        #if kwargs!="otehon" and kwargs["loop_truncation_algname"] == "canonize": continue
+        #if kwargs!="othn" and kwargs["loop_truncation_algname"] == "canonize": continue
         print()
         print(symbol)
         try:
@@ -115,8 +115,8 @@ def epm0620():
             results.append((symbol,F_value))
         except Exception as e:
             print(symbol, e)
-            results.append((symbol,114514))
-            #raise e
+            results.append((symbol,9999))
+            raise e
 
     print("\n\n")
 

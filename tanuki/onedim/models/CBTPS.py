@@ -83,15 +83,16 @@ class Cyc1DBTPS(Inf1DBTPS):
                 return 1.0
 
         elif algname == "canonize":
-            return self.universally_canonize(chi=chi, elements_normalize=normalize, transfer_normalize=False)
+            return self.universally_canonize(chi=chi, transfer_normalize=normalize)
 
         elif algname == "iterative":
             params = {
                 "conv_atol": kwargs.get("conv_atol", 1e-30),
                 "conv_rtol": kwargs.get("conv_rtol", 1e-30),
                 "max_iter": kwargs.get("max_iter", 200),
-                "initial_value": kwargs.get("initial_value", "random")
+                "initial_value": kwargs.get("initial_value", "naive_truncation")
                 }
+            chi = min(chi, soujou(self.get_ket_site(0).dims(self.get_phys_labels_site(0)))**(len(self)//2))
 
             ORIGIN = self.to_TPS()
 
@@ -146,7 +147,7 @@ class Cyc1DBTPS(Inf1DBTPS):
             self.bdts = PHI.bdts
             self.phys_labelss = PHI.phys_labelss
 
-            return self.universally_canonize(chi=None, elements_normalize=normalize, transfer_normalize=False)
+            return self.universally_canonize(chi=None, transfer_normalize=normalize)
 
 
 
