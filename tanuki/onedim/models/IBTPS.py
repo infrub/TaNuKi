@@ -70,8 +70,12 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
     def equalize_norms(self, multiplier=1.0, divisor=1.0, normalize=False):
         sun = multiplier / divisor
         for i in range(len(self)):
-            sun *= self.tensors[i].normalize(inplace=True)
-            sun *= self.bdts[i].normalize(inplace=True)
+            s = self.tensors[i].norm()
+            self.tensors[i] = self.tensors[i] / s
+            sun *= s
+            s = self.bdts[i].norm()
+            self.bdts[i] = self.bdts[i] / s
+            sun *= s
         if normalize:
             return sun
         else:

@@ -61,6 +61,15 @@ class Cyc1DBTPS(Inf1DBTPS):
     def to_BTPS(self):
         return self
 
+    def inner_prod(self, other):
+        result = 1.0
+        for e in range(len(self)):
+            result *= self.get_ket_site(e)
+            result *= self.get_ket_bond(e+1)
+            result *= other.get_ket_site(e)
+            result *= other.get_ket_bond(e+1)
+        return result
+
     def truncate(self, chi, normalize=True, algname="canonize", memo=None, **kwargs):
         if memo is None: memo = {}
 
@@ -75,11 +84,14 @@ class Cyc1DBTPS(Inf1DBTPS):
 
             if normalize:
                 for bde in range(len(self)):
-                    weight *= self.bdts[bde].normalize(inplace=True)
+                    s = self.bdts[bde].norm()
+                    self.bdts[bde] = self.bdts[bde] / s
+                    weight *= s
 
             return weight
 
         elif algname == "canonize":
+            #ORIGIN = Cyc1DBTPS(self.tensors, self.bdts, self.phys_labelss)
             return self.universally_canonize(chi=chi, transfer_normalize=normalize)
 
         elif algname == "iterative":
