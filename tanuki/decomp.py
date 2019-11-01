@@ -229,7 +229,8 @@ def tensor_solve(A, B, rows_of_A=None, cols_of_A=None, rows_of_B=None, cols_of_B
             try:
                 Xdata = xp.linalg.solve(Adata, Bdata, assume_a=assume_a)
                 success_flag = True
-            except:
+            except Exception as e:
+                print(e)
                 pass
 
     if not success_flag and assume_a in ["her","pos"]:
@@ -238,7 +239,8 @@ def tensor_solve(A, B, rows_of_A=None, cols_of_A=None, rows_of_B=None, cols_of_B
             try:
                 Xdata = xp.linalg.solve(Adata, Bdata, assume_a="her")
                 success_flag = True
-            except:
+            except Exception as e:
+                print(e)
                 pass
 
     if not success_flag:
@@ -247,7 +249,8 @@ def tensor_solve(A, B, rows_of_A=None, cols_of_A=None, rows_of_B=None, cols_of_B
             try:
                 Xdata = xp.linalg.solve(Adata, Bdata, assume_a="gen")
                 success_flag = True
-            except:
+            except Exception as e:
+                print(e)
                 pass
 
     if not success_flag:

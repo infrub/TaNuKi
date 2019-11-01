@@ -97,6 +97,8 @@ class Cyc1DBTPS(Inf1DBTPS):
             if chi is None or chi > enough_chi:
                 chi = enough_chi
 
+            weight = self.universally_canonize(chi=chi, transfer_normalize=normalize)
+            
             ORIGIN = self.to_TPS()
 
             ORIGIN_SQ = 1.0
@@ -157,7 +159,7 @@ class Cyc1DBTPS(Inf1DBTPS):
             self.bdts = PHI.bdts
             self.phys_labelss = PHI.phys_labelss
 
-            return self.universally_canonize(chi=None, transfer_normalize=normalize)
+            return weight * self.universally_canonize(chi=None, transfer_normalize=normalize)
 
 
 

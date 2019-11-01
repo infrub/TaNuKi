@@ -313,7 +313,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
 
 
     # ref: https://arxiv.org/abs/1512.04938
-    def universally_canonize_around_end_bond(self, bde=0, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30, transfer_normalize=True, memo=None):
+    def universally_canonize_around_end_bond(self, bde=0, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30, transfer_normalize=True, equalize_norms=True, memo=None):
         if memo is None: memo = {}
         dl_label = unique_label()
         dr_label = unique_label()
@@ -339,21 +339,22 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
         self.tensors[bde-1] = self.tensors[bde-1] * M
         self.bdts[bde] = S
         self.tensors[bde] = N * self.tensors[bde]
-        if transfer_normalize:
-            #"""
+
+        weight = w if transfer_normalize else 1.0
+
+        if equalize_norms:
             mo = 1.0
             for i in range(len(self)):
                 mo *= self.tensors[i].normalize(inplace=True)
                 mo *= self.bdts[i].normalize(inplace=True)
-            hon = (mo/w) ** (0.5/len(self))
+            hon = (mo/weight) ** (0.5/len(self))
             for i in range(len(self)):
                 self.tensors[i] *= hon
                 self.bdts[i] *= hon
-            #"""
-            #self.bdts[bde] /= w
-            return w
         else:
-            return 1.0
+            self.bdts[i] /= weight
+
+        return weight
 
 
     locally_left_canonize_around_right_end = NotImplemented
