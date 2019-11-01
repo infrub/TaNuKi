@@ -61,6 +61,7 @@ class Ptn2DCheckerBTPK:
         https://arxiv.org/abs/1512.04938
         """
 
+        weight = 1.0
         A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
 
         # O(chi^5)
@@ -97,15 +98,15 @@ class Ptn2DCheckerBTPK:
             B3 *= l1
             B1 *= d2
             """
-                     |   |
-                    A1 R B1
-                   A2     B2
-               -- A3       B3 --
-                  D         U
-               -- B4       A4 --
-                   B5     A5  
-                    B6 L A6    
-                     |   |
+                      |   |
+                     A1 R B1
+                    A2     B2
+                -- A3       B3 --
+                   D         U
+                -- B4       A4 --
+                    B5     A5  
+                     B6 L A6    
+                      |   |
             """
         else:
             raise ArgumentError
@@ -120,10 +121,7 @@ class Ptn2DCheckerBTPK:
 
             # O(chi^8 * repeat)
             CBTPS = onedim.Cyc1DBTPS([E,F,G,H],[B2,A2,B5,A5])
-            if normalize:
-                weight = CBTPS.truncate(chi=chi, normalize=True, algname=loop_truncation_algname)
-            else:
-                CBTPS.truncate(chi=chi, normalize=False, algname=loop_truncation_algname)
+            weight *= CBTPS.truncate(chi=chi, normalize=normalize, algname=loop_truncation_algname)
 
             B2,A2,B5,A5 = tuple(CBTPS.bdts)
             E,F,G,H = tuple(CBTPS.tensors)
@@ -131,10 +129,7 @@ class Ptn2DCheckerBTPK:
         else:
             # O((chi^5 + chi^6) * repeat)
             CBTPS = onedim.Cyc1DBTPS([A1,A3,B4,B6,A6,A4,B3,B1],[R,A2,D,B5,L,A5,U,B2])
-            if normalize:
-                weight = CBTPS.truncate(chi=chi, normalize=True, algname=loop_truncation_algname)
-            else:
-                CBTPS.truncate(chi=chi, normalize=False, algname=loop_truncation_algname)
+            weight *= CBTPS.truncate(chi=chi, normalize=normalize, algname=loop_truncation_algname)
             R_,A2,D_,B5,L_,A5,U_,B2 = tuple(CBTPS.bdts)
             A1,A3,B4,B6,A6,A4,B3,B1 = tuple(CBTPS.tensors)
 
@@ -145,13 +140,13 @@ class Ptn2DCheckerBTPK:
             H = B3*U_*A4
 
         """
-                  ||
-                   E
-                A2   B2   
-           == F         H ==
-                B5   A5   
-                   G
                    ||
+                    E
+                 A2   B2   
+            == F         H ==
+                 B5   A5   
+                    G
+                    ||
         """
 
         # O(chi^6)
@@ -162,28 +157,27 @@ class Ptn2DCheckerBTPK:
             X = E*G
             Y = F*H
         """
-                  X
-               A2   B2
-              Y       Y 
-               B5   A5
-                  X
+                X
+             A2   B2
+            Y       Y 
+             B5   A5
+                X
         """
         """
-               B5   A5   B5   A5
-                  X         X
-               A2   B2   A2   B2
-                       Y         Y
-               B5   A5   B5   A5
-                  X         X
-               A2   B2   A2   B2
-                       Y         Y
+           B5   A5   B5   A5
+              X         X
+           A2   B2   A2   B2
+                   Y         Y
+           B5   A5   B5   A5
+              X         X
+           A2   B2   A2   B2
+                   Y         Y
         """
 
         if drill_parity % 2 == 0:
             A,B,L,R,U,D = X,Y,B5,B2,A5,A2
         else:
             A,B,L,R,U,D = Y,X,B2,B5,A2,A5
-
 
         from tanuki.twodim.models.RhombusBTPK import Ptn2DRhombusBTPK
         if normalize:
