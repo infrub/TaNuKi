@@ -89,8 +89,8 @@ class Cyc1DBTPS(Inf1DBTPS):
             params = {
                 "conv_atol": kwargs.get("conv_atol", 1e-30),
                 "conv_rtol": kwargs.get("conv_rtol", 1e-30),
-                "max_iter": kwargs.get("max_iter", 200),
-                "initial_value": kwargs.get("initial_value", "naive_truncation")
+                "max_iter": kwargs.get("max_iter", 2000),
+                "initial_value": kwargs.get("initial_value", "canonize_truncation")
                 }
             #enough_chi = soujou(self.get_ket_site(0).dims(self.get_phys_labels_site(0)))**(len(self)//2)
             enough_chi = soujou(self.get_ket_site(0).dims(self.get_phys_labels_site(0)))**(len(self)//4)
@@ -108,6 +108,10 @@ class Cyc1DBTPS(Inf1DBTPS):
             if params["initial_value"] == "naive_truncation":
                 PHI = Cyc1DBTPS(self.tensors, self.bdts, self.phys_labelss)
                 PHI.truncate(chi=chi, normalize=False, algname="naive")
+                PHI = PHI.to_TPS()
+            elif params["initial_value"] == "canonize_truncation":
+                PHI = Cyc1DBTPS(self.tensors, self.bdts, self.phys_labelss)
+                PHI.truncate(chi=chi, normalize=False, algname="canonize")
                 PHI = PHI.to_TPS()
             elif params["initial_value"] == "random":
                 from tanuki.onedim.models_instant import random_cyc1DTPS
@@ -146,7 +150,7 @@ class Cyc1DBTPS(Inf1DBTPS):
 
             memo["sqdiff"] = sqdiff
             memo["iter_times"] = iteri+1
-            #print(memo)
+            print(memo)
 
             PHI = PHI.to_BTPS()
             self.tensors = PHI.tensors

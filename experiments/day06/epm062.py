@@ -103,8 +103,8 @@ def epm0620_core(symbol):
 
 def epm0620():
     #symbols = ["othn"] + [a+b+c+d for a in "NCI" for b in "HN" for c in "AB" for d in "EO"]
-    symbols = ["othn"] + [a+bc+d for a in "NCI" for bc in ["HA","HB","NB"] for d in "EO"]
-    #symbols = ["othn"] + [a+bc+d for a in "NCI" for bc in ["NA"] for d in "EO"]
+    #symbols = ["othn"] + [a+bc+d for a in "NCI" for bc in ["HA","HB","NB"] for d in "EO"]
+    symbols = ["othn"] + [a+bc+d for a in "I" for bc in ["NA"] for d in "EO"]
 
     results = []
     for symbol in symbols:

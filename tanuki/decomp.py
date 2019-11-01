@@ -91,7 +91,7 @@ def normarg_eigh_labels(eigh_labels):
     return eigh_labels
 
 
-# A == V*W*Vh
+# A == V*S*Vh
 def tensor_eigh(A, rows, cols=None, decomp_rtol=1e-30, decomp_atol=1e-50, eigh_labels=1):
     rows, cols = A.normarg_complement_indices(rows, cols)
     eigh_labels = normarg_eigh_labels(eigh_labels)
@@ -101,7 +101,7 @@ def tensor_eigh(A, rows, cols=None, decomp_rtol=1e-30, decomp_atol=1e-50, eigh_l
     a = A.to_matrix(rows, cols)
 
     try:
-        w_diag,v = xp.linalg.eigh(a)
+        s_diag,v = xp.linalg.eigh(a)
     except ValueError as e:
         raise ValueError(f"tensor_eigh(A={A}, rows={rows}, cols={cols}) aborted with xp-ValueError({e})")
 
@@ -110,19 +110,19 @@ def tensor_eigh(A, rows, cols=None, decomp_rtol=1e-30, decomp_atol=1e-50, eigh_l
     if decomp_atol is None:
         decomp_atol = 0.0
 
-    largest = max(abs(w_diag[0]), abs(w_diag[-1]))
+    largest = max(abs(s_diag[0]), abs(s_diag[-1]))
     threshold = min(largest, decomp_atol + decomp_rtol * largest)
-    selector = xp.fabs(w_diag) >= threshold
-    w_diag = w_diag[selector]
+    selector = xp.fabs(s_diag) >= threshold
+    s_diag = s_diag[selector]
     v = v[:,selector]
 
-    chi = len(w_diag)
+    chi = len(s_diag)
 
     V = tnc.matrix_to_tensor(v, row_dims+(chi,), row_labels+[eigh_labels[0]])
-    W = tnc.diagonalElementsVector_to_diagonalTensor(w_diag, (chi,), [eigh_labels[1],eigh_labels[2]])
+    S = tnc.diagonalElementsVector_to_diagonalTensor(s_diag, (chi,), [eigh_labels[1],eigh_labels[2]])
     Vh = tnc.matrix_to_tensor(xp.transpose(xp.conj(v)), (chi,)+col_dims, [eigh_labels[3]]+col_labels)
 
-    return V, W, Vh
+    return V, S, Vh
 
 
 
@@ -188,14 +188,14 @@ def tensor_eigsh(A, rows, cols=None):
     a = A.to_matrix(rows, cols)
 
     try:
-        w_diag,v = xp.linalg.eigh(a)
+        s_diag,v = xp.linalg.eigh(a)
     except ValueError as e:
         raise ValueError(f"tensor_eigsh(A={A}, rows={rows}, cols={cols}) aborted with xp-ValueError({e})")
 
-    w = w[0]
-    v = v[:,0]
-    V = tnc.vector_to_tensor(v, col_dims, col_labels)
-    return w,V
+    s0 = s_diag[0]
+    v0 = v[:,0]
+    V0 = tnc.vector_to_tensor(v0, col_dims, col_labels)
+    return s0,V0
 
 
 
@@ -247,8 +247,42 @@ def tensor_solve(A, B, rows_of_A=None, cols_of_A=None, rows_of_B=None, cols_of_B
             try:
                 Xdata = xp.linalg.solve(Adata, Bdata, assume_a="gen")
                 success_flag = True
-            except ValueError as e:
-                raise ValueError(f"tensor_eigh(A={A}, B={B}, rows_of_A={rows_of_A}, rows_of_B={rows_of_B}, cols_of_A={cols_of_A}, cols_of_B={cols_of_B}, assume_a={assume_a}) aborted with xp-ValueError({e})")
+            except:
+                pass
+
+    if not success_flag:
+        if assume_a in ["pos","her"]:
+            s_diag,v = xp.linalg.eigh(Adata)
+            print("v",v)
+            print("s_diag",s_diag)
+            largest = max(abs(s_diag[0]), abs(s_diag[-1]))
+            threshold = min(largest, 1e-20 + 1e-16 * largest)
+            selector = xp.fabs(s_diag) >= threshold
+            s_diag = s_diag[selector]
+            v = v[:,selector]
+            vh = xp.transpose(v)
+            print("v",v)
+            print("s_diag",s_diag)
+            Xdata = (v / s_diag) @ (vh @ B)
+            success_flag = True
+        else:
+            u,s_diag,v = xp.linalg.svd(Adata)
+            print("v",v)
+            print("s_diag",s_diag)
+            largest = s_diag[0]
+            threshold = min(largest, 1e-20 + 1e-16 * largest)
+            selector = xp.fabs(s_diag) >= threshold
+            s_diag = s_diag[selector]
+            u = u[:,selector]
+            v = v[selector,:]
+            print("v",v)
+            print("s_diag",s_diag)
+            Xdata = (xp.transpose(v) / s_diag) @ (xp.transpose(u) @ Bdata)
+            success_flag = True
+
+        if not xp.allclose(Adata @ Xdata, Bdata, rtol=1e-8, atol=1e-5):
+            raise ValueError(f"tensor_eigh(A={A}, B={B}, rows_of_A={rows_of_A}, rows_of_B={rows_of_B}, cols_of_A={cols_of_A}, cols_of_B={cols_of_B}, assume_a={assume_a}) aborted with xp-ValueError({xp.linalg.norm(Adata @ Xdata - Bdata)})")
+
                 
     X = tnc.matrix_to_tensor(Xdata, shape_of_X, labels_of_X)
 
