@@ -15,6 +15,7 @@ from datetime import datetime
 import textwrap
 from timeout_decorator import timeout, TimeoutError
 from math import *
+import itertools
 
 pd.options.display.max_columns = 30
 pd.options.display.width = 160
@@ -56,8 +57,9 @@ chi = 4
 print(f"beta:{beta}, width_scale:{width_scale}, height_scale:{height_scale}, chi:{chi}\n\n")
 
 
-def epm0620_core(symbol):
-    #push# make Ising model partition function TPK
+
+
+def make_Z_TPK():
     gate = zeros_tensor((2,2,2,2), ["ain","aout","bin","bout"])
     gate.data[1,1,1,1] = np.exp(beta*J)
     gate.data[0,0,0,0] = np.exp(beta*J)
@@ -78,8 +80,11 @@ def epm0620_core(symbol):
     A = A.trace("aout","ain")
     B = B.trace("bout","bin")
 
-    Z_TPK = twodim.Ptn2DCheckerBTPK(A,B,L,R,U,D, width_scale=width_scale, height_scale=height_scale)
+    return twodim.Ptn2DCheckerBTPK(A,B,L,R,U,D, width_scale=width_scale, height_scale=height_scale)
 
+
+def epm0620_core(symbol):
+    Z_TPK = make_Z_TPK()
 
     def calc_Z(symbol):
         if symbol == "othn":
@@ -103,8 +108,8 @@ def epm0620_core(symbol):
 
 def epm0620():
     #symbols = ["othn"] + [a+b+c+d for a in "NCI" for b in "HN" for c in "AB" for d in "EO"]
-    symbols = ["othn"] + [a+bc+d for a in "NCI" for bc in ["HA","HB","NB"] for d in "EO"]
-    #symbols = ["othn"] + [a+bc+d for a in "I" for bc in ["NA"] for d in "EO"]
+    #symbols = ["othn"] + [a+bc+d for a in "NCI" for bc in ["HA","HB","NB"] for d in "EO"]
+    symbols = ["othn"] + [a+bc+d for a in "NCI" for bc in ["NA"] for d in "EO"]
 
     results = []
     for symbol in symbols:
@@ -128,8 +133,32 @@ def epm0620():
 
 
 
+def epm0621():
+    print("othn", epm0620_core("othn"))
+
+    #symbol_seqs = [["CNAE","CNAE","CNAE"],["INAE","CNAE","CNAE"]]
+    symbol_seqs = itertools.product(["CHBE","CNAE"],repeat=3)
+
+    for symbol_seq in symbol_seqs:
+        Z_TPK = make_Z_TPK()
+        Z = 1.0
+
+        for symbol in symbol_seq:
+            a,b,c,d = symbol[0],symbol[1],symbol[2],symbol[3]
+            kwargs = {}
+            kwargs["loop_truncation_algname"] = {"N":"naive","C":"canonize","I":"iterative"}[a]
+            kwargs["env_choice"] = {"N":"no","H":"half"}[b]
+            kwargs["contract_before_truncate"] = {"A":False,"B":True}[c]
+            kwargs["drill_parity"] = {"E":0,"O":1}[d]
+            Z_TPK,w = Z_TPK.renormalize(chi=chi, **kwargs)
+            Z *= w
+
+        Z *= Z_TPK.calculate()
+        F_value = -1.0 / beta * Z.log
+
+        print(symbol_seq, Z, F_value)
 
 
-#epm0620_core("INBO")
-epm0620()
+
+epm0621()
 
