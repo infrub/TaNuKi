@@ -247,21 +247,21 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
         trdim = soujou(tshape)
         trlabel = unique_label() if edge_label is None else edge_label
         T = tni.random_tensor((trdim,)+tshape, [trlabel]+tlabels)
+        T = T / T.norm()
 
         for iteri in range(1,101):
-            T.normalize(inplace=True)
             old_T = T
 
             for e in range(bde,bde+len(self)):
                 D = T*self.get_ket_bond(e)*self.get_ket_site(e)
                 _,T = D.qr([trlabel]+self.get_phys_labels_site(e), self.get_ket_right_labels_site(e), qr_labels=trlabel, force_diagonal_elements_positive=True)
 
-            temp = T.is_prop_to(old_T, check_rtol=1e-14, check_atol=1e-14)
+            w = T.norm()
+            T = T / w
 
-            if temp or temp["reason"]=="NOT_PROP_TO":
-                w = temp["factor"].real
-            if temp:
+            if T.__eq__(old_T, check_rtol=1e-14, check_atol=1e-14):
                 break
+
         memo["iter_times"] = iteri
 
         return w,T
@@ -280,20 +280,21 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
         trdim = soujou(tshape)
         trlabel = unique_label() if edge_label is None else edge_label
         T = tni.random_tensor((trdim,)+tshape, [trlabel]+tlabels)
+        T = T / T.norm()
 
         for iteri in range(1,101):
-            T.normalize(inplace=True)
             old_T = T
 
             for e in range(bde+len(self)-1, bde-1, -1):
                 D = T*self.get_ket_bond(e+1)*self.get_ket_site(e)
                 T,_ = D.lq(self.get_ket_left_labels_site(e), self.get_phys_labels_site(e)+[trlabel], lq_labels=trlabel, force_diagonal_elements_positive=True)
 
-            temp = T.is_prop_to(old_T, check_rtol=1e-14, check_atol=1e-14)
-            if temp or temp["reason"]=="NOT_PROP_TO":
-                w = temp["factor"].real
-            if temp:
+            w = T.norm()
+            T = T / w
+
+            if T.__eq__(old_T, check_rtol=1e-14, check_atol=1e-14):
                 break
+
         memo["iter_times"] = iteri
 
         return w,T
@@ -354,8 +355,10 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
         w_L, T_L = self.get_left_half_transfer_eigen(bde=bde, memo=memo["left_half_transfer_eigen"],edge_label=dl_label)
         memo["right_half_transfer_eigen"] = {}
         w_R, T_R = self.get_right_half_transfer_eigen(bde=bde, memo=memo["right_half_transfer_eigen"],edge_label=dr_label)
-        #print("wlr",w_L, w_R)
+        print("wlr",w_L, w_R)
         if w_L<0 or w_R<0:
+            print("T_L",T_L)
+            print("T_R",T_R)
             raise InternalError(f"In universally_canonize_around_end_bond, internal calculation conflicted: w_L={w_L}, w_R={w_R}) (both must be positive)")
         w = sqrt(w_L*w_R)
         #assert abs(W_L-W_R) < 1e-3*abs(w), f"transfer_eigen different. {W_L} != {W_R}"

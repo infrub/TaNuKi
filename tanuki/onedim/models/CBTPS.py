@@ -91,7 +91,6 @@ class Cyc1DBTPS(Inf1DBTPS):
             return weight
 
         elif algname == "canonize":
-            #ORIGIN = Cyc1DBTPS(self.tensors, self.bdts, self.phys_labelss)
             return self.universally_canonize(chi=chi, transfer_normalize=normalize)
 
         elif algname == "iterative":

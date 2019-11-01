@@ -50,9 +50,9 @@ def partition_function(beta, Jx, Jy, Lx, Ly):
 
 beta = 1.0
 J = 0.5
-width_scale = 2
-height_scale = 2
-chi = 4
+width_scale = 10
+height_scale = 10
+chi = 10
 
 print(f"beta:{beta}, width_scale:{width_scale}, height_scale:{height_scale}, chi:{chi}\n\n")
 
@@ -107,9 +107,9 @@ def epm0620_core(symbol):
 
 
 def epm0620():
-    #symbols = ["othn"] + [a+b+c+d for a in "NCI" for b in "HN" for c in "AB" for d in "EO"]
+    symbols = ["othn"] + [a+b+c+d for a in "NCI" for b in "HN" for c in "AB" for d in "EO"]
     #symbols = ["othn"] + [a+bc+d for a in "NCI" for bc in ["HA","HB","NB"] for d in "EO"]
-    symbols = ["othn"] + [a+bc+d for a in "NCI" for bc in ["NA"] for d in "EO"]
+    #symbols = ["othn"] + [a+bc+d for a in "NCI" for bc in ["NA"] for d in "EO"]
 
     results = []
     for symbol in symbols:
@@ -160,5 +160,6 @@ def epm0621():
 
 
 
-epm0621()
+#print(epm0620_core("CNAE"))
+epm0620()
 
