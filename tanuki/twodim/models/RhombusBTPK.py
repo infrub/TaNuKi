@@ -59,7 +59,7 @@ class Ptn2DRhombusBTPK:
 
 
 
-    def renormalize(self, chi=10, normalize=True, env_choice="half", contract_before_truncate=False, loop_truncation_algname="canonize", drill_parity=0):
+    def renormalize(self, chi=10, normalize=True, env_choice="half", contract_before_truncate=False, loop_truncation_algname="canonize", drill_parity=1):
         A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
 
         # O(chi^5)
