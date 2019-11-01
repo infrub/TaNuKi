@@ -63,10 +63,10 @@ class Ptn2DRhombusBTPK:
         A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
 
         # O(chi^5)
-        A1,A2,A3 = A.svd(intersection_list(A.labels, R.labels+U.labels), chi=chi, svd_labels=2)
-        A4,A5,A6 = A.svd(intersection_list(A.labels, R.labels+U.labels), chi=chi, svd_labels=2)
-        B1,B2,B3 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=chi, svd_labels=2)
-        B4,B5,B6 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=chi, svd_labels=2)
+        A1,A2,A3 = A.svd(intersection_list(A.labels, R.labels+U.labels), chi=None, svd_labels=2)
+        A4,A5,A6 = A.svd(intersection_list(A.labels, R.labels+U.labels), chi=None, svd_labels=2)
+        B1,B2,B3 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=None, svd_labels=2)
+        B4,B5,B6 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=None, svd_labels=2)
 
         if env_choice=="no":
             pass

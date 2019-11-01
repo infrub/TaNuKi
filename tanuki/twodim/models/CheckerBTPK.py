@@ -66,10 +66,10 @@ class Ptn2DCheckerBTPK:
 
         # O(chi^5)
         #TODO konotoki L,R,U,D mo hukumete svd sitekara waru?
-        A1,A2,A3 = A.svd(intersection_list(A.labels, R.labels+U.labels), chi=chi, svd_labels=2)
-        A4,A5,A6 = A.svd(intersection_list(A.labels, R.labels+U.labels), chi=chi, svd_labels=2)
-        B1,B2,B3 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=chi, svd_labels=2)
-        B4,B5,B6 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=chi, svd_labels=2)
+        A1,A2,A3 = A.svd(intersection_list(A.labels, R.labels+U.labels), chi=None, svd_labels=2)
+        A4,A5,A6 = A.svd(intersection_list(A.labels, R.labels+U.labels), chi=None, svd_labels=2)
+        B1,B2,B3 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=None, svd_labels=2)
+        B4,B5,B6 = B.svd(intersection_list(B.labels, R.labels+D.labels), chi=None, svd_labels=2)
         """
                  U   D
                 A1 R B1

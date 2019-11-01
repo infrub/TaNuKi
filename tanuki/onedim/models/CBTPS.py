@@ -99,7 +99,7 @@ class Cyc1DBTPS(Inf1DBTPS):
                     + weight * weight * self.inner_prod(self).real() ).to_scalar()
             memo["sqdiff"] = sqdiff
             memo["relative_sqdiff"] = sqdiff / ORIGIN_SQ.to_scalar()
-            print(memo)
+            #print(memo)
             return weight
 
         elif algname == "iterative":
@@ -170,7 +170,7 @@ class Cyc1DBTPS(Inf1DBTPS):
             memo["sqdiff"] = sqdiff
             memo["relative_sqdiff"] = sqdiff / ORIGIN_SQ.to_scalar()
             memo["iter_times"] = iteri+1
-            print(memo)
+            #print(memo)
 
             PHI = PHI.to_BTPS()
             self.tensors = PHI.tensors
