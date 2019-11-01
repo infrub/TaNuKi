@@ -355,10 +355,8 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
         w_L, T_L = self.get_left_half_transfer_eigen(bde=bde, memo=memo["left_half_transfer_eigen"],edge_label=dl_label)
         memo["right_half_transfer_eigen"] = {}
         w_R, T_R = self.get_right_half_transfer_eigen(bde=bde, memo=memo["right_half_transfer_eigen"],edge_label=dr_label)
-        print("wlr",w_L, w_R)
+        #print("wlr",w_L, w_R)
         if w_L<0 or w_R<0:
-            print("T_L",T_L)
-            print("T_R",T_R)
             raise InternalError(f"In universally_canonize_around_end_bond, internal calculation conflicted: w_L={w_L}, w_R={w_R}) (both must be positive)")
         w = sqrt(w_L*w_R)
         #assert abs(W_L-W_R) < 1e-3*abs(w), f"transfer_eigen different. {W_L} != {W_R}"

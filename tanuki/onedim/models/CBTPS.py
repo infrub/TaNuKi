@@ -64,8 +64,8 @@ class Cyc1DBTPS(Inf1DBTPS):
     def inner_prod(self, other):
         result = 1.0
         for e in range(len(self)):
-            result *= self.get_ket_site(e)
-            result *= self.get_ket_bond(e+1)
+            result *= self.get_bra_site(e)
+            result *= self.get_bra_bond(e+1)
             result *= other.get_ket_site(e)
             result *= other.get_ket_bond(e+1)
         return result
@@ -91,7 +91,16 @@ class Cyc1DBTPS(Inf1DBTPS):
             return weight
 
         elif algname == "canonize":
-            return self.universally_canonize(chi=chi, transfer_normalize=normalize)
+            ORIGIN = Cyc1DBTPS(self.tensors, self.bdts, phys_labelss=self.phys_labelss)
+            weight = self.universally_canonize(chi=chi, transfer_normalize=normalize)
+            ORIGIN_SQ = ORIGIN.inner_prod(ORIGIN).real()
+            sqdiff = ( ORIGIN_SQ \
+                    - weight * ORIGIN.inner_prod(self).real() * 2 \
+                    + weight * weight * self.inner_prod(self).real() ).to_scalar()
+            memo["sqdiff"] = sqdiff
+            memo["relative_sqdiff"] = sqdiff / ORIGIN_SQ.to_scalar()
+            print(memo)
+            return weight
 
         elif algname == "iterative":
             params = {
@@ -159,6 +168,7 @@ class Cyc1DBTPS(Inf1DBTPS):
                     break
 
             memo["sqdiff"] = sqdiff
+            memo["relative_sqdiff"] = sqdiff / ORIGIN_SQ.to_scalar()
             memo["iter_times"] = iteri+1
             print(memo)
 
