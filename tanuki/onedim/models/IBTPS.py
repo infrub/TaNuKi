@@ -67,6 +67,35 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
 
 
 
+    def equalize_norms(self, multiplier=1.0, divisor=1.0, normalize=False):
+        sun = multiplier / divisor
+        for i in range(len(self)):
+            sun *= self.tensors[i].normalize(inplace=True)
+            sun *= self.bdts[i].normalize(inplace=True)
+        if normalize:
+            return sun
+        else:
+            moon = sun ** (0.5/len(self))
+            for i in range(len(self)):
+                self.tensors[i] *= moon
+                self.bdts[i] *= moon
+            return 1.0
+
+    def __imul__(self,other):
+        if xp.isscalar(other):
+            self.equalize_norms(multiplier=other)
+            return self
+        else:
+            return NotImplemented
+
+    def __itruediv__(self,other):
+        if xp.isscalar(other):
+            self.equalize_norms(divisor=other)
+            return self
+        else:
+            return NotImplemented
+        
+
     # ref: https://arxiv.org/abs/0711.3960
     #
     # [bde=0] get L s.t.
@@ -313,7 +342,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
 
 
     # ref: https://arxiv.org/abs/1512.04938
-    def universally_canonize_around_end_bond(self, bde=0, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30, transfer_normalize=True, equalize_norms=True, memo=None):
+    def universally_canonize_around_end_bond(self, bde=0, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30, transfer_normalize=True, memo=None):
         if memo is None: memo = {}
         dl_label = unique_label()
         dr_label = unique_label()
@@ -342,17 +371,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
 
         weight = w if transfer_normalize else 1.0
 
-        if equalize_norms:
-            mo = 1.0
-            for i in range(len(self)):
-                mo *= self.tensors[i].normalize(inplace=True)
-                mo *= self.bdts[i].normalize(inplace=True)
-            hon = (mo/weight) ** (0.5/len(self))
-            for i in range(len(self)):
-                self.tensors[i] *= hon
-                self.bdts[i] *= hon
-        else:
-            self.bdts[i] /= weight
+        self /= weight
 
         return weight
 
@@ -377,10 +396,6 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
                 weight *= self.locally_left_canonize_around_bond(i, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
             for i in range(len(self)-1,0,-1):
                 weight *= self.locally_right_canonize_around_bond(i, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)
-            """
-            self.globally_left_canonize_upto(len(self)-1, 0, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, transfer_normalize=transfer_normalize)
-            self.globally_right_canonize_upto(1, len(self), chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, transfer_normalize=transfer_normalize)
-            """
         else:
             if right_already is None: right_already = len(self)
             weight *= self.globally_left_canonize_upto(right_already-1, left_already, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol)

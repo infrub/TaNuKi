@@ -65,22 +65,19 @@ class Cyc1DBTPS(Inf1DBTPS):
         if memo is None: memo = {}
 
         if algname == "naive":
+            weight = self.equalize_norms(normalize=normalize)
+
+            for bde in range(len(self)):
+                U,S,V = self.bdts[bde].svd(self.get_left_labels_bond(bde), chi=chi, svd_labels=2)
+                self.tensors[bde-1] = self.tensors[bde-1] * U
+                self.bdts[bde] = S
+                self.tensors[bde] = V * self.tensors[bde]
+
             if normalize:
-                weight = 1.0
                 for bde in range(len(self)):
-                    U,S,V = self.bdts[bde].svd(self.get_left_labels_bond(bde), chi=chi, svd_labels=2)
-                    weight *= S.normalize(inplace=True)
-                    self.tensors[bde-1] = self.tensors[bde-1] * U
-                    self.bdts[bde] = S
-                    self.tensors[bde] = V * self.tensors[bde]
-                return weight
-            else:
-                for bde in range(len(self)):
-                    U,S,V = self.bdts[bde].svd(self.get_left_labels_bond(bde), chi=chi, svd_labels=2)
-                    self.tensors[bde-1] = self.tensors[bde-1] * U
-                    self.bdts[bde] = S
-                    self.tensors[bde] = V * self.tensors[bde]
-                return 1.0
+                    weight *= self.bdts[bde].normalize(inplace=True)
+
+            return weight
 
         elif algname == "canonize":
             return self.universally_canonize(chi=chi, transfer_normalize=normalize)
@@ -98,7 +95,7 @@ class Cyc1DBTPS(Inf1DBTPS):
                 chi = enough_chi
 
             weight = self.universally_canonize(chi=chi, transfer_normalize=normalize)
-            
+
             ORIGIN = self.to_TPS()
 
             ORIGIN_SQ = 1.0
