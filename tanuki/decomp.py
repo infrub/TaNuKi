@@ -18,7 +18,7 @@ def normarg_qr_labels(qr_labels):
     return qr_labels
 
 
-def tensor_qr(A, rows, cols=None, qr_labels=1, mode="economic", force_diagonal_elements_positive=False):
+def tensor_qr(A, rows=None, cols=None, qr_labels=1, mode="economic", force_diagonal_elements_positive=False):
     #A == Q*R
     rows, cols = A.normarg_complement_indices(rows, cols)
     qr_labels = normarg_qr_labels(qr_labels)
@@ -64,7 +64,7 @@ def normarg_lq_labels(lq_labels):
     return lq_labels
 
 
-def tensor_lq(A, rows, cols=None, lq_labels=1, mode="economic", force_diagonal_elements_positive=False):
+def tensor_lq(A, rows=None, cols=None, lq_labels=1, mode="economic", force_diagonal_elements_positive=False):
     #A == L*Q
     rows, cols = A.normarg_complement_indices(rows, cols)
     lq_labels = normarg_lq_labels(lq_labels)
@@ -92,7 +92,7 @@ def normarg_eigh_labels(eigh_labels):
 
 
 # A == V*S*Vh
-def tensor_eigh(A, rows, cols=None, decomp_rtol=1e-30, decomp_atol=1e-50, eigh_labels=1):
+def tensor_eigh(A, rows=None, cols=None, decomp_rtol=1e-30, decomp_atol=1e-50, eigh_labels=1):
     rows, cols = A.normarg_complement_indices(rows, cols)
     eigh_labels = normarg_eigh_labels(eigh_labels)
     row_labels, col_labels = A.labels_of_indices(rows), A.labels_of_indices(cols)
@@ -142,7 +142,7 @@ def normarg_svd_labels(svd_labels):
     return svd_labels
 
 
-def tensor_svd(A, rows, cols=None, chi=None, decomp_rtol=1e-16, decomp_atol=1e-20, svd_labels=2):
+def tensor_svd(A, rows=None, cols=None, chi=None, decomp_rtol=1e-16, decomp_atol=1e-20, svd_labels=2):
     rows, cols = A.normarg_complement_indices(rows, cols)
     svd_labels = normarg_svd_labels(svd_labels)
     row_labels, col_labels = A.labels_of_indices(rows), A.labels_of_indices(cols)
@@ -178,6 +178,28 @@ def tensor_svd(A, rows, cols=None, chi=None, decomp_rtol=1e-16, decomp_atol=1e-2
     V = tnc.matrix_to_tensor(v, (chi,)+col_dims, [svd_labels[3]]+col_labels)
 
     return U, S, V
+
+
+def tensor_svd_again(A,B,C, chi=None, decomp_rtol=1e-16, decomp_atol=1e-20, svd_labels=2):
+    P,R = tensor_qr(A,cols=B)
+    L,Q = tensor_lq(C,rows=B)
+    # ABC = PRBLQ = PGQ = PUSVQ
+    G = R*B*L
+    U,S,V = tensor_svd(G, rows=R, cols=L, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, svd_labels=svd_labels)
+    return P*U, S, V*Q
+
+
+def tensor_svd_again_in_bdts(A,B,C,A_env_bdts,C_env_bdts, chi=None, decomp_rtol=1e-16, decomp_atol=1e-20, svd_labels=2):
+    E = A
+    for bdt in A_env_bdts: E *= bdt
+    F = C
+    for bdt in C_env_bdts: F *= bdt
+    E,B,F = tensor_svd_again(E,B,F, chi=None, decomp_rtol=1e-16, decomp_atol=1e-20, svd_labels=2)
+    A = E
+    for bdt in A_env_bdts: A /= bdt
+    C = F
+    for bdt in C_env_bdts: C /= bdt
+    return A,B,C
 
 
 # A*V == w*V

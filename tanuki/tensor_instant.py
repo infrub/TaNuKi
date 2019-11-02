@@ -26,6 +26,10 @@ def zeros_tensor(shape, labels=None, base_label=None, dtype=complex):
     data = xp.zeros(shape, dtype=dtype)
     return tnc.Tensor(data, labels=labels, base_label=base_label)
 
+def ones_tensor(shape, labels=None, base_label=None, dtype=complex):
+    data = xp.ones(shape, dtype=dtype)
+    return tnc.Tensor(data, labels=labels, base_label=base_label)
+
 def identity_tensor(row_shape, col_shape=None, labels=None, base_label=None, dtype=complex):
     if type(row_shape) == int:
         row_shape = (row_shape,)
@@ -49,6 +53,9 @@ def random_tensor_like(tensor):
 
 def zeros_tensor_like(tensor):
     return zeros_tensor(tensor.shape, labels=tensor.labels, dtype=tensor.dtype)
+
+def ones_tensor_like(tensor):
+    return ones_tensor(tensor.shape, labels=tensor.labels, dtype=tensor.dtype)
 
 def identity_tensor_like(tensor):
     return identity_tensor(tensor.shape[:tensor.ndim//2], tensor.shape[tensor.ndim//2:], labels=tensor.labels, dtype=tensor.dtype)

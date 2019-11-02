@@ -18,10 +18,15 @@ def eq_list(xs, ys):
     zs = list(xc.elements())
     return len(zs)==0
 
-def diff_list(univ, see):
+def diff_list(univ, see, assume_included=True):
     diff = list(univ)
     for x in see:
-        diff.remove(x)
+        if assume_included:
+            diff.remove(x)
+        else:
+            if x in diff:
+                diff.remove(x)
+
     return diff
 
 def intersection_list(xs, ys):

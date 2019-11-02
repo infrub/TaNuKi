@@ -50,7 +50,7 @@ def tensor_to_ndarray(T, indices):
     T = T.move_all_indices(indices)
     return T.data
 
-def tensor_to_matrix(T, rows, cols=None):
+def tensor_to_matrix(T, rows=None, cols=None):
     rows, cols = T.normarg_complement_indices(rows, cols)
     T = T.move_all_indices(rows+cols)
     total_row_dim = soujou(T.shape[:len(rows)])
@@ -331,23 +331,20 @@ class TensorLabelingMixin:
 
     normarg_indices = normarg_indices_front
 
-    def normarg_complement_indices_front(self, rows, cols=None):
-        rows = self.normarg_indices_front(rows)
-        if cols is None:
+    def normarg_complement_indices(self, rows=None, cols=None):
+        if rows is None and cols is None:
+            raise ValueError
+        elif cols is None:
+            rows = self.normarg_indices_front(rows)
             cols = diff_list(list(range(self.ndim)), rows)
+        elif rows is None:
+            cols = self.normarg_indices_back(cols)
+            rows = diff_list(list(range(self.ndim)), cols)
         else:
+            rows = self.normarg_indices_front(rows)
             cols = self.normarg_indices_back(cols)
         return rows, cols
 
-    def normarg_complement_indices_back(self, rows, cols=None):
-        rows = self.normarg_indices_back(rows)
-        if cols is None:
-            cols = diff_list(list(range(self.ndim)), rows)
-        else:
-            cols = self.normarg_indices_front(cols)
-        return rows, cols
-
-    normarg_complement_indices = normarg_complement_indices_front
 
 
 
