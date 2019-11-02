@@ -63,11 +63,33 @@ def make_Z_TPS():
     return twodim.Ptn2DCheckerBTPS(A,B,L,R,U,D, width_scale=width_scale, height_scale=height_scale)
 
 
+def make_random_TPS():
+    b = 2
+    chi = 20
+    A = random_tensor((b,chi,chi,chi,chi),["a","al","ar","au","ad"])
+    B = random_tensor((b,chi,chi,chi,chi),["b","bl","br","bu","bd"])
+    L = random_diagonalTensor((chi,),["al","bl"])
+    R = random_diagonalTensor((chi,),["ar","br"])
+    U = random_diagonalTensor((chi,),["au","bu"])
+    D = random_diagonalTensor((chi,),["ad","bd"])
+
+    return twodim.Ptn2DCheckerBTPS(A,B,L,R,U,D, width_scale=width_scale, height_scale=height_scale)
+
+
 def epm0700():
     Z = make_Z_TPS()
-    print(Z)
+    print("ALURDB",Z.A*Z.L*Z.R*Z.U*Z.D*Z.B)
     Z.super_orthogonalize_ver1(maxiter=1)
-    print(Z)
+    print("ALURDB",Z.A*Z.L*Z.R*Z.U*Z.D*Z.B)
+    print("ALRU",(Z.A*Z.L*Z.R*Z.U).is_prop_right_semi_unitary(rows=Z.D)) #True(factor=1.0)
 
 
-epm0700()
+def epm0701():
+    Z = make_random_TPS()
+    print("ALURDB",Z.A*Z.L*Z.R*Z.U*Z.D*Z.B)
+    Z.super_orthogonalize_ver1(maxiter=1000)
+    print("ALURDB",Z.A*Z.L*Z.R*Z.U*Z.D*Z.B)
+    print("ALRU",(Z.A*Z.L*Z.R*Z.U).is_prop_right_semi_unitary(rows=Z.D)) #True(factor=1.0)
+
+
+epm0701()
