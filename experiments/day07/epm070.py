@@ -87,7 +87,7 @@ def epm0700():
 def epm0701():
     Z = make_random_TPS()
     print("ALURDB",Z.A*Z.L*Z.R*Z.U*Z.D*Z.B)
-    Z.super_orthogonalize_ver1(maxiter=1000)
+    Z.super_orthogonalize()
     print("ALURDB",Z.A*Z.L*Z.R*Z.U*Z.D*Z.B)
     print("ALRU",(Z.A*Z.L*Z.R*Z.U).is_prop_right_semi_unitary(rows=Z.D)) #True(factor=1.0)
 

@@ -58,7 +58,7 @@ class Ptn2DCheckerBTPS:
 
 
 
-    def super_orthogonalize_ver1(self, conv_rtol=1e-8, conv_atol=1e-11, maxiter=100, memo=None):
+    def super_orthogonalize(self, conv_rtol=1e-8, conv_atol=1e-11, maxiter=100, memo=None):
         if memo is None: memo={}
         A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
         weight = 1.0
@@ -116,32 +116,3 @@ class Ptn2DCheckerBTPS:
 
         # assert keeps A*L*R*U*D*B
         # assert (A*L*R*U).is_prop_right_semi_unitary(rows=D)["factor"]==1.0
-
-
-    def super_orthogonalize_ver2(self):
-        """
-        "i" is "i" of "inverse"
-
-                        U                 D
-                       TD                SU
-                       TDi               SUi
-        SLi SL L TR TRi A TLi TL R SR SRi B SLi SL L
-                       TUi               SDi
-                       TU                SD
-                        D                 U
-                       SD                TU
-                       SDi               TUi
-        TLi TL R SR SRi B SLi SL L TR TRi A TLi TL R
-                       SUi               TDi
-                       SU                TD
-                        U                 D
-        """
-        """
-        tshape = self.get_right_shape_site(bde-1)
-        tlabels = self.get_ket_right_labels_site(bde-1)
-        trdim = soujou(tshape)
-        trlabel = unique_label() if edge_label is None else edge_label
-        T = tni.random_tensor((trdim,)+tshape, [trlabel]+tlabels)"""
-
-    super_orthogonalize = super_orthogonalize_ver1
-
