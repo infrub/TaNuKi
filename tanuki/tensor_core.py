@@ -169,7 +169,7 @@ def matrix_is_prop_identity(M, check_rtol=1e-5, check_atol=1e-8):
     factor = xp.average(d)
     ones = xp.ones_like(d)
     if not xp.allclose(d, factor*ones, rtol=check_rtol, atol=check_atol):
-        return CollateralBool(False, {"reason":"NOT_PROP_IDENTITY"})
+        return CollateralBool(False, {"reason":"NOT_PROP_IDENTITY", "factor":factor})
     return CollateralBool(True, {"factor":factor})
 
 def matrix_is_left_semi_unitary(M, check_rtol=1e-5, check_atol=1e-8):
