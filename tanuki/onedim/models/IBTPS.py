@@ -235,7 +235,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
 
     # ref: https://arxiv.org/abs/1512.04938
     #
-    # [bde=0] get L s.t.
+    # [bde=0] get L s.t. (w will be the maximum one of availables)
     # /-L-(0)-[0]-...-(len-1)-[len-1]-                 /-L-
     # |        |                 |      == w * (unitary tensor)
     #
@@ -268,9 +268,9 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
 
     # ref: https://arxiv.org/abs/1512.04938
     #
-    # [bde=0] get R s.t.
+    # [bde=0] get R s.t. (w will be the maximum one of availables)
     # -[0]-...-(len-1)-[len-1]-(0)-R-\               -R-\
-    #   |                 |          |  ==  W *  (unitary tensor)
+    #   |                 |          |  ==  w *  (unitary tensor)
     #
     # O(chi^3 * phys_dim * repeat)
     def get_right_half_transfer_eigen(self, bde=0, memo=None, edge_label=None):
@@ -347,6 +347,7 @@ class Inf1DBTPS(MixinInf1DBTP_, Opn1DBTPS):
 
 
     # ref: https://arxiv.org/abs/1512.04938
+    # O(chi^3 * phys_dim * repeat * 2 + chi^3)
     def universally_canonize_around_end_bond(self, bde=0, chi=None, decomp_rtol=1e-20, decomp_atol=1e-30, transfer_normalize=True, memo=None):
         if memo is None: memo = {}
         dl_label = unique_label()

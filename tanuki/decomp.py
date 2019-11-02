@@ -188,13 +188,25 @@ def tensor_svd_again(A,B,C, chi=None, decomp_rtol=1e-16, decomp_atol=1e-20, svd_
     U,S,V = tensor_svd(G, rows=R, cols=L, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, svd_labels=svd_labels)
     return P*U, S, V*Q
 
+def tensor_svd_in_bdts(A,row_env_bdts,col_env_bdts, chi=None, decomp_rtol=1e-16, decomp_atol=1e-20, svd_labels=2):
+    E = A
+    row_labels = []
+    for bdt in row_env_bdts:
+        E *= bdt
+        row_labels += bdt.labels
+    row_labels = intersection_list(A.labels, row_labels)
+    for bdt in col_env_bdts: E *= bdt
+    U,S,V = tensor_svd(E, rows=row_labels, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, svd_labels=svd_labels)
+    for bdt in row_env_bdts: U /= bdt
+    for bdt in col_env_bdts: V /= bdt
+    return U,S,V
 
 def tensor_svd_again_in_bdts(A,B,C,A_env_bdts,C_env_bdts, chi=None, decomp_rtol=1e-16, decomp_atol=1e-20, svd_labels=2):
     E = A
     for bdt in A_env_bdts: E *= bdt
     F = C
     for bdt in C_env_bdts: F *= bdt
-    E,B,F = tensor_svd_again(E,B,F, chi=None, decomp_rtol=1e-16, decomp_atol=1e-20, svd_labels=2)
+    E,B,F = tensor_svd_again(E,B,F, chi=chi, decomp_rtol=decomp_rtol, decomp_atol=decomp_atol, svd_labels=svd_labels)
     A = E
     for bdt in A_env_bdts: A /= bdt
     C = F

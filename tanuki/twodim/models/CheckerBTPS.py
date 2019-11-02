@@ -93,9 +93,9 @@ class Ptn2DCheckerBTPS:
         cau = (B*L*R*D).is_prop_right_semi_unitary(rows=U, check_rtol=conv_rtol*1e3, check_atol=conv_atol*1e3)["factor"]**(0.5)
         cad = (B*L*R*U).is_prop_right_semi_unitary(rows=D, check_rtol=conv_rtol*1e3, check_atol=conv_atol*1e3)["factor"]**(0.5)
 
-        c = 1.0/weight
+        c = 1.0/weight # =: 1/(a*b*l*r*u*d)
         gamma = (cbl/cal*cbr/car*cbu/cau*cbd/cad)**0.25 # = b/a
-        a = (cbl*cbr*cbu*cbd / c**3 / gamma**3)**0.5
+        a = (gamma * cal*car*cau*cad / c**3)**0.5
         b = gamma * a
         l = cbl / c / b
         r = cbr / c / b
