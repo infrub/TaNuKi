@@ -166,44 +166,6 @@ class CollateralBool:
         return self.expression[arg]
 
 
-class PowPowFloat: #[ (mantissa, radix, exponent) ]
-    def __init__(self, *args):
-        if len(args)==1:
-            self.mres = args[0]
-        else:
-            self.mres = [(args[0],args[1],args[2])]
-    def __str__(self):
-        re = ""
-        for m,r,e in self.mres:
-            if len(re)>0:
-                re += " * "
-            re += f"({m})**({r}**{e})"
-        return re
-    def __mul__(self, other):
-        if type(other) == PowPowFloat:
-            return PowPowFloat(self.mres + other.mres)
-        else:
-            return self * PowPowFloat(other, self.mres[0][1], 0)
-    @property
-    def value(self):
-        return soujou([m ** (r ** e) for (m,r,e) in self.mres])
-    def __float__(self):
-        result = self.value
-        if type(result) == complex:
-            result = result.real
-        return result
-    def __complex__(self):
-        result = self.value
-        if type(result) == float:
-            result = result * (1.0+0.0j)
-        return result
-    @property
-    def log(self, radix=math.e):
-        result = 0
-        for m,r,e in self.mres:
-            result += math.log(abs(m),radix) * (r**e)
-        return result
-
 
 class ExpFloat:
     def __init__(self, *args):
