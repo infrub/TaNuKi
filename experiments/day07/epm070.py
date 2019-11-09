@@ -59,6 +59,8 @@ def make_Z_TPS():
     L,R,U,D = tuple(Ss)
     A.replace_labels("aout","a")
     B.replace_labels("bout","b")
+    A = random_tensor_like(A)
+    B = random_tensor_like(B)
 
     return twodim.Ptn2DCheckerBTPS(A,B,L,R,U,D, width_scale=width_scale, height_scale=height_scale)
 
@@ -89,7 +91,20 @@ def epm0701():
     print("ALURDB",Z.A*Z.L*Z.R*Z.U*Z.D*Z.B)
     Z.super_orthogonalize()
     print("ALURDB",Z.A*Z.L*Z.R*Z.U*Z.D*Z.B)
-    print("ALRU",(Z.A*Z.L*Z.R*Z.U).is_prop_right_semi_unitary(rows=Z.D)) #True(factor=1.0)
+    print("ALRU unitary",(Z.A*Z.L*Z.R*Z.U).is_prop_right_semi_unitary(rows=Z.D)) #True(factor=1.0)
+    print("BRUD unitary",(Z.B*Z.R*Z.U*Z.D).is_prop_right_semi_unitary(rows=Z.L)) #True(factor=1.0)
 
 
-epm0701()
+def epm0702():
+    for normalize_where in ["keep_overall","A","B","L","R","U","D"]:
+        print("\n",normalize_where)
+        Z = make_random_TPS()
+        z0 = Z.A*Z.L*Z.R*Z.U*Z.D*Z.B
+        Z.super_orthogonalize(normalize_where=normalize_where)
+        z1 = Z.A*Z.L*Z.R*Z.U*Z.D*Z.B
+        print("ALURDB prop", z0.is_prop_to(z1))
+        print("ALRU unitary",(Z.A*Z.L*Z.R*Z.U).is_prop_right_semi_unitary(rows=Z.D)) #True(factor=1.0)
+        print("BRUD unitary",(Z.B*Z.R*Z.U*Z.D).is_prop_right_semi_unitary(rows=Z.L)) #True(factor=1.0)
+        print("norms",Z.A.norm(),Z.B.norm(),Z.L.norm(),Z.R.norm(),Z.U.norm(),Z.D.norm())
+
+epm0702()
