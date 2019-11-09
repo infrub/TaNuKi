@@ -583,6 +583,8 @@ class TensorMixin(TensorLabelingMixin):
         # [[x,y]] => [x,y]          => [x,y]
         #
         # so inevitable ambiguousity exist in some cases e.g. calling [(x,y)] vs [x,y] when labels==[x,y,(x,y)]
+        if isinstance(kusonmiteenashorisaretahikisuu, slice):
+            return ToContract(self, kusonmiteenashorisaretahikisuu.start, kusonmiteenashorisaretahikisuu.stop, kusonmiteenashorisaretahikisuu.step)
         if isinstance(kusonmiteenashorisaretahikisuu, list):
             indices = kusonmiteenashorisaretahikisuu
         elif type(kusonmiteenashorisaretahikisuu)==tuple:
@@ -645,6 +647,10 @@ class TensorMixin(TensorLabelingMixin):
         if not skipLabelSort:
             other = other.move_all_indices(self.labels)
         return ndarray_is_prop_to(self.data, other.data, check_rtol=check_rtol, check_atol=check_atol)
+
+    def is_dummy(self):
+        return self.data.ndim==0 and self.data.item(0)==1.0
+
 
 
 
@@ -1274,12 +1280,19 @@ class DiagonalTensor(TensorMixin):
 #contract functions
 class ToContract:
     #A["a"]*B["b"] == contract(A,B,["a"],["b"])
-    def __init__(self, tensor, labels):
+    def __init__(self, tensor, labelsToContract, labelsRenameFrom=None, labelsRenameTo=None):
         self.tensor = tensor
-        self.labels = labels
+        self.labelsToContract = labelsToContract
+        self.labelsRenameFrom = labelsRenameFrom
+        self.labelsRenameTo = labelsRenameTo
 
     def __mul__(self, other):
-        return contract(self.tensor, other.tensor, self.labels, other.labels)
+        result = contract(self.tensor, other.tensor, self.labelsToContract, other.labelsToContract)
+        if self.labelsRenameFrom != None:
+            result.replace_labels(self.labelsRenameFrom, self.labelsRenameTo, inplace=True)
+        if other.labelsRenameFrom != None:
+            result.replace_labels(other.labelsRenameFrom, other.labelsRenameTo, inplace=True)
+        return result
 
 
 

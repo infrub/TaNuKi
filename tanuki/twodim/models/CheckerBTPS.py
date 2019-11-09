@@ -57,8 +57,33 @@ class Ptn2DCheckerBTPS:
         return dataStr
 
 
+    def locally_canonize(self, where, chi=None, normalize=True):
+        A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
+        weight = 1.0
+        if where=="L":
+            A,L,B = tnd.tensor_svd_again_in_bdts(A,L,B,[R,U,D],[R,U,D], chi=chi)
+            if normalize: weight *= L.normalize(inplace=True)
+        elif where=="R":
+            A,R,B = tnd.tensor_svd_again_in_bdts(A,R,B,[L,U,D],[L,U,D], chi=chi)
+            if normalize: weight *= R.normalize(inplace=True)
+        elif where=="U":
+            A,U,B = tnd.tensor_svd_again_in_bdts(A,U,B,[L,R,D],[L,R,D], chi=chi)
+            if normalize: weight *= U.normalize(inplace=True)
+        elif where=="D":
+            A,D,B = tnd.tensor_svd_again_in_bdts(A,D,B,[L,R,U],[L,R,U], chi=chi)
+            if normalize: weight *= D.normalize(inplace=True)
 
-    def super_orthogonalize(self, conv_rtol=1e-11, conv_atol=1e-14, maxiter=100, normalize=True, memo=None):
+        if normalize:
+            a = (A*L*R*U*D).norm()
+            b = (B*L*R*U*D).norm()
+            A /= a
+            B /= b
+            weight *= a * b
+        self.A,self.B,self.L,self.R,self.U,self.D = A,B,L,R,U,D
+        return weight
+
+
+    def locally_canonize_all(self, conv_rtol=1e-11, conv_atol=1e-14, maxiter=100, normalize=True, memo=None):
         if memo is None: memo={}
         A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
         weight = 1.0
@@ -74,11 +99,6 @@ class Ptn2DCheckerBTPS:
             weight *= A.normalize(inplace=True) * U.normalize(inplace=True) * B.normalize(inplace=True)
             A,D,B = tnd.tensor_svd_again_in_bdts(A,D,B,[L,R,U],[L,R,U])
             weight *= A.normalize(inplace=True) * D.normalize(inplace=True) * B.normalize(inplace=True)
-            """
-            if lastA is not None and A.__eq__(lastA, skipLabelSort=True):
-                break
-            lastA = A
-            """
             if lastL is not None and L.__eq__(lastL, skipLabelSort=True, check_rtol=conv_rtol, check_atol=conv_atol):
                 break
             lastL = L
@@ -109,3 +129,25 @@ class Ptn2DCheckerBTPS:
         print(memo)
 
         return weight
+
+    super_orthogonalize = locally_canonize_all
+
+
+    def apply(self, mpo, where, chi=None, normalize=True):
+        A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
+        C = {"L":L,"R":R,"U":U,"D":D}[where]
+
+        mpo = mpo.to_BTPO()
+
+        A = A[self.A_phys_labels] * mpo.tensors[0][mpo.physin_labelss[0] : mpo.physout_labelss[0] : self.A_phys_labels]
+        C = C * mpo.bdts[1]
+        B = B[self.B_phys_labels] * mpo.tensors[1][mpo.physin_labelss[1] : mpo.physout_labelss[1] : self.B_phys_labels]
+
+        if where=="L": L=C
+        if where=="R": R=C
+        if where=="U": U=C
+        if where=="D": D=C
+        self.A,self.B,self.L,self.R,self.U,self.D = A,B,L,R,U,D
+
+        return self.locally_canonize(where,chi=chi,normalize=normalize)
+

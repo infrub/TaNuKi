@@ -65,5 +65,10 @@ class Opn1DBTPO(MixinOpn1DBTP_):
         return Opn1DTPO(tensors, self.physout_labelss, self.physin_labelss, is_unitary=self.is_unitary, is_hermite=self.is_hermite)
 
     def to_BTPO(self):
-        return self
-
+        if self.bdts[0].is_dummy() and self.bdts[-1].is_dummy():
+            return self
+        tensors = list(self.tensors)
+        tensors[0] *= self.bdts[0]
+        tensors[-1] *= self.bdts[-1]
+        bdts = [tni.dummy_diagonalTensor()] + self.bdts[1:-1] + [tni.dummy_diagonalTensor()]
+        return Opn1DBTPO(self.tensors, self.bdts, self.physout_labelss, self.physin_labelss)
