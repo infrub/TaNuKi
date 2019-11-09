@@ -58,7 +58,7 @@ class Ptn2DCheckerBTPS:
 
 
 
-    def super_orthogonalize(self, conv_rtol=1e-11, conv_atol=1e-14, maxiter=100, normalize_where="keep_overall", memo=None):
+    def super_orthogonalize(self, conv_rtol=1e-11, conv_atol=1e-14, maxiter=100, normalize=True, memo=None):
         if memo is None: memo={}
         A,B,L,R,U,D = self.A,self.B,self.L,self.R,self.U,self.D
         weight = 1.0
@@ -84,71 +84,28 @@ class Ptn2DCheckerBTPS:
             lastL = L
         memo["iter_times"] = iteri+1
 
-        cbl = (A*R*U*D).is_prop_right_semi_unitary(rows=L, check_rtol=conv_rtol*1e3, check_atol=conv_atol*1e3)["factor"]**(0.5)
-        cbr = (A*L*U*D).is_prop_right_semi_unitary(rows=R, check_rtol=conv_rtol*1e3, check_atol=conv_atol*1e3)["factor"]**(0.5)
-        cbu = (A*L*R*D).is_prop_right_semi_unitary(rows=U, check_rtol=conv_rtol*1e3, check_atol=conv_atol*1e3)["factor"]**(0.5)
-        cbd = (A*L*R*U).is_prop_right_semi_unitary(rows=D, check_rtol=conv_rtol*1e3, check_atol=conv_atol*1e3)["factor"]**(0.5)
-        cal = (B*R*U*D).is_prop_right_semi_unitary(rows=L, check_rtol=conv_rtol*1e3, check_atol=conv_atol*1e3)["factor"]**(0.5)
-        car = (B*L*U*D).is_prop_right_semi_unitary(rows=R, check_rtol=conv_rtol*1e3, check_atol=conv_atol*1e3)["factor"]**(0.5)
-        cau = (B*L*R*D).is_prop_right_semi_unitary(rows=U, check_rtol=conv_rtol*1e3, check_atol=conv_atol*1e3)["factor"]**(0.5)
-        cad = (B*L*R*U).is_prop_right_semi_unitary(rows=D, check_rtol=conv_rtol*1e3, check_atol=conv_atol*1e3)["factor"]**(0.5)
+        a = (A*L*R*U*D).norm()
+        b = (B*L*R*U*D).norm()
+        A /= a
+        B /= b
+        weight *= a
+        weight *= b
 
+        # assert (A*R*U*D).is_prop_right_semi_unitary(rows=L, check_rtol=conv_rtol*1e3, check_atol=conv_atol*1e3)["factor"] ~= 1.0
 
-        cccaaa__b = cal*car*cau*cad
-        cccbbb__a = cbl*cbr*cbu*cbd
-        # a__b = (cccaaa__b/cccbbb__a)**0.25
-        # print(a__b) # kore daitai 1 ni narukedo tabun genmitsu na 1 deha naiyone?
+        if not normalize:
+            tensor_m = weight**1.5
+            bdt_m = weight**(-0.5)
+            A *= tensor_m
+            B *= tensor_m
+            L *= bdt_m
+            R *= bdt_m
+            U *= bdt_m
+            D *= bdt_m
+            weight = 1.0
 
-        if normalize_where in ["keep_overall","A","B"]:
-            if normalize_where == "keep_overall": # assert keeps A*L*R*U*D*B
-                c = 1.0/weight
-                a = ((cccaaa__b**3 * cccbbb__a)**0.25 / c**3)**0.5
-                b = ((cccbbb__a**3 * cccaaa__b)**0.25 / c**3)**0.5
-            elif normalize_where == "A": # assert A.norm() == 1
-                a = 1.0/A.norm()
-                b = (cccbbb__a / cccaaa__b )**0.25 * a
-                c = (cccaaa__b * b)**(1/3) / a
-            elif normalize_where == "B":
-                b = 1.0/B.norm()
-                a = (cccaaa__b / cccbbb__a )**0.25 * b
-                c = (cccbbb__a * a)**(1/3) / b
-            ca = c*a
-            cb = c*b
-
-        if normalize_where in ["L","R","U","D"]:
-            if normalize_where == "L":
-                l = 1.0/L.norm()
-                ca = cal/l
-                cb = cbl/l
-            elif normalize_where == "R":
-                r = 1.0/R.norm()
-                ca = car/r
-                cb = cbr/r
-            elif normalize_where == "U":
-                u = 1.0/U.norm()
-                ca = cau/u
-                cb = cbu/u
-            elif normalize_where == "D":
-                d = 1.0/D.norm()
-                ca = cad/d
-                cb = cbd/d
-            c = cccbbb__a * ca / cb**3
-            a = ca / c
-            b = cb / c
-
-        if normalize_where != "L": l = cbl / cb
-        if normalize_where != "R": r = cbr / cb
-        if normalize_where != "U": u = cbu / cb
-        if normalize_where != "D": d = cbd / cb
-
-        A *= a
-        B *= b
-        L *= l
-        R *= r
-        U *= u
-        D *= d
         self.A,self.B,self.L,self.R,self.U,self.D = A,B,L,R,U,D
 
         print(memo)
 
-        return 1.0
+        return weight

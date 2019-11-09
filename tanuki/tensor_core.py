@@ -407,6 +407,9 @@ class TensorMixin(TensorLabelingMixin):
         else:
             return self / norm
 
+    def __abs__(self):
+        return self.norm()
+
     def __neg__(self):
         return self.__class__(-self.data, labels=self.labels)
 
